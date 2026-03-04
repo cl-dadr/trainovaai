@@ -2,10 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AudioPlayerProvider } from "./contexts/AudioPlayerContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import NowPlayingBar from "./components/NowPlayingBar";
 import BottomNav from "./components/BottomNav";
+import AuthPage from "./pages/AuthPage";
 import HomePage from "./pages/HomePage";
 import StreakPage from "./pages/StreakPage";
 import MusicPage from "./pages/MusicPage";
@@ -14,34 +16,54 @@ import CameraPage from "./pages/CameraPage";
 import ActivityPage from "./pages/ActivityPage";
 import HealthReportPage from "./pages/HealthReportPage";
 import JaxAIPage from "./pages/JaxAIPage";
+import RunningPage from "./pages/RunningPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+  if (!user) return <Navigate to="/auth" replace />;
+  return <>{children}</>;
+};
+
+const AppRoutes = () => {
+  const { user } = useAuth();
+
+  return (
+    <div className="max-w-md mx-auto relative">
+      <Routes>
+        <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
+        <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+        <Route path="/streak" element={<ProtectedRoute><StreakPage /></ProtectedRoute>} />
+        <Route path="/music" element={<ProtectedRoute><MusicPage /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/camera" element={<ProtectedRoute><CameraPage /></ProtectedRoute>} />
+        <Route path="/activity" element={<ProtectedRoute><ActivityPage /></ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute><HealthReportPage /></ProtectedRoute>} />
+        <Route path="/jax" element={<ProtectedRoute><JaxAIPage /></ProtectedRoute>} />
+        <Route path="/running" element={<ProtectedRoute><RunningPage /></ProtectedRoute>} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      {user && <NowPlayingBar />}
+      {user && <BottomNav />}
+    </div>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AudioPlayerProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <div className="max-w-md mx-auto relative">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/streak" element={<StreakPage />} />
-              <Route path="/music" element={<MusicPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/camera" element={<CameraPage />} />
-              <Route path="/activity" element={<ActivityPage />} />
-              <Route path="/reports" element={<HealthReportPage />} />
-              <Route path="/jax" element={<JaxAIPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <NowPlayingBar />
-            <BottomNav />
-          </div>
-        </BrowserRouter>
-      </AudioPlayerProvider>
+      <AuthProvider>
+        <AudioPlayerProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </AudioPlayerProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

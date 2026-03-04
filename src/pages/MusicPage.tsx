@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Music, Play, Pause, Heart, Loader2 } from "lucide-react";
+import { Search, Music, Play, Pause, Heart, Loader2, Youtube, Headphones } from "lucide-react";
 import { searchTracks, getTracksForCategory, type Track } from "@/lib/musicService";
+import { searchYouTube, type YouTubeVideo } from "@/lib/youtubeService";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 
 const categories = ["Phonk", "Workout", "Running", "High Energy", "Chill", "Hardstyle", "Trap", "EDM"];
@@ -9,26 +10,39 @@ const categories = ["Phonk", "Workout", "Running", "High Energy", "Chill", "Hard
 const MusicPage = () => {
   const [activeCategory, setActiveCategory] = useState("Workout");
   const [tracks, setTracks] = useState<Track[]>([]);
+  const [ytVideos, setYtVideos] = useState<YouTubeVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [liked, setLiked] = useState<Set<number>>(new Set());
+  const [musicSource, setMusicSource] = useState<"itunes" | "youtube">("itunes");
+  const [ytPlaying, setYtPlaying] = useState<string | null>(null);
 
   const { currentTrack, isPlaying, play, pause, resume } = useAudioPlayer();
 
   const loadCategory = useCallback(async (cat: string) => {
     setLoading(true);
-    const results = await getTracksForCategory(cat);
-    setTracks(results);
+    if (musicSource === "itunes") {
+      const results = await getTracksForCategory(cat);
+      setTracks(results);
+    } else {
+      const results = await searchYouTube(`${cat} workout music`);
+      setYtVideos(results);
+    }
     setLoading(false);
-  }, []);
+  }, [musicSource]);
 
   const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) return;
     setLoading(true);
-    const results = await searchTracks(searchQuery, 50);
-    setTracks(results);
+    if (musicSource === "itunes") {
+      const results = await searchTracks(searchQuery, 50);
+      setTracks(results);
+    } else {
+      const results = await searchYouTube(searchQuery);
+      setYtVideos(results);
+    }
     setLoading(false);
-  }, [searchQuery]);
+  }, [searchQuery, musicSource]);
 
   useEffect(() => {
     loadCategory(activeCategory);
@@ -55,60 +69,59 @@ const MusicPage = () => {
       <div className="ambient-glow" />
 
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 flex items-center gap-3 mb-5"
-      >
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 flex items-center gap-3 mb-5">
         <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center">
           <Music className="h-5 w-5 text-primary-foreground" />
         </div>
         <div>
           <h1 className="text-xl font-display font-bold text-foreground">GYM LIBRARY</h1>
-          <p className="text-xs text-muted-foreground">Stream real workout tracks 🎵</p>
+          <p className="text-xs text-muted-foreground">Stream workout tracks 🎵</p>
         </div>
       </motion.div>
 
+      {/* Source Toggle */}
+      <div className="relative z-10 glass-card p-1 flex mb-4 rounded-xl">
+        <button
+          onClick={() => setMusicSource("itunes")}
+          className={`flex-1 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+            musicSource === "itunes" ? "gradient-primary text-primary-foreground" : "text-muted-foreground"
+          }`}
+        >
+          <Headphones className="h-3.5 w-3.5" /> iTunes Audio
+        </button>
+        <button
+          onClick={() => setMusicSource("youtube")}
+          className={`flex-1 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+            musicSource === "youtube" ? "bg-destructive text-foreground" : "text-muted-foreground"
+          }`}
+        >
+          <Youtube className="h-3.5 w-3.5" /> YouTube
+        </button>
+      </div>
+
       {/* Search */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="relative z-10 mb-4"
-      >
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="relative z-10 mb-4">
         <div className="glass-card flex items-center gap-3 px-4 py-3">
           <Search className="h-4 w-4 text-muted-foreground" />
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            placeholder="Search any song, artist..."
+            placeholder={musicSource === "youtube" ? "Search YouTube..." : "Search any song, artist..."}
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
           />
-          <button
-            onClick={handleSearch}
-            className="gradient-primary px-3 py-1.5 rounded-lg text-xs font-bold text-primary-foreground"
-          >
-            GO
-          </button>
+          <button onClick={handleSearch} className="gradient-primary px-3 py-1.5 rounded-lg text-xs font-bold text-primary-foreground">GO</button>
         </div>
       </motion.div>
 
       {/* Categories */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.15 }}
-        className="relative z-10 flex gap-2 mb-5 overflow-x-auto no-scrollbar"
-      >
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className="relative z-10 flex gap-2 mb-5 overflow-x-auto no-scrollbar">
         {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => { setActiveCategory(cat); setSearchQuery(""); }}
             className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
-              activeCategory === cat
-                ? "gradient-primary text-primary-foreground neon-glow"
-                : "glass-card text-muted-foreground"
+              activeCategory === cat ? "gradient-primary text-primary-foreground neon-glow" : "glass-card text-muted-foreground"
             }`}
           >
             {cat}
@@ -124,8 +137,65 @@ const MusicPage = () => {
         </div>
       )}
 
-      {/* Track List */}
-      {!loading && (
+      {/* YouTube Content */}
+      {!loading && musicSource === "youtube" && (
+        <div className="relative z-10 space-y-3">
+          <p className="text-[10px] text-muted-foreground mb-3 px-1">{ytVideos.length} videos found</p>
+          
+          {/* YouTube Player */}
+          {ytPlaying && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mb-4 rounded-xl overflow-hidden">
+              <iframe
+                src={`https://www.youtube.com/embed/${ytPlaying}?autoplay=1`}
+                className="w-full aspect-video rounded-xl"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+              />
+            </motion.div>
+          )}
+
+          {ytVideos.map((video, i) => (
+            <motion.div
+              key={video.id}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: Math.min(0.03 * i, 0.5) }}
+              onClick={() => setYtPlaying(video.id)}
+              className={`w-full flex items-center gap-3 p-2.5 rounded-xl transition-colors cursor-pointer ${
+                ytPlaying === video.id ? "bg-destructive/10 border border-destructive/20" : "hover:bg-secondary/50"
+              }`}
+            >
+              <div className="relative h-11 w-11 rounded-lg overflow-hidden shrink-0">
+                {video.thumbnail ? (
+                  <img src={video.thumbnail} alt={video.title} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="h-full w-full bg-secondary flex items-center justify-center">
+                    <Youtube className="h-4 w-4 text-destructive" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-background/40 flex items-center justify-center">
+                  <Play className="h-4 w-4 text-foreground ml-0.5" />
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-semibold truncate ${ytPlaying === video.id ? "text-destructive" : "text-foreground"}`}>{video.title}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{video.author}</p>
+              </div>
+              <span className="text-[11px] text-muted-foreground shrink-0">{video.duration}</span>
+            </motion.div>
+          ))}
+
+          {ytVideos.length === 0 && (
+            <div className="text-center py-12">
+              <Youtube className="mx-auto h-12 w-12 text-muted-foreground/30 mb-3" />
+              <p className="text-sm text-muted-foreground">No videos found</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* iTunes Track List */}
+      {!loading && musicSource === "itunes" && (
         <div className="relative z-10 space-y-1">
           <p className="text-[10px] text-muted-foreground mb-3 px-1">{tracks.length} tracks found • 30s previews</p>
           <AnimatePresence>
@@ -141,54 +211,33 @@ const MusicPage = () => {
                     isCurrentTrack ? "bg-neon-green/5 border border-neon-green/10" : "hover:bg-secondary/50"
                   }`}
                 >
-                  {/* Album Art + Play */}
-                  <button
-                    onClick={() => handleTrackPress(track)}
-                    className="relative h-11 w-11 rounded-lg overflow-hidden shrink-0"
-                  >
+                  <button onClick={() => handleTrackPress(track)} className="relative h-11 w-11 rounded-lg overflow-hidden shrink-0">
                     {track.artworkUrl ? (
                       <img src={track.artworkUrl} alt={track.title} className="h-full w-full object-cover" />
                     ) : (
                       <div className="h-full w-full bg-secondary" />
                     )}
                     <div className="absolute inset-0 bg-background/40 flex items-center justify-center">
-                      {isCurrentTrack && isPlaying ? (
-                        <Pause className="h-4 w-4 text-neon-green" />
-                      ) : (
-                        <Play className="h-4 w-4 text-foreground ml-0.5" />
-                      )}
+                      {isCurrentTrack && isPlaying ? <Pause className="h-4 w-4 text-neon-green" /> : <Play className="h-4 w-4 text-foreground ml-0.5" />}
                     </div>
                   </button>
-
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-semibold truncate ${isCurrentTrack ? "text-neon-green" : "text-foreground"}`}>
-                      {track.title}
-                    </p>
+                    <p className={`text-sm font-semibold truncate ${isCurrentTrack ? "text-neon-green" : "text-foreground"}`}>{track.title}</p>
                     <p className="text-[11px] text-muted-foreground truncate">{track.artist}</p>
                   </div>
-
-                  {/* Like */}
                   <button onClick={() => toggleLike(track.id)} className="shrink-0 p-1">
-                    <Heart
-                      className={`h-4 w-4 transition-colors ${
-                        liked.has(track.id) ? "text-neon-pink fill-current" : "text-muted-foreground"
-                      }`}
-                    />
+                    <Heart className={`h-4 w-4 transition-colors ${liked.has(track.id) ? "text-neon-pink fill-current" : "text-muted-foreground"}`} />
                   </button>
-
-                  {/* Duration */}
                   <span className="text-[11px] text-muted-foreground shrink-0 w-8 text-right">{track.duration}</span>
                 </motion.div>
               );
             })}
           </AnimatePresence>
 
-          {tracks.length === 0 && !loading && (
+          {tracks.length === 0 && (
             <div className="text-center py-12">
               <Music className="mx-auto h-12 w-12 text-muted-foreground/30 mb-3" />
               <p className="text-sm text-muted-foreground">No tracks found</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">Try a different search</p>
             </div>
           )}
         </div>

@@ -1,9 +1,12 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   Zap, Trophy, Target, Flame, Sparkles, User,
-  Footprints, BarChart3, Bot, Heart, Droplets, SmilePlus,
+  Footprints, BarChart3, Bot, Heart, Bell, PersonStanding,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { showRandomInspiration, startInspiringNotifications } from "@/lib/inspiringNotifications";
 
 const stats = [
   { icon: Trophy, value: "271", label: "Total Reps", color: "text-neon-cyan" },
@@ -25,29 +28,35 @@ const aiHints = [
 
 const quickNav = [
   { icon: Footprints, label: "Activity", path: "/activity", color: "text-neon-green" },
+  { icon: PersonStanding, label: "Run", path: "/running", color: "text-neon-cyan" },
   { icon: BarChart3, label: "Reports", path: "/reports", color: "text-neon-orange" },
   { icon: Bot, label: "JAX AI", path: "/jax", color: "text-neon-purple" },
-  { icon: Heart, label: "Health", path: "/activity", color: "text-neon-pink" },
 ];
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    startInspiringNotifications();
+  }, []);
 
   return (
     <div className="relative min-h-screen pb-24 px-4 pt-6">
       <div className="ambient-glow" />
 
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 flex items-center justify-between mb-6"
-      >
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 flex items-center justify-between mb-6">
         <div>
           <p className="text-sm text-neon-green font-medium">Welcome back</p>
-          <h1 className="text-2xl font-display font-bold text-foreground">Rookie</h1>
+          <h1 className="text-2xl font-display font-bold text-foreground">
+            {user?.user_metadata?.display_name || "Beast"} 🐺
+          </h1>
         </div>
         <div className="flex items-center gap-3">
+          <button onClick={() => showRandomInspiration()} className="h-10 w-10 rounded-full glass-card flex items-center justify-center">
+            <Bell className="h-4 w-4 text-neon-orange" />
+          </button>
           <div className="flex items-center gap-1.5 glass-card px-3 py-2">
             <Flame className="h-4 w-4 text-neon-orange" />
             <span className="text-sm font-bold text-foreground">3</span>
@@ -68,25 +77,14 @@ const HomePage = () => {
         className="relative z-10 w-full rounded-2xl gradient-primary p-8 mb-6 neon-glow text-left"
       >
         <Zap className="h-10 w-10 text-primary-foreground mb-2" />
-        <h2 className="font-display text-2xl font-black text-primary-foreground tracking-wide">
-          START WORKOUT
-        </h2>
-        <p className="text-primary-foreground/80 text-sm mt-1">Crush your pushups</p>
+        <h2 className="font-display text-2xl font-black text-primary-foreground tracking-wide">START WORKOUT</h2>
+        <p className="text-primary-foreground/80 text-sm mt-1">AI detects 6 exercises in real-time</p>
       </motion.button>
 
       {/* Quick Nav */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="relative z-10 grid grid-cols-4 gap-2 mb-6"
-      >
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="relative z-10 grid grid-cols-4 gap-2 mb-6">
         {quickNav.map((item) => (
-          <button
-            key={item.label}
-            onClick={() => navigate(item.path)}
-            className="glass-card p-3 text-center hover:bg-secondary/50 transition-colors"
-          >
+          <button key={item.label} onClick={() => navigate(item.path)} className="glass-card p-3 text-center hover:bg-secondary/50 transition-colors">
             <item.icon className={`mx-auto h-5 w-5 mb-1.5 ${item.color}`} />
             <span className="text-[10px] text-muted-foreground font-medium">{item.label}</span>
           </button>
@@ -94,12 +92,7 @@ const HomePage = () => {
       </motion.div>
 
       {/* Stats */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="relative z-10 grid grid-cols-3 gap-3 mb-6"
-      >
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="relative z-10 grid grid-cols-3 gap-3 mb-6">
         {stats.map((s) => (
           <div key={s.label} className="glass-card p-4 text-center">
             <s.icon className={`mx-auto h-5 w-5 mb-2 ${s.color}`} />
@@ -110,12 +103,7 @@ const HomePage = () => {
       </motion.div>
 
       {/* Milestone */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.25 }}
-        className="relative z-10 glass-card p-5 mb-6"
-      >
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="relative z-10 glass-card p-5 mb-6">
         <div className="flex justify-between items-center mb-1">
           <div>
             <p className="text-xs text-muted-foreground">Next Milestone</p>
@@ -124,23 +112,13 @@ const HomePage = () => {
           <span className="text-sm font-semibold text-neon-orange">229 to go</span>
         </div>
         <div className="h-2 rounded-full bg-secondary mt-3 overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: "54%" }}
-            transition={{ delay: 0.6, duration: 1 }}
-            className="h-full rounded-full gradient-primary"
-          />
+          <motion.div initial={{ width: 0 }} animate={{ width: "54%" }} transition={{ delay: 0.6, duration: 1 }} className="h-full rounded-full gradient-primary" />
         </div>
         <p className="text-[10px] text-muted-foreground mt-2">Keep going! You're over halfway there 🔥</p>
       </motion.div>
 
       {/* Today's Progress */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="relative z-10 mb-6"
-      >
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="relative z-10 mb-6">
         <h3 className="font-bold text-foreground mb-3">Today's Progress</h3>
         <div className="grid grid-cols-3 gap-3">
           {todayProgress.map((p) => (
@@ -154,12 +132,7 @@ const HomePage = () => {
       </motion.div>
 
       {/* AI Hints */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35 }}
-        className="relative z-10"
-      >
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="relative z-10">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="h-4 w-4 text-neon-green" />
           <h3 className="font-bold text-foreground">AI Coach</h3>
