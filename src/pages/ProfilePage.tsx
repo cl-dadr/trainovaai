@@ -112,7 +112,7 @@ const ProfilePage = () => {
         <Crown className="mx-auto h-8 w-8 text-foreground mb-2" />
         <h3 className="font-display font-bold text-foreground text-lg">Go Pro</h3>
         <p className="text-xs text-foreground/70 mt-1 mb-3">Unlock advanced AI coaching, analytics & custom plans</p>
-        <button className="glass-card px-6 py-2 rounded-xl text-sm font-bold text-foreground flex items-center gap-2 mx-auto">Upgrade <ChevronRight className="h-4 w-4" /></button>
+        <button onClick={() => navigate("/premium")} className="glass-card px-6 py-2 rounded-xl text-sm font-bold text-foreground flex items-center gap-2 mx-auto">Upgrade <ChevronRight className="h-4 w-4" /></button>
       </motion.div>
     </div>
   );
