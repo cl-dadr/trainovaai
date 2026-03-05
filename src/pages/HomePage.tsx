@@ -3,27 +3,22 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   Zap, Trophy, Target, Flame, Sparkles, User,
-  Footprints, BarChart3, Bot, Heart, Bell, PersonStanding,
+  Footprints, BarChart3, Bot, Bell, PersonStanding,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserStats } from "@/hooks/useUserStats";
 import { showRandomInspiration, startInspiringNotifications } from "@/lib/inspiringNotifications";
 
-const stats = [
-  { icon: Trophy, value: "271", label: "Total Reps", color: "text-neon-cyan" },
-  { icon: Target, value: "87%", label: "Accuracy", color: "text-neon-purple" },
-  { icon: Flame, value: "5", label: "Best Streak", color: "text-neon-orange" },
-];
-
 const todayProgress = [
-  { emoji: "💪", label: "Workout", subLabel: "1 done", color: "from-neon-green/20 to-neon-cyan/10" },
-  { emoji: "💧", label: "Water", subLabel: "3/8", color: "from-neon-cyan/20 to-neon-cyan/5" },
+  { emoji: "💪", label: "Workout", subLabel: "Track it!", color: "from-neon-green/20 to-neon-cyan/10" },
+  { emoji: "💧", label: "Water", subLabel: "Stay hydrated", color: "from-neon-cyan/20 to-neon-cyan/5" },
   { emoji: "🤩", label: "Mood", subLabel: "Great", color: "from-neon-orange/20 to-neon-orange/5" },
 ];
 
 const aiHints = [
-  "You're 3 reps away from your best record. 🔥",
+  "You're getting stronger every session. 🔥",
   "Try a quick 5 minute workout. 💪",
-  "You usually workout at 7pm — ready?",
+  "Consistency beats intensity — keep showing up!",
 ];
 
 const quickNav = [
@@ -36,10 +31,20 @@ const quickNav = [
 const HomePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { totalReps, avgFormScore, longestStreak, currentStreak, loading } = useUserStats();
 
   useEffect(() => {
     startInspiringNotifications();
   }, []);
+
+  const stats = [
+    { icon: Trophy, value: loading ? "..." : String(totalReps), label: "Total Reps", color: "text-neon-cyan" },
+    { icon: Target, value: loading ? "..." : `${avgFormScore}%`, label: "Accuracy", color: "text-neon-purple" },
+    { icon: Flame, value: loading ? "..." : String(longestStreak), label: "Best Streak", color: "text-neon-orange" },
+  ];
+
+  const nextMilestone = [100, 250, 500, 1000, 2500, 5000].find(m => m > totalReps) || 10000;
+  const milestoneProgress = Math.min((totalReps / nextMilestone) * 100, 100);
 
   return (
     <div className="relative min-h-screen pb-24 px-4 pt-6">
@@ -59,7 +64,7 @@ const HomePage = () => {
           </button>
           <div className="flex items-center gap-1.5 glass-card px-3 py-2">
             <Flame className="h-4 w-4 text-neon-orange" />
-            <span className="text-sm font-bold text-foreground">3</span>
+            <span className="text-sm font-bold text-foreground">{currentStreak}</span>
           </div>
           <button onClick={() => navigate("/profile")} className="h-10 w-10 rounded-full bg-neon-green/20 border border-neon-green/30 flex items-center justify-center">
             <User className="h-5 w-5 text-neon-green" />
@@ -107,14 +112,14 @@ const HomePage = () => {
         <div className="flex justify-between items-center mb-1">
           <div>
             <p className="text-xs text-muted-foreground">Next Milestone</p>
-            <p className="text-lg font-bold text-foreground">500 Reps</p>
+            <p className="text-lg font-bold text-foreground">{nextMilestone} Reps</p>
           </div>
-          <span className="text-sm font-semibold text-neon-orange">229 to go</span>
+          <span className="text-sm font-semibold text-neon-orange">{nextMilestone - totalReps} to go</span>
         </div>
         <div className="h-2 rounded-full bg-secondary mt-3 overflow-hidden">
-          <motion.div initial={{ width: 0 }} animate={{ width: "54%" }} transition={{ delay: 0.6, duration: 1 }} className="h-full rounded-full gradient-primary" />
+          <motion.div initial={{ width: 0 }} animate={{ width: `${milestoneProgress}%` }} transition={{ delay: 0.6, duration: 1 }} className="h-full rounded-full gradient-primary" />
         </div>
-        <p className="text-[10px] text-muted-foreground mt-2">Keep going! You're over halfway there 🔥</p>
+        <p className="text-[10px] text-muted-foreground mt-2">Keep going! You're making progress 🔥</p>
       </motion.div>
 
       {/* Today's Progress */}

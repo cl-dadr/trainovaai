@@ -1,32 +1,13 @@
 import { motion } from "framer-motion";
 import { User, Trophy, Target, Dumbbell, Crown, Settings, ChevronRight, Zap, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserStats } from "@/hooks/useUserStats";
 import { useNavigate } from "react-router-dom";
-
-const profileStats = [
-  { icon: Trophy, value: "271", label: "Total Reps", color: "text-neon-cyan" },
-  { icon: Target, value: "87%", label: "Accuracy", color: "text-neon-purple" },
-  { icon: Dumbbell, value: "12", label: "Workouts", color: "text-neon-orange" },
-  { icon: Crown, value: "LV1", label: "Level", color: "text-neon-green" },
-];
-
-const achievements = [
-  { reps: 10, unlocked: true, icon: "🔥" },
-  { reps: 25, unlocked: true, icon: "⚡" },
-  { reps: 50, unlocked: true, icon: "💪" },
-  { reps: 100, unlocked: true, icon: "🏆" },
-  { reps: 150, unlocked: true, icon: "🦾" },
-  { reps: 250, unlocked: true, icon: "🐺" },
-  { reps: 500, unlocked: false, icon: "👑" },
-  { reps: 1000, unlocked: false, icon: "⭐" },
-];
-
-const currentXP = 75;
-const nextLevelXP = 100;
 
 const ProfilePage = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { totalReps, avgFormScore, totalWorkouts, totalXP, loading } = useUserStats();
 
   const handleSignOut = async () => {
     await signOut();
@@ -34,6 +15,29 @@ const ProfilePage = () => {
   };
 
   const displayName = user?.user_metadata?.display_name || "Beast";
+
+  const level = Math.floor(totalXP / 100) + 1;
+  const xpInLevel = totalXP % 100;
+  const levelNames = ["Rookie", "Beginner", "Fighter", "Warrior", "Champion", "Legend", "Beast"];
+  const levelName = levelNames[Math.min(level - 1, levelNames.length - 1)];
+
+  const profileStats = [
+    { icon: Trophy, value: loading ? "..." : String(totalReps), label: "Total Reps", color: "text-neon-cyan" },
+    { icon: Target, value: loading ? "..." : `${avgFormScore}%`, label: "Accuracy", color: "text-neon-purple" },
+    { icon: Dumbbell, value: loading ? "..." : String(totalWorkouts), label: "Workouts", color: "text-neon-orange" },
+    { icon: Crown, value: loading ? "..." : `LV${level}`, label: "Level", color: "text-neon-green" },
+  ];
+
+  const achievements = [
+    { reps: 10, unlocked: totalReps >= 10, icon: "🔥" },
+    { reps: 25, unlocked: totalReps >= 25, icon: "⚡" },
+    { reps: 50, unlocked: totalReps >= 50, icon: "💪" },
+    { reps: 100, unlocked: totalReps >= 100, icon: "🏆" },
+    { reps: 150, unlocked: totalReps >= 150, icon: "🦾" },
+    { reps: 250, unlocked: totalReps >= 250, icon: "🐺" },
+    { reps: 500, unlocked: totalReps >= 500, icon: "👑" },
+    { reps: 1000, unlocked: totalReps >= 1000, icon: "⭐" },
+  ];
 
   return (
     <div className="relative min-h-screen pb-24 px-4 pt-6">
@@ -58,7 +62,7 @@ const ProfilePage = () => {
             <User className="h-12 w-12 text-neon-green" />
           </div>
           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 gradient-primary px-3 py-0.5 rounded-full">
-            <span className="text-[10px] font-bold text-primary-foreground">LV1</span>
+            <span className="text-[10px] font-bold text-primary-foreground">LV{level}</span>
           </div>
         </div>
         <h2 className="text-lg font-bold text-foreground mt-5">{displayName}</h2>
@@ -69,12 +73,12 @@ const ProfilePage = () => {
           <div className="flex justify-between items-center mb-1.5">
             <div className="flex items-center gap-1">
               <Zap className="h-3 w-3 text-neon-green" />
-              <span className="text-[10px] text-muted-foreground">LV1 Rookie</span>
+              <span className="text-[10px] text-muted-foreground">LV{level} {levelName}</span>
             </div>
-            <span className="text-[10px] text-neon-green font-semibold">{currentXP}/{nextLevelXP} XP</span>
+            <span className="text-[10px] text-neon-green font-semibold">{xpInLevel}/100 XP</span>
           </div>
           <div className="h-2 rounded-full bg-secondary overflow-hidden">
-            <motion.div initial={{ width: 0 }} animate={{ width: `${(currentXP / nextLevelXP) * 100}%` }} transition={{ delay: 0.5, duration: 1 }} className="h-full rounded-full gradient-primary" />
+            <motion.div initial={{ width: 0 }} animate={{ width: `${xpInLevel}%` }} transition={{ delay: 0.5, duration: 1 }} className="h-full rounded-full gradient-primary" />
           </div>
         </div>
       </motion.div>
