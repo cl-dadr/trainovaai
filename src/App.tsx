@@ -17,6 +17,7 @@ import ActivityPage from "./pages/ActivityPage";
 import HealthReportPage from "./pages/HealthReportPage";
 import JaxAIPage from "./pages/JaxAIPage";
 import RunningPage from "./pages/RunningPage";
+import PremiumPage from "./pages/PremiumPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const AppRoutes = () => {
         <Route path="/reports" element={<ProtectedRoute><HealthReportPage /></ProtectedRoute>} />
         <Route path="/jax" element={<ProtectedRoute><JaxAIPage /></ProtectedRoute>} />
         <Route path="/running" element={<ProtectedRoute><RunningPage /></ProtectedRoute>} />
+        <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {user && <NowPlayingBar />}
