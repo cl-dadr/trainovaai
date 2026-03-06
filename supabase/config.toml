@@ -2,3 +2,9 @@ project_id = "meaibpmvphthoozbizti"
 
 [functions.create-razorpay-order]
 verify_jwt = false
+
+[functions.youtube-proxy]
+verify_jwt = false
+
+[functions.ai-coach]
+verify_jwt = false
