@@ -230,9 +230,18 @@ const MusicPage = () => {
     });
   }, [loadYtVideo]);
 
-  // Auto-play next song when current ends
+  // Auto-play next or repeat when current ends
   useEffect(() => {
     onEndedRef.current = () => {
+      if (repeatMode === 'one' && activeVideoId) {
+        // Replay current song
+        const player = ytPlayerRef.current;
+        if (player?.seekTo) {
+          player.seekTo(0, true);
+          player.playVideo?.();
+        }
+        return;
+      }
       const idx = ytVideos.findIndex(v => v.id === activeVideoId);
       if (idx >= 0 && idx < ytVideos.length - 1) {
         const next = ytVideos[idx + 1];
@@ -246,7 +255,7 @@ const MusicPage = () => {
         setRecentlyPlayed(prev => [next, ...prev.filter(v => v.id !== next.id)].slice(0, 15));
       }
     };
-  }, [ytVideos, activeVideoId, loadYtVideo]);
+  }, [ytVideos, activeVideoId, loadYtVideo, repeatMode]);
 
   const handlePlayLikedSong = (song: { video_id: string; title: string; author: string | null; thumbnail: string | null; duration: string | null }) => {
     setActiveVideoId(song.video_id);
