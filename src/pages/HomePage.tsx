@@ -2,25 +2,13 @@ import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
-  Zap, Trophy, Target, Flame, Sparkles, User,
-  Footprints, BarChart3, Bot, Bell, PersonStanding,
-  Apple, Brain, CheckSquare, TrendingUp, Dumbbell, Swords,
+  Zap, Flame, User,
+  Footprints, Bot, Bell, PersonStanding,
+  Apple, Brain, CheckSquare, TrendingUp, Dumbbell,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserStats } from "@/hooks/useUserStats";
 import { showRandomInspiration, startInspiringNotifications } from "@/lib/inspiringNotifications";
-
-const todayProgress = [
-  { emoji: "💪", label: "Workout", subLabel: "Track it!", color: "from-neon-green/20 to-neon-cyan/10" },
-  { emoji: "💧", label: "Water", subLabel: "Stay hydrated", color: "from-neon-cyan/20 to-neon-cyan/5" },
-  { emoji: "🤩", label: "Mood", subLabel: "Great", color: "from-neon-orange/20 to-neon-orange/5" },
-];
-
-const aiHints = [
-  "You're getting stronger every session. 🔥",
-  "Try a quick 5 minute workout. 💪",
-  "Consistency beats intensity — keep showing up!",
-];
 
 const quickNav = [
   { icon: PersonStanding, label: "Run", path: "/running", color: "text-neon-cyan" },
@@ -39,20 +27,7 @@ const quickNav2 = [
 const HomePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { totalReps, avgFormScore, longestStreak, currentStreak, loading } = useUserStats();
-
-  useEffect(() => {
-    startInspiringNotifications();
-  }, []);
-
-  const stats = [
-    { icon: Trophy, value: loading ? "..." : String(totalReps), label: "Total Reps", color: "text-neon-cyan" },
-    { icon: Target, value: loading ? "..." : `${avgFormScore}%`, label: "Accuracy", color: "text-neon-purple" },
-    { icon: Flame, value: loading ? "..." : String(longestStreak), label: "Best Streak", color: "text-neon-orange" },
-  ];
-
-  const nextMilestone = [100, 250, 500, 1000, 2500, 5000].find(m => m > totalReps) || 10000;
-  const milestoneProgress = Math.min((totalReps / nextMilestone) * 100, 100);
+  const { currentStreak, loading } = useUserStats();
 
   return (
     <div className="relative min-h-screen pb-24 px-4 pt-6">
@@ -112,59 +87,6 @@ const HomePage = () => {
         ))}
       </motion.div>
 
-      {/* Stats */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="relative z-10 grid grid-cols-3 gap-3 mb-6">
-        {stats.map((s) => (
-          <div key={s.label} className="glass-card p-4 text-center">
-            <s.icon className={`mx-auto h-5 w-5 mb-2 ${s.color}`} />
-            <p className="text-xl font-bold text-foreground">{s.value}</p>
-            <p className="text-[11px] text-muted-foreground mt-1">{s.label}</p>
-          </div>
-        ))}
-      </motion.div>
-
-      {/* Milestone */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="relative z-10 glass-card p-5 mb-6">
-        <div className="flex justify-between items-center mb-1">
-          <div>
-            <p className="text-xs text-muted-foreground">Next Milestone</p>
-            <p className="text-lg font-bold text-foreground">{nextMilestone} Reps</p>
-          </div>
-          <span className="text-sm font-semibold text-neon-orange">{nextMilestone - totalReps} to go</span>
-        </div>
-        <div className="h-2 rounded-full bg-secondary mt-3 overflow-hidden">
-          <motion.div initial={{ width: 0 }} animate={{ width: `${milestoneProgress}%` }} transition={{ delay: 0.6, duration: 1 }} className="h-full rounded-full gradient-primary" />
-        </div>
-        <p className="text-[10px] text-muted-foreground mt-2">Keep going! You're making progress 🔥</p>
-      </motion.div>
-
-      {/* Today's Progress */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="relative z-10 mb-6">
-        <h3 className="font-bold text-foreground mb-3">Today's Progress</h3>
-        <div className="grid grid-cols-3 gap-3">
-          {todayProgress.map((p) => (
-            <div key={p.label} className="glass-card p-4 text-center">
-              <span className="text-2xl">{p.emoji}</span>
-              <p className="text-xs font-semibold text-foreground mt-2">{p.label}</p>
-              <p className="text-[10px] text-muted-foreground">{p.subLabel}</p>
-            </div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* AI Hints */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="relative z-10">
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="h-4 w-4 text-neon-green" />
-          <h3 className="font-bold text-foreground">AI Coach</h3>
-        </div>
-        {aiHints.map((hint, i) => (
-          <div key={i} className="glass-card p-4 mb-3 flex items-start gap-3 border-l-2 border-neon-green/40">
-            <Sparkles className="h-4 w-4 text-neon-green mt-0.5 shrink-0" />
-            <p className="text-sm text-foreground/80">{hint}</p>
-          </div>
-        ))}
-      </motion.div>
     </div>
   );
 };
