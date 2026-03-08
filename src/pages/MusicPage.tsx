@@ -1020,7 +1020,22 @@ const MusicPage = () => {
             <h2 className="text-sm font-bold text-foreground">
               {searchQuery ? `Results for "${searchQuery}"` : activeCuratedPlaylist ? curatedPlaylists.find(p => p.id === activeCuratedPlaylist)?.name : `${activeCategory} Tracks`}
             </h2>
-            <span className="text-[10px] text-muted-foreground">{ytVideos.length} tracks</span>
+            <div className="flex items-center gap-2">
+              {searchSource && isSearchMode && (
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                  searchSource === 'youtube_api' ? 'bg-red-500/20 text-red-400' :
+                  searchSource === 'free_api' ? 'bg-green-500/20 text-green-400' :
+                  searchSource === 'client_fallback' ? 'bg-blue-500/20 text-blue-400' :
+                  'bg-yellow-500/20 text-yellow-400'
+                }`}>
+                  {searchSource === 'youtube_api' ? '⚡ YT API' :
+                   searchSource === 'free_api' ? '🌐 Live' :
+                   searchSource === 'client_fallback' ? '🔄 Client' :
+                   '📦 Curated'}
+                </span>
+              )}
+              <span className="text-[10px] text-muted-foreground">{ytVideos.length} tracks</span>
+            </div>
           </div>
 
           <div className="space-y-1">
