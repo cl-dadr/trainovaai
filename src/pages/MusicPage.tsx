@@ -128,6 +128,61 @@ const MusicPage = () => {
 
   useEffect(() => { localStorage.setItem("yt_recent", JSON.stringify(recentlyPlayed)); }, [recentlyPlayed]);
 
+  // Load YouTube IFrame API
+  useEffect(() => {
+    if (!(window as any).YT) {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(tag);
+    }
+    return () => {
+      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    };
+  }, []);
+
+  const startProgressTracking = useCallback(() => {
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    progressIntervalRef.current = setInterval(() => {
+      const player = ytPlayerRef.current;
+      if (player?.getCurrentTime && player?.getDuration) {
+        const current = player.getCurrentTime();
+        const total = player.getDuration();
+        setYtCurrentTime(current);
+        setYtDurationSec(total);
+        setYtProgress(total > 0 ? current / total : 0);
+      }
+    }, 500);
+  }, []);
+
+  const loadYtVideo = useCallback((videoId: string) => {
+    const createPlayer = () => {
+      if (ytPlayerRef.current?.loadVideoById) {
+        ytPlayerRef.current.loadVideoById(videoId);
+        return;
+      }
+      ytPlayerRef.current = new (window as any).YT.Player('yt-hidden-player', {
+        height: '0',
+        width: '0',
+        videoId,
+        playerVars: { autoplay: 1, controls: 0, modestbranding: 1, playsinline: 1, rel: 0 },
+        events: {
+          onStateChange: (event: any) => {
+            if (event.data === 1) { setIsYtPlaying(true); startProgressTracking(); }
+            else if (event.data === 2) { setIsYtPlaying(false); }
+            else if (event.data === 0) { setIsYtPlaying(false); if (progressIntervalRef.current) clearInterval(progressIntervalRef.current); }
+          },
+          onReady: () => { startProgressTracking(); },
+        },
+      });
+    };
+
+    if ((window as any).YT?.Player) {
+      createPlayer();
+    } else {
+      (window as any).onYouTubeIframeAPIReady = createPlayer;
+    }
+  }, [startProgressTracking]);
+
   const handleToggleLike = (video: { id: string; title: string; author: string; thumbnail: string; duration: string }) => {
     toggleLike(video);
   };
