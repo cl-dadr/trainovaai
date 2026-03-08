@@ -134,6 +134,78 @@ const MusicPage = () => {
     <div className="relative min-h-screen pb-24 px-4 pt-6">
       <div className="ambient-glow" />
 
+      {/* Full Favorites Screen */}
+      <AnimatePresence>
+        {showFavorites && (
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-background"
+          >
+            <div className="flex items-center justify-between px-4 pt-12 pb-4 border-b border-border/20">
+              <button onClick={() => setShowFavorites(false)} className="p-2 rounded-full hover:bg-secondary/50">
+                <ChevronDown className="h-6 w-6 text-foreground" />
+              </button>
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <Heart className="h-5 w-5 text-destructive fill-current" /> My Favorites
+              </h2>
+              <span className="text-sm text-muted-foreground">{likedSongs.length}</span>
+            </div>
+            <div className="flex-1 px-4 pt-4 pb-24">
+              {likesLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                </div>
+              ) : likedSongs.length === 0 ? (
+                <div className="text-center py-16">
+                  <Heart className="mx-auto h-12 w-12 text-muted-foreground/30 mb-3" />
+                  <p className="text-sm text-muted-foreground">No liked songs yet</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">Tap the ❤️ on any song to add it here</p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {likedSongs.map((song, i) => (
+                    <motion.div
+                      key={song.video_id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: Math.min(0.03 * i, 0.3) }}
+                      onClick={() => handlePlayLikedSong(song)}
+                      className={`flex items-center gap-3 p-2.5 rounded-2xl transition-all cursor-pointer ${
+                        activeVideoId === song.video_id ? "glass-card border border-primary/20" : "hover:bg-secondary/30"
+                      }`}
+                    >
+                      <div className="relative h-12 w-12 rounded-xl overflow-hidden shrink-0 border border-border/10">
+                        {song.thumbnail ? (
+                          <img src={song.thumbnail} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="h-full w-full bg-destructive/10 flex items-center justify-center">
+                            <Music className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-semibold truncate ${activeVideoId === song.video_id ? "text-primary" : "text-foreground"}`}>{song.title}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">{song.author || "Unknown"}</p>
+                      </div>
+                      <button onClick={(e) => { e.stopPropagation(); handleToggleLike({ id: song.video_id, title: song.title, author: song.author || "", thumbnail: song.thumbnail || "", duration: song.duration || "" }); }} className="shrink-0 p-1">
+                        <Heart className="h-3.5 w-3.5 text-destructive fill-current" />
+                      </button>
+                      <span className="text-[10px] text-muted-foreground shrink-0">{song.duration || ""}</span>
+                      <button className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 bg-primary/10">
+                        <Play className="h-3.5 w-3.5 ml-0.5 text-primary" />
+                      </button>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Full-screen Now Playing - YouTube Music Style */}
       <AnimatePresence>
         {showNowPlaying && activeVideoId && (
