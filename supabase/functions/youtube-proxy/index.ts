@@ -8,23 +8,13 @@ const corsHeaders = {
 const PIPED_INSTANCES = [
   "https://pipedapi.kavin.rocks",
   "https://pipedapi.r4fo.com",
-  "https://pipedapi.adminforge.de",
   "https://api.piped.yt",
-  "https://pipedapi.darkness.services",
-  "https://pipedapi.drgns.space",
-  "https://pipedapi.leptons.xyz",
-  "https://pipedapi.us.projectsegfau.lt",
 ];
 
 const INVIDIOUS_INSTANCES = [
   "https://inv.nadeko.net",
-  "https://invidious.nerdvpn.de",
-  "https://invidious.jing.rocks",
-  "https://invidious.privacyredirect.com",
-  "https://yt.artemislena.eu",
   "https://vid.puffyan.us",
   "https://invidious.lunar.icu",
-  "https://invidious.protokoll.earth",
 ];
 
 // Curated fallback videos by category
@@ -57,16 +47,16 @@ const CURATED_VIDEOS: Record<string, Array<{id: string; title: string; author: s
     { id: "rUxyKA_-grg", title: "Chill Music Mix - Deep Focus", author: "Chill Nation", lengthSeconds: 3600 },
     { id: "77ZozI0rw7w", title: "Chill Vibes - Relaxing Study Music", author: "The Vibe Guide", lengthSeconds: 2400 },
   ],
-  "EDM": [
-    { id: "V-QJi3I_uBk", title: "Best EDM Songs & Remixes - Festival Music Mix", author: "NCS", lengthSeconds: 3600 },
-    { id: "LLwuGYlmaxQ", title: "EDM Mix 2024 - Best Electro House Music", author: "EDM Nation", lengthSeconds: 2700 },
-    { id: "IryIMTbx7Wg", title: "Top EDM Music Mix - Best Drops", author: "Bass Nation", lengthSeconds: 3000 },
-  ],
   "High Energy": [
     { id: "n1WpP7iowLc", title: "Eminem - Lose Yourself", author: "Eminem", lengthSeconds: 326 },
     { id: "2X_2IdybTV0", title: "Eye of the Tiger - Survivor", author: "Survivor", lengthSeconds: 245 },
     { id: "btPJPFnesV4", title: "Eye of the Tiger - Gym Remix", author: "Gym Music", lengthSeconds: 240 },
     { id: "fJ9rUzIMcZQ", title: "Bohemian Rhapsody - Queen", author: "Queen", lengthSeconds: 354 },
+  ],
+  "EDM": [
+    { id: "V-QJi3I_uBk", title: "Best EDM Songs & Remixes - Festival Music Mix", author: "NCS", lengthSeconds: 3600 },
+    { id: "LLwuGYlmaxQ", title: "EDM Mix 2024 - Best Electro House Music", author: "EDM Nation", lengthSeconds: 2700 },
+    { id: "IryIMTbx7Wg", title: "Top EDM Music Mix - Best Drops", author: "Bass Nation", lengthSeconds: 3000 },
   ],
   "Hardstyle": [
     { id: "5gDzhrPbULk", title: "Hardstyle Mix 2024 - Best of Hardstyle", author: "Hardstyle Nation", lengthSeconds: 3600 },
@@ -78,7 +68,7 @@ const CURATED_VIDEOS: Record<string, Array<{id: string; title: string; author: s
   ],
 };
 
-async function tryFetch(url: string, timeout = 6000): Promise<Response | null> {
+async function tryFetch(url: string, timeout = 4000): Promise<Response | null> {
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
@@ -89,80 +79,96 @@ async function tryFetch(url: string, timeout = 6000): Promise<Response | null> {
   return null;
 }
 
-async function searchPiped(query: string): Promise<any[]> {
-  for (const instance of PIPED_INSTANCES) {
-    try {
-      const res = await tryFetch(`${instance}/search?q=${encodeURIComponent(query)}&filter=music_songs`);
-      if (res) {
-        const data = await res.json();
-        const items = (data.items || [])
-          .filter((item: any) => item.type === "stream" && item.duration > 0)
-          .slice(0, 30)
-          .map((item: any) => ({
-            id: item.url?.replace("/watch?v=", "") || "",
-            title: item.title || "Unknown",
-            author: item.uploaderName || "Unknown",
-            thumbnail: item.thumbnail || "",
-            lengthSeconds: item.duration || 0,
-          }));
-        if (items.length > 0) return items;
-      }
-    } catch { /* skip */ }
-  }
-  return [];
-}
-
-async function searchInvidious(query: string): Promise<any[]> {
-  for (const instance of INVIDIOUS_INSTANCES) {
-    try {
-      const res = await tryFetch(`${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&sort_by=relevance`);
-      if (res) {
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          return data
-            .filter((item: any) => item.type === "video" && item.lengthSeconds > 0)
-            .slice(0, 30)
+// Race all instances in parallel instead of sequential
+async function searchAPIs(query: string): Promise<any[]> {
+  const promises = [
+    ...PIPED_INSTANCES.map(async (instance) => {
+      try {
+        const res = await tryFetch(`${instance}/search?q=${encodeURIComponent(query)}&filter=music_songs`);
+        if (res) {
+          const data = await res.json();
+          const items = (data.items || [])
+            .filter((item: any) => item.type === "stream" && item.duration > 0)
+            .slice(0, 20)
             .map((item: any) => ({
-              id: item.videoId || "",
+              id: item.url?.replace("/watch?v=", "") || "",
               title: item.title || "Unknown",
-              author: item.author || "Unknown",
-              thumbnail: `https://i.ytimg.com/vi/${item.videoId}/mqdefault.jpg`,
-              lengthSeconds: item.lengthSeconds || 0,
+              author: item.uploaderName || "Unknown",
+              thumbnail: item.thumbnail || `https://i.ytimg.com/vi/${item.url?.replace("/watch?v=", "") || ""}/mqdefault.jpg`,
+              lengthSeconds: item.duration || 0,
             }));
+          if (items.length > 0) return items;
         }
-      }
-    } catch { /* skip */ }
+      } catch { /* skip */ }
+      return [];
+    }),
+    ...INVIDIOUS_INSTANCES.map(async (instance) => {
+      try {
+        const res = await tryFetch(`${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&sort_by=relevance`);
+        if (res) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            const items = data
+              .filter((item: any) => item.type === "video" && item.lengthSeconds > 0)
+              .slice(0, 20)
+              .map((item: any) => ({
+                id: item.videoId || "",
+                title: item.title || "Unknown",
+                author: item.author || "Unknown",
+                thumbnail: `https://i.ytimg.com/vi/${item.videoId}/mqdefault.jpg`,
+                lengthSeconds: item.lengthSeconds || 0,
+              }));
+            if (items.length > 0) return items;
+          }
+        }
+      } catch { /* skip */ }
+      return [];
+    }),
+  ];
+
+  const results = await Promise.allSettled(promises);
+  for (const r of results) {
+    if (r.status === "fulfilled" && r.value.length > 0) return r.value;
   }
   return [];
 }
 
 async function getAudioUrl(videoId: string): Promise<string | null> {
-  for (const instance of PIPED_INSTANCES) {
-    try {
-      const res = await tryFetch(`${instance}/streams/${videoId}`);
-      if (res) {
-        const data = await res.json();
-        const audioStreams = data.audioStreams || [];
-        if (audioStreams.length > 0) {
-          const best = audioStreams.sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0))[0];
-          if (best?.url) return best.url;
+  const promises = [
+    ...PIPED_INSTANCES.map(async (instance) => {
+      try {
+        const res = await tryFetch(`${instance}/streams/${videoId}`);
+        if (res) {
+          const data = await res.json();
+          const audioStreams = data.audioStreams || [];
+          if (audioStreams.length > 0) {
+            const best = audioStreams.sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0))[0];
+            if (best?.url) return best.url;
+          }
         }
-      }
-    } catch { /* skip */ }
-  }
-  for (const instance of INVIDIOUS_INSTANCES) {
-    try {
-      const res = await tryFetch(`${instance}/api/v1/videos/${videoId}`);
-      if (res) {
-        const data = await res.json();
-        const adaptiveFormats = data.adaptiveFormats || [];
-        const audioFormats = adaptiveFormats.filter((f: any) => f.type?.startsWith("audio/"));
-        if (audioFormats.length > 0) {
-          const best = audioFormats.sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0))[0];
-          if (best?.url) return best.url;
+      } catch { /* skip */ }
+      return null;
+    }),
+    ...INVIDIOUS_INSTANCES.map(async (instance) => {
+      try {
+        const res = await tryFetch(`${instance}/api/v1/videos/${videoId}`);
+        if (res) {
+          const data = await res.json();
+          const adaptiveFormats = data.adaptiveFormats || [];
+          const audioFormats = adaptiveFormats.filter((f: any) => f.type?.startsWith("audio/"));
+          if (audioFormats.length > 0) {
+            const best = audioFormats.sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0))[0];
+            if (best?.url) return best.url;
+          }
         }
-      }
-    } catch { /* skip */ }
+      } catch { /* skip */ }
+      return null;
+    }),
+  ];
+
+  const results = await Promise.allSettled(promises);
+  for (const r of results) {
+    if (r.status === "fulfilled" && r.value) return r.value;
   }
   return null;
 }
@@ -184,15 +190,16 @@ serve(async (req) => {
     const { action, query, videoId, category } = await req.json();
 
     if (action === "search") {
-      // Try APIs first, then fallback to curated
-      let results = await searchPiped(query);
-      if (results.length === 0) {
-        results = await searchInvidious(query);
-      }
-      if (results.length === 0) {
-        // Use curated as fallback
-        results = getCuratedVideos(category || query);
-      }
+      // Race: curated is instant fallback, APIs run in parallel with 4s timeout
+      const curated = getCuratedVideos(category || query);
+      
+      // Try APIs with a short overall timeout
+      const apiPromise = searchAPIs(query);
+      const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 8000));
+      
+      const apiResults = await Promise.race([apiPromise, timeoutPromise]);
+      const results = apiResults.length > 0 ? apiResults : curated;
+
       return new Response(JSON.stringify({ items: results }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
