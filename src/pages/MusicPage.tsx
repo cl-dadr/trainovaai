@@ -30,12 +30,12 @@ const playlists = [
 
 // Favorite artists for gym
 const favoriteArtists = [
-  { name: "NCS", image: "https://i.ytimg.com/vi/X4C1Dp_ToS0/mqdefault.jpg", query: "NCS gym workout mix" },
-  { name: "Phonk Rival", image: "https://i.ytimg.com/vi/mg74FZwG8uo/mqdefault.jpg", query: "Phonk Rival gym phonk" },
-  { name: "Power Music", image: "https://i.ytimg.com/vi/eqYi3RXiB90/mqdefault.jpg", query: "Power Music workout" },
-  { name: "Gym Hits", image: "https://i.ytimg.com/vi/pvH7jjWOnTw/mqdefault.jpg", query: "gym hits motivational" },
+  { name: "NCS", image: "https://i.ytimg.com/vi/EPII1OglnGg/mqdefault.jpg", query: "NCS gym workout mix 2025" },
+  { name: "Phonk Rival", image: "https://i.ytimg.com/vi/aGt0Jj2ps-Q/mqdefault.jpg", query: "phonk gym workout mix 2025" },
+  { name: "Power Music", image: "https://i.ytimg.com/vi/eqYi3RXiB90/mqdefault.jpg", query: "power music workout 2025" },
+  { name: "Gym Hits", image: "https://i.ytimg.com/vi/pvH7jjWOnTw/mqdefault.jpg", query: "gym hits motivational 2025" },
   { name: "Lofi Station", image: "https://i.ytimg.com/vi/BsMbBVZYAi4/mqdefault.jpg", query: "lofi hip hop chill beats" },
-  { name: "EDM Nation", image: "https://i.ytimg.com/vi/XRtXayAiluw/mqdefault.jpg", query: "EDM Nation festival mix" },
+  { name: "Trap Music", image: "https://i.ytimg.com/vi/h9EUxjJsMM8/mqdefault.jpg", query: "trap gym workout music 2025" },
 ];
 
 const MusicPage = () => {
