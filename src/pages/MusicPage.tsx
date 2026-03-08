@@ -28,14 +28,22 @@ const playlists = [
   { id: "edm-drop", name: "EDM Drops", emoji: "🎧", category: "EDM", color: "from-violet-500/30 to-indigo-500/30" },
 ];
 
-// Favorite artists for gym
+// Global iconic artists - India & USA
 const favoriteArtists = [
-  { name: "NCS", image: "https://i.ytimg.com/vi/EPII1OglnGg/mqdefault.jpg", query: "NCS gym workout mix 2025" },
-  { name: "Phonk Rival", image: "https://i.ytimg.com/vi/aGt0Jj2ps-Q/mqdefault.jpg", query: "phonk gym workout mix 2025" },
-  { name: "Power Music", image: "https://i.ytimg.com/vi/eqYi3RXiB90/mqdefault.jpg", query: "power music workout 2025" },
-  { name: "Gym Hits", image: "https://i.ytimg.com/vi/pvH7jjWOnTw/mqdefault.jpg", query: "gym hits motivational 2025" },
-  { name: "Lofi Station", image: "https://i.ytimg.com/vi/BsMbBVZYAi4/mqdefault.jpg", query: "lofi hip hop chill beats" },
-  { name: "Trap Music", image: "https://i.ytimg.com/vi/h9EUxjJsMM8/mqdefault.jpg", query: "trap gym workout music 2025" },
+  // 🇮🇳 India
+  { name: "Arijit Singh", image: "https://i.ytimg.com/vi/hoNb6fQ1aBI/mqdefault.jpg", query: "Arijit Singh best songs" },
+  { name: "A.R. Rahman", image: "https://i.ytimg.com/vi/kYgJ1BKajkk/mqdefault.jpg", query: "AR Rahman top hits" },
+  { name: "Honey Singh", image: "https://i.ytimg.com/vi/DGmUKgrS45c/mqdefault.jpg", query: "Yo Yo Honey Singh top songs" },
+  { name: "Badshah", image: "https://i.ytimg.com/vi/VPigFLzuDBQ/mqdefault.jpg", query: "Badshah latest songs" },
+  { name: "Shreya Ghoshal", image: "https://i.ytimg.com/vi/07FBG_ixnfE/mqdefault.jpg", query: "Shreya Ghoshal best songs" },
+  { name: "Diljit Dosanjh", image: "https://i.ytimg.com/vi/OEmSHxiT3BY/mqdefault.jpg", query: "Diljit Dosanjh top songs" },
+  // 🇺🇸 USA
+  { name: "Drake", image: "https://i.ytimg.com/vi/uxpDa-c-4Mc/mqdefault.jpg", query: "Drake top hits" },
+  { name: "The Weeknd", image: "https://i.ytimg.com/vi/4NRXx6U8ABQ/mqdefault.jpg", query: "The Weeknd best songs" },
+  { name: "Eminem", image: "https://i.ytimg.com/vi/YVkUvmDQ3HY/mqdefault.jpg", query: "Eminem greatest hits" },
+  { name: "Taylor Swift", image: "https://i.ytimg.com/vi/IC8JjO4jcZ0/mqdefault.jpg", query: "Taylor Swift popular songs" },
+  { name: "Post Malone", image: "https://i.ytimg.com/vi/UceaB4D0jpo/mqdefault.jpg", query: "Post Malone best songs" },
+  { name: "Travis Scott", image: "https://i.ytimg.com/vi/eb2dJmSEaps/mqdefault.jpg", query: "Travis Scott top hits" },
 ];
 
 const MusicPage = () => {
