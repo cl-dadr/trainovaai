@@ -824,6 +824,19 @@ const MusicPage = () => {
         </div>
       )}
 
+      {/* Hidden YouTube Player */}
+      {activeVideoId && (
+        <iframe
+          ref={iframeRef}
+          key={activeVideoId}
+          src={`https://www.youtube.com/embed/${activeVideoId}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&playsinline=1`}
+          title="YouTube audio player"
+          allow="autoplay; encrypted-media"
+          className="fixed top-0 left-0 w-0 h-0 opacity-0 pointer-events-none"
+          style={{ position: 'fixed', width: 0, height: 0 }}
+        />
+      )}
+
       {/* Bottom Mini Player */}
       <AnimatePresence>
         {activeVideoId && (
@@ -837,6 +850,25 @@ const MusicPage = () => {
               className="max-w-md mx-auto glass-card p-3 rounded-2xl border border-primary/20"
               style={{ boxShadow: "0 0 20px hsl(var(--primary) / 0.15)" }}
             >
+              {/* Waveform animation */}
+              <div className="flex items-end gap-[2px] h-4 justify-center mb-2">
+                {Array.from({ length: 24 }).map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="w-[2px] rounded-full bg-primary"
+                    animate={isYtPlaying ? {
+                      height: [3, 5 + Math.random() * 11, 3],
+                    } : { height: 3 }}
+                    transition={{
+                      repeat: isYtPlaying ? Infinity : 0,
+                      duration: 0.3 + Math.random() * 0.4,
+                      delay: i * 0.02,
+                      ease: "easeInOut",
+                    }}
+                  />
+                ))}
+              </div>
+
               <div className="flex items-center gap-3">
                 <div className="h-11 w-11 rounded-xl overflow-hidden shrink-0 border border-border/10">
                   <img src={activeVideoThumb} alt="" className="h-full w-full object-cover" />
@@ -851,9 +883,13 @@ const MusicPage = () => {
                 <button onClick={(e) => { e.stopPropagation(); openSaveModal({ id: activeVideoId!, title: activeVideoTitle, author: activeVideoAuthor, thumbnail: activeVideoThumb, duration: "" }); }} className="p-1">
                   <ListMusic className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
-                <div className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center neon-glow">
-                  <Play className="h-3.5 w-3.5 text-primary-foreground ml-0.5" />
-                </div>
+                <button onClick={togglePlayPause} className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center neon-glow">
+                  {isYtPlaying ? (
+                    <Pause className="h-3.5 w-3.5 text-primary-foreground" />
+                  ) : (
+                    <Play className="h-3.5 w-3.5 text-primary-foreground ml-0.5" />
+                  )}
+                </button>
               </div>
             </div>
           </motion.div>
