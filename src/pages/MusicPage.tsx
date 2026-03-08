@@ -66,6 +66,7 @@ const MusicPage = () => {
   const ytPlayerRef = useRef<any>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const onEndedRef = useRef<() => void>(() => {});
+  const [repeatMode, setRepeatMode] = useState<'off' | 'one'>('off');
   const [showNowPlaying, setShowNowPlaying] = useState(false);
   const [recentlyPlayed, setRecentlyPlayed] = useState<YouTubeVideo[]>(() => {
     try { return JSON.parse(localStorage.getItem("yt_recent") || "[]"); } catch { return []; }
