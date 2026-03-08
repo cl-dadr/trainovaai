@@ -158,7 +158,7 @@ const JaxAIPage = () => {
                 {msg.role === "assistant" && (
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <Sparkles className="h-3 w-3 text-neon-purple" />
-                    <span className="text-[10px] font-bold text-neon-purple">AI COACH</span>
+                    <span className="text-[10px] font-bold text-neon-purple">JAX</span>
                   </div>
                 )}
                 {msg.role === "assistant" ? (
