@@ -25,8 +25,15 @@ const aiHints = [
 const quickNav = [
   { icon: Footprints, label: "Activity", path: "/activity", color: "text-neon-green" },
   { icon: PersonStanding, label: "Run", path: "/running", color: "text-neon-cyan" },
-  { icon: BarChart3, label: "Reports", path: "/reports", color: "text-neon-orange" },
-  { icon: Bot, label: "JAX AI", path: "/jax", color: "text-neon-purple" },
+  { icon: Bot, label: "AI Coach", path: "/jax", color: "text-neon-purple" },
+  { icon: Dumbbell, label: "Planner", path: "/planner", color: "text-neon-orange" },
+];
+
+const quickNav2 = [
+  { icon: Apple, label: "Nutrition", path: "/nutrition", color: "text-neon-green" },
+  { icon: Brain, label: "Wellness", path: "/wellness", color: "text-neon-cyan" },
+  { icon: CheckSquare, label: "Habits", path: "/habits", color: "text-neon-orange" },
+  { icon: TrendingUp, label: "Progress", path: "/progress", color: "text-neon-purple" },
 ];
 
 const HomePage = () => {
