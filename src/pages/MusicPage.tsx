@@ -65,6 +65,7 @@ const MusicPage = () => {
   const [ytDurationSec, setYtDurationSec] = useState(0);
   const ytPlayerRef = useRef<any>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const onEndedRef = useRef<() => void>(() => {});
   const [showNowPlaying, setShowNowPlaying] = useState(false);
   const [recentlyPlayed, setRecentlyPlayed] = useState<YouTubeVideo[]>(() => {
     try { return JSON.parse(localStorage.getItem("yt_recent") || "[]"); } catch { return []; }
@@ -194,7 +195,7 @@ const MusicPage = () => {
           onStateChange: (event: any) => {
             if (event.data === 1) { setIsYtPlaying(true); startProgressTracking(); }
             else if (event.data === 2) { setIsYtPlaying(false); }
-            else if (event.data === 0) { setIsYtPlaying(false); if (progressIntervalRef.current) clearInterval(progressIntervalRef.current); }
+            else if (event.data === 0) { setIsYtPlaying(false); if (progressIntervalRef.current) clearInterval(progressIntervalRef.current); onEndedRef.current(); }
           },
           onReady: () => { startProgressTracking(); },
         },
@@ -227,6 +228,24 @@ const MusicPage = () => {
       return [video, ...filtered].slice(0, 15);
     });
   }, [loadYtVideo]);
+
+  // Auto-play next song when current ends
+  useEffect(() => {
+    onEndedRef.current = () => {
+      const idx = ytVideos.findIndex(v => v.id === activeVideoId);
+      if (idx >= 0 && idx < ytVideos.length - 1) {
+        const next = ytVideos[idx + 1];
+        setActiveVideoId(next.id);
+        setActiveVideoTitle(next.title);
+        setActiveVideoAuthor(next.author);
+        setActiveVideoThumb(next.thumbnail);
+        setActiveVideoDuration(next.duration);
+        setYtProgress(0); setYtCurrentTime(0); setYtDurationSec(0);
+        loadYtVideo(next.id);
+        setRecentlyPlayed(prev => [next, ...prev.filter(v => v.id !== next.id)].slice(0, 15));
+      }
+    };
+  }, [ytVideos, activeVideoId, loadYtVideo]);
 
   const handlePlayLikedSong = (song: { video_id: string; title: string; author: string | null; thumbnail: string | null; duration: string | null }) => {
     setActiveVideoId(song.video_id);
