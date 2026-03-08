@@ -331,6 +331,12 @@ const MusicPage = () => {
             <p className="text-[10px] text-muted-foreground">Play any YouTube song 🎵</p>
           </div>
         </div>
+        <button onClick={() => setShowFavorites(true)} className="relative h-10 w-10 rounded-xl bg-destructive/10 flex items-center justify-center hover:bg-destructive/20 transition-colors">
+          <Heart className="h-5 w-5 text-destructive" />
+          {likedSongs.length > 0 && (
+            <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground flex items-center justify-center">{likedSongs.length}</span>
+          )}
+        </button>
       </motion.div>
 
       {/* Always-visible Search */}
