@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Bot, Music, User, Camera } from "lucide-react";
+import { Home, BotMusic, User, Camera } from "lucide-react";
 import { motion } from "framer-motion";
 
 const tabs = [
