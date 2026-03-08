@@ -778,7 +778,7 @@ const MusicPage = () => {
 
       {/* Bottom Mini Player */}
       <AnimatePresence>
-        {activeVideoId && !showNowPlaying && (
+        {activeVideoId && (
           <motion.div
             initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -786,9 +786,8 @@ const MusicPage = () => {
             className="fixed bottom-16 left-0 right-0 z-40 px-3"
           >
             <div
-              className="max-w-md mx-auto glass-card p-3 rounded-2xl border border-primary/20 cursor-pointer"
+              className="max-w-md mx-auto glass-card p-3 rounded-2xl border border-primary/20"
               style={{ boxShadow: "0 0 20px hsl(var(--primary) / 0.15)" }}
-              onClick={() => setShowNowPlaying(true)}
             >
               <div className="flex items-center gap-3">
                 <div className="h-11 w-11 rounded-xl overflow-hidden shrink-0 border border-border/10">
