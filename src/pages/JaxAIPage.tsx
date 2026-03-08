@@ -136,7 +136,7 @@ const JaxAIPage = () => {
             <Bot className="h-5 w-5 text-foreground" />
           </div>
           <div>
-            <h1 className="text-xl font-display font-bold text-foreground">AI COACH</h1>
+            <h1 className="text-xl font-display font-bold text-foreground">JAX AI COACH</h1>
             <p className="text-xs text-neon-green flex items-center gap-1">
               <span className="h-1.5 w-1.5 rounded-full bg-neon-green inline-block animate-pulse-neon" />
               24/7 Fitness Guidance
