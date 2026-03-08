@@ -14,6 +14,95 @@ export type Database = {
   }
   public: {
     Tables: {
+      battle_participants: {
+        Row: {
+          battle_id: string
+          finished_at: string | null
+          form_score: number
+          id: string
+          joined_at: string
+          reps: number
+          score: number
+          status: string
+          user_id: string
+        }
+        Insert: {
+          battle_id: string
+          finished_at?: string | null
+          form_score?: number
+          id?: string
+          joined_at?: string
+          reps?: number
+          score?: number
+          status?: string
+          user_id: string
+        }
+        Update: {
+          battle_id?: string
+          finished_at?: string | null
+          form_score?: number
+          id?: string
+          joined_at?: string
+          reps?: number
+          score?: number
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "battle_participants_battle_id_fkey"
+            columns: ["battle_id"]
+            isOneToOne: false
+            referencedRelation: "battles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      battles: {
+        Row: {
+          created_at: string
+          creator_id: string
+          duration_seconds: number
+          ends_at: string | null
+          exercise_type: string
+          id: string
+          is_community: boolean
+          max_participants: number
+          starts_at: string | null
+          status: string
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          duration_seconds?: number
+          ends_at?: string | null
+          exercise_type?: string
+          id?: string
+          is_community?: boolean
+          max_participants?: number
+          starts_at?: string | null
+          status?: string
+          title: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          duration_seconds?: number
+          ends_at?: string | null
+          exercise_type?: string
+          id?: string
+          is_community?: boolean
+          max_participants?: number
+          starts_at?: string | null
+          status?: string
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       daily_activity: {
         Row: {
           active_minutes: number | null
@@ -52,6 +141,30 @@ export type Database = {
           spo2?: number | null
           steps?: number | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      friendships: {
+        Row: {
+          created_at: string
+          friend_id: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          friend_id: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          friend_id?: string
+          id?: string
+          status?: string
           user_id?: string
         }
         Relationships: []
@@ -258,27 +371,36 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string
           display_name: string | null
+          fitness_level: string
           id: string
           updated_at: string
           user_id: string
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
+          fitness_level?: string
           id?: string
           updated_at?: string
           user_id: string
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
+          fitness_level?: string
           id?: string
           updated_at?: string
           user_id?: string
+          username?: string | null
         }
         Relationships: []
       }

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Zap, Trophy, Target, Flame, Sparkles, User,
   Footprints, BarChart3, Bot, Bell, PersonStanding,
-  Apple, Brain, CheckSquare, TrendingUp, Dumbbell,
+  Apple, Brain, CheckSquare, TrendingUp, Dumbbell, Swords,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserStats } from "@/hooks/useUserStats";
@@ -32,7 +32,7 @@ const quickNav = [
 const quickNav2 = [
   { icon: Apple, label: "Nutrition", path: "/nutrition", color: "text-neon-green" },
   { icon: Brain, label: "Wellness", path: "/wellness", color: "text-neon-cyan" },
-  { icon: CheckSquare, label: "Habits", path: "/habits", color: "text-neon-orange" },
+  { icon: Swords, label: "Battles", path: "/battles", color: "text-neon-pink" },
   { icon: TrendingUp, label: "Progress", path: "/progress", color: "text-neon-purple" },
 ];
 

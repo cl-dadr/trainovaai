@@ -23,6 +23,7 @@ import HabitTrackerPage from "./pages/HabitTrackerPage";
 import MentalWellnessPage from "./pages/MentalWellnessPage";
 import WorkoutPlannerPage from "./pages/WorkoutPlannerPage";
 import ProgressPage from "./pages/ProgressPage";
+import BattleArenaPage from "./pages/BattleArenaPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const AppRoutes = () => {
         <Route path="/wellness" element={<ProtectedRoute><MentalWellnessPage /></ProtectedRoute>} />
         <Route path="/planner" element={<ProtectedRoute><WorkoutPlannerPage /></ProtectedRoute>} />
         <Route path="/progress" element={<ProtectedRoute><ProgressPage /></ProtectedRoute>} />
+        <Route path="/battles" element={<ProtectedRoute><BattleArenaPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {user && <NowPlayingBar />}
