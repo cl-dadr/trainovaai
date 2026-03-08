@@ -80,6 +80,7 @@ const MusicPage = () => {
   });
   const [activeCuratedPlaylist, setActiveCuratedPlaylist] = useState<string | null>(null);
   const [isSearchMode, setIsSearchMode] = useState(false);
+  const [searchSource, setSearchSource] = useState<'youtube_api' | 'free_api' | 'client_fallback' | 'curated' | null>(null);
   const [showFavorites, setShowFavorites] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
 
