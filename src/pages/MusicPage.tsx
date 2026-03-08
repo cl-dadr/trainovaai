@@ -192,12 +192,14 @@ const MusicPage = () => {
               {/* YouTube Iframe */}
               <div className={`w-full ${expandedVideo ? "aspect-video" : "aspect-square"}`}>
                 <iframe
-                  src={`https://www.youtube.com/embed/${activeVideoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
+                  key={activeVideoId}
+                  src={`https://www.youtube.com/embed/${activeVideoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1&origin=${window.location.origin}`}
                   title="YouTube video player"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
-                  className="w-full h-full"
-                  style={{ border: "none" }}
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="w-full h-full border-0"
+                  sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
                 />
               </div>
             </div>
