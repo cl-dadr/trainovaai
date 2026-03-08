@@ -379,22 +379,22 @@ const MusicPage = () => {
         </motion.div>
       )}
 
-      {/* Liked Songs */}
-      {likedVideos.length > 0 && (
+      {/* Liked Songs Quick Preview */}
+      {likedSongs.length > 0 && !showFavorites && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative z-10 mb-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
               <Heart className="h-3.5 w-3.5 text-destructive fill-current" /> Liked Songs
             </h2>
-            <span className="text-[10px] text-muted-foreground">{likedVideos.length}</span>
+            <button onClick={() => setShowFavorites(true)} className="text-[10px] text-primary font-semibold">View All ({likedSongs.length})</button>
           </div>
           <div className="flex gap-3 overflow-x-auto no-scrollbar">
-            {likedVideos.slice(0, 6).map((video) => (
-              <motion.div key={video.id} whileTap={{ scale: 0.95 }} onClick={() => handleYtPlay(video)} className="shrink-0 w-24 cursor-pointer">
+            {likedSongs.slice(0, 6).map((song) => (
+              <motion.div key={song.video_id} whileTap={{ scale: 0.95 }} onClick={() => handlePlayLikedSong(song)} className="shrink-0 w-24 cursor-pointer">
                 <div className="h-24 w-24 rounded-xl overflow-hidden mb-1.5 border border-destructive/20">
-                  <img src={video.thumbnail} alt="" className="h-full w-full object-cover" />
+                  {song.thumbnail ? <img src={song.thumbnail} alt="" className="h-full w-full object-cover" /> : <div className="h-full w-full bg-destructive/10 flex items-center justify-center"><Heart className="h-6 w-6 text-destructive" /></div>}
                 </div>
-                <p className="text-[10px] font-semibold text-foreground line-clamp-1">{video.title}</p>
+                <p className="text-[10px] font-semibold text-foreground line-clamp-1">{song.title}</p>
               </motion.div>
             ))}
           </div>
