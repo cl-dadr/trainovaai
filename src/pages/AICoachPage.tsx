@@ -84,7 +84,7 @@ const AICoachPage = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1, role: "assistant",
-      content: "💪 **Dr. Arjun**: Ready to perfect your form!\n\n🌿 **Dr. Priya**: And I'll handle your nutrition & recovery!\n\nAsk us anything about exercises, diet, or recovery! 🔥",
+      content: "Hey! I'm **JAX** 🔥 — your personal AI fitness coach.\n\nI cover **everything**: workouts, form correction, nutrition, diet plans, and recovery. Ask me anything and let's crush your goals! 💪",
     },
   ]);
   const [input, setInput] = useState("");
