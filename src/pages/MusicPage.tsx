@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Music, Play, Pause, Heart, Loader2, Youtube, ChevronRight, ChevronDown, Shuffle, SkipBack, SkipForward, MoreHorizontal, X, ListMusic, Flame, Zap, Dumbbell, Wind, Plus, Trash2, FolderPlus, RotateCcw, RotateCw } from "lucide-react";
+import { Search, Music, Play, Pause, Heart, Loader2, Youtube, ChevronRight, ChevronDown, Shuffle, SkipBack, SkipForward, MoreHorizontal, X, ListMusic, Flame, Zap, Dumbbell, Wind, Plus, Trash2, FolderPlus, RotateCcw, RotateCw, Repeat, Repeat1 } from "lucide-react";
 import { searchYouTube, type YouTubeVideo } from "@/lib/youtubeService";
 import { useLikedSongs } from "@/hooks/useLikedSongs";
 import { usePlaylists, type PlaylistSong } from "@/hooks/usePlaylists";
@@ -66,6 +66,7 @@ const MusicPage = () => {
   const ytPlayerRef = useRef<any>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const onEndedRef = useRef<() => void>(() => {});
+  const [repeatMode, setRepeatMode] = useState<'off' | 'one'>('off');
   const [showNowPlaying, setShowNowPlaying] = useState(false);
   const [recentlyPlayed, setRecentlyPlayed] = useState<YouTubeVideo[]>(() => {
     try { return JSON.parse(localStorage.getItem("yt_recent") || "[]"); } catch { return []; }
@@ -229,9 +230,18 @@ const MusicPage = () => {
     });
   }, [loadYtVideo]);
 
-  // Auto-play next song when current ends
+  // Auto-play next or repeat when current ends
   useEffect(() => {
     onEndedRef.current = () => {
+      if (repeatMode === 'one' && activeVideoId) {
+        // Replay current song
+        const player = ytPlayerRef.current;
+        if (player?.seekTo) {
+          player.seekTo(0, true);
+          player.playVideo?.();
+        }
+        return;
+      }
       const idx = ytVideos.findIndex(v => v.id === activeVideoId);
       if (idx >= 0 && idx < ytVideos.length - 1) {
         const next = ytVideos[idx + 1];
@@ -245,7 +255,7 @@ const MusicPage = () => {
         setRecentlyPlayed(prev => [next, ...prev.filter(v => v.id !== next.id)].slice(0, 15));
       }
     };
-  }, [ytVideos, activeVideoId, loadYtVideo]);
+  }, [ytVideos, activeVideoId, loadYtVideo, repeatMode]);
 
   const handlePlayLikedSong = (song: { video_id: string; title: string; author: string | null; thumbnail: string | null; duration: string | null }) => {
     setActiveVideoId(song.video_id);
@@ -1041,6 +1051,13 @@ const MusicPage = () => {
                   </button>
                   <button onClick={handleSkipNext} className="p-1">
                     <SkipForward className="h-3.5 w-3.5 text-foreground" />
+                  </button>
+                  <button onClick={() => setRepeatMode(prev => prev === 'off' ? 'one' : 'off')} className="p-1" title={repeatMode === 'one' ? 'Repeat: On' : 'Repeat: Off'}>
+                    {repeatMode === 'one' ? (
+                      <Repeat1 className="h-3.5 w-3.5 text-primary" />
+                    ) : (
+                      <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
+                    )}
                   </button>
                 </div>
               </div>
