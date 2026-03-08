@@ -229,6 +229,24 @@ const MusicPage = () => {
     });
   }, [loadYtVideo]);
 
+  // Auto-play next song when current ends
+  useEffect(() => {
+    onEndedRef.current = () => {
+      const idx = ytVideos.findIndex(v => v.id === activeVideoId);
+      if (idx >= 0 && idx < ytVideos.length - 1) {
+        const next = ytVideos[idx + 1];
+        setActiveVideoId(next.id);
+        setActiveVideoTitle(next.title);
+        setActiveVideoAuthor(next.author);
+        setActiveVideoThumb(next.thumbnail);
+        setActiveVideoDuration(next.duration);
+        setYtProgress(0); setYtCurrentTime(0); setYtDurationSec(0);
+        loadYtVideo(next.id);
+        setRecentlyPlayed(prev => [next, ...prev.filter(v => v.id !== next.id)].slice(0, 15));
+      }
+    };
+  }, [ytVideos, activeVideoId, loadYtVideo]);
+
   const handlePlayLikedSong = (song: { video_id: string; title: string; author: string | null; thumbnail: string | null; duration: string | null }) => {
     setActiveVideoId(song.video_id);
     setActiveVideoTitle(song.title);
