@@ -803,10 +803,9 @@ const MusicPage = () => {
                 <button onClick={(e) => { e.stopPropagation(); openSaveModal({ id: activeVideoId!, title: activeVideoTitle, author: activeVideoAuthor, thumbnail: activeVideoThumb, duration: "" }); }} className="p-1">
                   <ListMusic className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); setShowNowPlaying(true); }}
-                  className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center neon-glow">
+                <div className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center neon-glow">
                   <Play className="h-3.5 w-3.5 text-primary-foreground ml-0.5" />
-                </button>
+                </div>
               </div>
             </div>
           </motion.div>
