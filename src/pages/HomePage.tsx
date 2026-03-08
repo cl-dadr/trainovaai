@@ -112,59 +112,6 @@ const HomePage = () => {
         ))}
       </motion.div>
 
-      {/* Stats */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="relative z-10 grid grid-cols-3 gap-3 mb-6">
-        {stats.map((s) => (
-          <div key={s.label} className="glass-card p-4 text-center">
-            <s.icon className={`mx-auto h-5 w-5 mb-2 ${s.color}`} />
-            <p className="text-xl font-bold text-foreground">{s.value}</p>
-            <p className="text-[11px] text-muted-foreground mt-1">{s.label}</p>
-          </div>
-        ))}
-      </motion.div>
-
-      {/* Milestone */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="relative z-10 glass-card p-5 mb-6">
-        <div className="flex justify-between items-center mb-1">
-          <div>
-            <p className="text-xs text-muted-foreground">Next Milestone</p>
-            <p className="text-lg font-bold text-foreground">{nextMilestone} Reps</p>
-          </div>
-          <span className="text-sm font-semibold text-neon-orange">{nextMilestone - totalReps} to go</span>
-        </div>
-        <div className="h-2 rounded-full bg-secondary mt-3 overflow-hidden">
-          <motion.div initial={{ width: 0 }} animate={{ width: `${milestoneProgress}%` }} transition={{ delay: 0.6, duration: 1 }} className="h-full rounded-full gradient-primary" />
-        </div>
-        <p className="text-[10px] text-muted-foreground mt-2">Keep going! You're making progress 🔥</p>
-      </motion.div>
-
-      {/* Today's Progress */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="relative z-10 mb-6">
-        <h3 className="font-bold text-foreground mb-3">Today's Progress</h3>
-        <div className="grid grid-cols-3 gap-3">
-          {todayProgress.map((p) => (
-            <div key={p.label} className="glass-card p-4 text-center">
-              <span className="text-2xl">{p.emoji}</span>
-              <p className="text-xs font-semibold text-foreground mt-2">{p.label}</p>
-              <p className="text-[10px] text-muted-foreground">{p.subLabel}</p>
-            </div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* AI Hints */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="relative z-10">
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="h-4 w-4 text-neon-green" />
-          <h3 className="font-bold text-foreground">AI Coach</h3>
-        </div>
-        {aiHints.map((hint, i) => (
-          <div key={i} className="glass-card p-4 mb-3 flex items-start gap-3 border-l-2 border-neon-green/40">
-            <Sparkles className="h-4 w-4 text-neon-green mt-0.5 shrink-0" />
-            <p className="text-sm text-foreground/80">{hint}</p>
-          </div>
-        ))}
-      </motion.div>
     </div>
   );
 };
