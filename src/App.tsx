@@ -13,7 +13,7 @@ import StreakPage from "./pages/StreakPage";
 import MusicPage from "./pages/MusicPage";
 import ProfilePage from "./pages/ProfilePage";
 import CameraPage from "./pages/CameraPage";
-import ActivityPage from "./pages/ActivityPage";
+
 import HealthReportPage from "./pages/HealthReportPage";
 import JaxAIPage from "./pages/JaxAIPage";
 import RunningPage from "./pages/RunningPage";
