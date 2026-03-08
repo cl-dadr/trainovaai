@@ -327,7 +327,7 @@ const MusicPage = () => {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="relative z-10 mb-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <Heart className="h-4 w-4 text-destructive" /> Favorite Artists
+            <Heart className="h-4 w-4 text-destructive" /> 🇮🇳 🇺🇸 Global Icons
           </h2>
         </div>
         <div className="flex gap-3 overflow-x-auto no-scrollbar">
