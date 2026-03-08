@@ -132,6 +132,7 @@ const MusicPage = () => {
     setActiveVideoTitle(video.title);
     setActiveVideoAuthor(video.author);
     setActiveVideoThumb(video.thumbnail);
+    setActiveVideoDuration(video.duration);
     setIsYtPlaying(true);
     setRecentlyPlayed(prev => {
       const filtered = prev.filter(v => v.id !== video.id);
@@ -144,6 +145,7 @@ const MusicPage = () => {
     setActiveVideoTitle(song.title);
     setActiveVideoAuthor(song.author || "");
     setActiveVideoThumb(song.thumbnail || "");
+    setActiveVideoDuration(song.duration || "");
     setIsYtPlaying(true);
   };
 
@@ -152,6 +154,7 @@ const MusicPage = () => {
     setActiveVideoTitle(song.title);
     setActiveVideoAuthor(song.author || "");
     setActiveVideoThumb(song.thumbnail || "");
+    setActiveVideoDuration(song.duration || "");
     setIsYtPlaying(true);
   };
 
@@ -164,6 +167,20 @@ const MusicPage = () => {
     } else {
       iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
       setIsYtPlaying(true);
+    }
+  };
+
+  const handleSkipNext = () => {
+    const idx = ytVideos.findIndex(v => v.id === activeVideoId);
+    if (idx >= 0 && idx < ytVideos.length - 1) {
+      handleYtPlay(ytVideos[idx + 1]);
+    }
+  };
+
+  const handleSkipPrev = () => {
+    const idx = ytVideos.findIndex(v => v.id === activeVideoId);
+    if (idx > 0) {
+      handleYtPlay(ytVideos[idx - 1]);
     }
   };
 
