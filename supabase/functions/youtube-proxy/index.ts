@@ -5,7 +5,21 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Curated fallback library
+const PIPED_INSTANCES = [
+  "https://pipedapi.kavin.rocks",
+  "https://pipedapi.r4fo.com",
+  "https://api.piped.yt",
+  "https://pipedapi.adminforge.de",
+  "https://pipedapi.in.projectsegfau.lt",
+];
+
+const INVIDIOUS_INSTANCES = [
+  "https://inv.nadeko.net",
+  "https://vid.puffyan.us",
+  "https://invidious.lunar.icu",
+  "https://invidious.privacyredirect.com",
+];
+
 const CURATED_VIDEOS: Record<string, Array<{id: string; title: string; author: string; lengthSeconds: number}>> = {
   "Workout": [
     { id: "h9EUxjJsMM8", title: "Best Gym Workout Music 2025 🔥 Top Motivational Songs", author: "Trap Music", lengthSeconds: 3600 },
@@ -98,10 +112,21 @@ const CURATED_VIDEOS: Record<string, Array<{id: string; title: string; author: s
   ],
 };
 
+async function tryFetch(url: string, timeout = 5000): Promise<Response | null> {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timer);
+    if (res.ok) return res;
+  } catch { /* skip */ }
+  return null;
+}
+
 // YouTube Data API v3 search
 async function searchYouTubeAPI(query: string, apiKey: string): Promise<any[]> {
   try {
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=20&q=${encodeURIComponent(query)}&key=${apiKey}`;
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=20&q=${encodeURIComponent(query)}&key=${apiKey}`;
     const res = await fetch(url);
     if (!res.ok) {
       console.error("YouTube API error:", res.status, await res.text());
@@ -111,7 +136,6 @@ async function searchYouTubeAPI(query: string, apiKey: string): Promise<any[]> {
     const videoIds = (data.items || []).map((item: any) => item.id?.videoId).filter(Boolean);
     if (videoIds.length === 0) return [];
 
-    // Get video details (duration, etc.)
     const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds.join(",")}&key=${apiKey}`;
     const detailsRes = await fetch(detailsUrl);
     if (!detailsRes.ok) return [];
@@ -134,14 +158,64 @@ async function searchYouTubeAPI(query: string, apiKey: string): Promise<any[]> {
   }
 }
 
-// Parse ISO 8601 duration (PT1H30M45S) to seconds
 function parseDuration(iso: string): number {
   const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
   if (!match) return 0;
-  const h = parseInt(match[1] || "0");
-  const m = parseInt(match[2] || "0");
-  const s = parseInt(match[3] || "0");
-  return h * 3600 + m * 60 + s;
+  return parseInt(match[1] || "0") * 3600 + parseInt(match[2] || "0") * 60 + parseInt(match[3] || "0");
+}
+
+// Piped/Invidious fallback search
+async function searchFreeAPIs(query: string): Promise<any[]> {
+  const promises = [
+    ...PIPED_INSTANCES.map(async (instance) => {
+      try {
+        const res = await tryFetch(`${instance}/search?q=${encodeURIComponent(query)}&filter=music_songs`);
+        if (res) {
+          const data = await res.json();
+          const items = (data.items || [])
+            .filter((item: any) => item.type === "stream" && item.duration > 0)
+            .slice(0, 20)
+            .map((item: any) => ({
+              id: item.url?.replace("/watch?v=", "") || "",
+              title: item.title || "Unknown",
+              author: item.uploaderName || "Unknown",
+              thumbnail: item.thumbnail || `https://i.ytimg.com/vi/${item.url?.replace("/watch?v=", "") || ""}/mqdefault.jpg`,
+              lengthSeconds: item.duration || 0,
+            }));
+          if (items.length > 0) return items;
+        }
+      } catch { /* skip */ }
+      return [];
+    }),
+    ...INVIDIOUS_INSTANCES.map(async (instance) => {
+      try {
+        const res = await tryFetch(`${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&sort_by=relevance`);
+        if (res) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            const items = data
+              .filter((item: any) => item.type === "video" && item.lengthSeconds > 0)
+              .slice(0, 20)
+              .map((item: any) => ({
+                id: item.videoId || "",
+                title: item.title || "Unknown",
+                author: item.author || "Unknown",
+                thumbnail: `https://i.ytimg.com/vi/${item.videoId}/mqdefault.jpg`,
+                lengthSeconds: item.lengthSeconds || 0,
+              }));
+            if (items.length > 0) return items;
+          }
+        }
+      } catch { /* skip */ }
+      return [];
+    }),
+  ];
+
+  const results = await Promise.allSettled(promises);
+  for (const r of results) {
+    if (r.status === "fulfilled" && r.value.length > 0) return r.value;
+  }
+  return [];
 }
 
 function getCuratedVideos(category: string): any[] {
@@ -176,17 +250,27 @@ serve(async (req) => {
     const apiKey = Deno.env.get("YOUTUBE_API_KEY");
 
     if (action === "search") {
-      // Try YouTube Data API v3 first
+      // 1. Try YouTube Data API v3
       if (apiKey) {
-        const results = await searchYouTubeAPI(query, apiKey);
-        if (results.length > 0) {
-          return new Response(JSON.stringify({ items: results, source: "youtube_api" }), {
+        const ytResults = await searchYouTubeAPI(query, apiKey);
+        if (ytResults.length > 0) {
+          return new Response(JSON.stringify({ items: ytResults, source: "youtube_api" }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
       }
 
-      // Fallback to curated
+      // 2. Try Piped/Invidious free APIs (8s timeout)
+      const freePromise = searchFreeAPIs(query);
+      const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 8000));
+      const freeResults = await Promise.race([freePromise, timeoutPromise]);
+      if (freeResults.length > 0) {
+        return new Response(JSON.stringify({ items: freeResults, source: "free_api" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // 3. Fallback to curated
       const curated = getCuratedVideos(category || "Workout");
       return new Response(JSON.stringify({ items: curated, source: "curated" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -194,35 +278,30 @@ serve(async (req) => {
     }
 
     if (action === "curated") {
-      const results = getCuratedVideos(category || "Workout");
-      return new Response(JSON.stringify({ items: results }), {
+      return new Response(JSON.stringify({ items: getCuratedVideos(category || "Workout") }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (action === "all") {
-      const results = getAllCurated();
-      return new Response(JSON.stringify({ items: results }), {
+      return new Response(JSON.stringify({ items: getAllCurated() }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (action === "audio") {
-      // Audio URL extraction not needed - we use YouTube iframe embed
       return new Response(JSON.stringify({ url: null }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     return new Response(JSON.stringify({ error: "Invalid action" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("youtube-proxy error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
