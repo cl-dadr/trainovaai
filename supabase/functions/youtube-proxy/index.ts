@@ -5,19 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const PIPED_INSTANCES = [
-  "https://pipedapi.kavin.rocks",
-  "https://pipedapi.r4fo.com",
-  "https://api.piped.yt",
-];
-
-const INVIDIOUS_INSTANCES = [
-  "https://inv.nadeko.net",
-  "https://vid.puffyan.us",
-  "https://invidious.lunar.icu",
-];
-
-// Large curated library with verified YouTube IDs
+// Curated fallback library
 const CURATED_VIDEOS: Record<string, Array<{id: string; title: string; author: string; lengthSeconds: number}>> = {
   "Workout": [
     { id: "h9EUxjJsMM8", title: "Best Gym Workout Music 2025 🔥 Top Motivational Songs", author: "Trap Music", lengthSeconds: 3600 },
@@ -110,108 +98,50 @@ const CURATED_VIDEOS: Record<string, Array<{id: string; title: string; author: s
   ],
 };
 
-async function tryFetch(url: string, timeout = 4000): Promise<Response | null> {
+// YouTube Data API v3 search
+async function searchYouTubeAPI(query: string, apiKey: string): Promise<any[]> {
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeout);
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timer);
-    if (res.ok) return res;
-  } catch { /* skip */ }
-  return null;
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&maxResults=20&q=${encodeURIComponent(query)}&key=${apiKey}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error("YouTube API error:", res.status, await res.text());
+      return [];
+    }
+    const data = await res.json();
+    const videoIds = (data.items || []).map((item: any) => item.id?.videoId).filter(Boolean);
+    if (videoIds.length === 0) return [];
+
+    // Get video details (duration, etc.)
+    const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds.join(",")}&key=${apiKey}`;
+    const detailsRes = await fetch(detailsUrl);
+    if (!detailsRes.ok) return [];
+    const detailsData = await detailsRes.json();
+
+    return (detailsData.items || []).map((item: any) => {
+      const duration = item.contentDetails?.duration || "PT0S";
+      const seconds = parseDuration(duration);
+      return {
+        id: item.id,
+        title: item.snippet?.title || "Unknown",
+        author: item.snippet?.channelTitle || "Unknown",
+        thumbnail: item.snippet?.thumbnails?.medium?.url || `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`,
+        lengthSeconds: seconds,
+      };
+    });
+  } catch (e) {
+    console.error("YouTube API search error:", e);
+    return [];
+  }
 }
 
-async function searchAPIs(query: string): Promise<any[]> {
-  const promises = [
-    ...PIPED_INSTANCES.map(async (instance) => {
-      try {
-        const res = await tryFetch(`${instance}/search?q=${encodeURIComponent(query)}&filter=music_songs`);
-        if (res) {
-          const data = await res.json();
-          const items = (data.items || [])
-            .filter((item: any) => item.type === "stream" && item.duration > 0)
-            .slice(0, 20)
-            .map((item: any) => ({
-              id: item.url?.replace("/watch?v=", "") || "",
-              title: item.title || "Unknown",
-              author: item.uploaderName || "Unknown",
-              thumbnail: item.thumbnail || `https://i.ytimg.com/vi/${item.url?.replace("/watch?v=", "") || ""}/mqdefault.jpg`,
-              lengthSeconds: item.duration || 0,
-            }));
-          if (items.length > 0) return items;
-        }
-      } catch { /* skip */ }
-      return [];
-    }),
-    ...INVIDIOUS_INSTANCES.map(async (instance) => {
-      try {
-        const res = await tryFetch(`${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&sort_by=relevance`);
-        if (res) {
-          const data = await res.json();
-          if (Array.isArray(data)) {
-            const items = data
-              .filter((item: any) => item.type === "video" && item.lengthSeconds > 0)
-              .slice(0, 20)
-              .map((item: any) => ({
-                id: item.videoId || "",
-                title: item.title || "Unknown",
-                author: item.author || "Unknown",
-                thumbnail: `https://i.ytimg.com/vi/${item.videoId}/mqdefault.jpg`,
-                lengthSeconds: item.lengthSeconds || 0,
-              }));
-            if (items.length > 0) return items;
-          }
-        }
-      } catch { /* skip */ }
-      return [];
-    }),
-  ];
-
-  const results = await Promise.allSettled(promises);
-  for (const r of results) {
-    if (r.status === "fulfilled" && r.value.length > 0) return r.value;
-  }
-  return [];
-}
-
-async function getAudioUrl(videoId: string): Promise<string | null> {
-  const promises = [
-    ...PIPED_INSTANCES.map(async (instance) => {
-      try {
-        const res = await tryFetch(`${instance}/streams/${videoId}`);
-        if (res) {
-          const data = await res.json();
-          const audioStreams = data.audioStreams || [];
-          if (audioStreams.length > 0) {
-            const best = audioStreams.sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0))[0];
-            if (best?.url) return best.url;
-          }
-        }
-      } catch { /* skip */ }
-      return null;
-    }),
-    ...INVIDIOUS_INSTANCES.map(async (instance) => {
-      try {
-        const res = await tryFetch(`${instance}/api/v1/videos/${videoId}`);
-        if (res) {
-          const data = await res.json();
-          const adaptiveFormats = data.adaptiveFormats || [];
-          const audioFormats = adaptiveFormats.filter((f: any) => f.type?.startsWith("audio/"));
-          if (audioFormats.length > 0) {
-            const best = audioFormats.sort((a: any, b: any) => (b.bitrate || 0) - (a.bitrate || 0))[0];
-            if (best?.url) return best.url;
-          }
-        }
-      } catch { /* skip */ }
-      return null;
-    }),
-  ];
-
-  const results = await Promise.allSettled(promises);
-  for (const r of results) {
-    if (r.status === "fulfilled" && r.value) return r.value;
-  }
-  return null;
+// Parse ISO 8601 duration (PT1H30M45S) to seconds
+function parseDuration(iso: string): number {
+  const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return 0;
+  const h = parseInt(match[1] || "0");
+  const m = parseInt(match[2] || "0");
+  const s = parseInt(match[3] || "0");
+  return h * 3600 + m * 60 + s;
 }
 
 function getCuratedVideos(category: string): any[] {
@@ -222,33 +152,6 @@ function getCuratedVideos(category: string): any[] {
   }));
 }
 
-// Search across ALL curated videos by text matching
-function searchCurated(query: string): any[] {
-  const q = query.toLowerCase();
-  const allVideos: any[] = [];
-  const seenIds = new Set<string>();
-  
-  for (const cat of Object.keys(CURATED_VIDEOS)) {
-    for (const v of CURATED_VIDEOS[cat]) {
-      if (!seenIds.has(v.id)) {
-        seenIds.add(v.id);
-        const matchScore = 
-          (v.title.toLowerCase().includes(q) ? 3 : 0) +
-          (v.author.toLowerCase().includes(q) ? 2 : 0) +
-          (cat.toLowerCase().includes(q) ? 1 : 0);
-        if (matchScore > 0) {
-          allVideos.push({ ...v, thumbnail: `https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`, _score: matchScore });
-        }
-      }
-    }
-  }
-  
-  // Sort by relevance score
-  allVideos.sort((a, b) => b._score - a._score);
-  return allVideos.map(({ _score, ...rest }) => rest);
-}
-
-// Get all unique curated videos (for broad/unmatched searches)
 function getAllCurated(): any[] {
   const seenIds = new Set<string>();
   const all: any[] = [];
@@ -270,30 +173,22 @@ serve(async (req) => {
 
   try {
     const { action, query, videoId, category } = await req.json();
+    const apiKey = Deno.env.get("YOUTUBE_API_KEY");
 
     if (action === "search") {
-      // Try APIs with short timeout
-      const apiPromise = searchAPIs(query);
-      const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 6000));
-      const apiResults = await Promise.race([apiPromise, timeoutPromise]);
-      
-      if (apiResults.length > 0) {
-        return new Response(JSON.stringify({ items: apiResults }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      // Try YouTube Data API v3 first
+      if (apiKey) {
+        const results = await searchYouTubeAPI(query, apiKey);
+        if (results.length > 0) {
+          return new Response(JSON.stringify({ items: results, source: "youtube_api" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
       }
 
-      // Fallback: search curated by text match first, then by category
-      const textMatches = searchCurated(query);
-      if (textMatches.length > 0) {
-        return new Response(JSON.stringify({ items: textMatches }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      // Category fallback
+      // Fallback to curated
       const curated = getCuratedVideos(category || "Workout");
-      return new Response(JSON.stringify({ items: curated }), {
+      return new Response(JSON.stringify({ items: curated, source: "curated" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -313,8 +208,8 @@ serve(async (req) => {
     }
 
     if (action === "audio") {
-      const url = await getAudioUrl(videoId);
-      return new Response(JSON.stringify({ url }), {
+      // Audio URL extraction not needed - we use YouTube iframe embed
+      return new Response(JSON.stringify({ url: null }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
