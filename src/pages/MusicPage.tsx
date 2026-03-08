@@ -422,7 +422,7 @@ const MusicPage = () => {
           <div className="space-y-1">
             {ytVideos.map((video, i) => {
               const isActive = activeVideoId === video.id;
-              const isLiked = liked.has(video.id);
+              const videoLiked = isLiked(video.id);
               return (
                 <motion.div
                   key={video.id}
