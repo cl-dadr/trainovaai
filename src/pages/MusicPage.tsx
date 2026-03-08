@@ -55,7 +55,7 @@ const MusicPage = () => {
     try { return JSON.parse(localStorage.getItem("yt_recent") || "[]"); } catch { return []; }
   });
   const [activePlaylist, setActivePlaylist] = useState<string | null>(null);
-  const [showSearch, setShowSearch] = useState(false);
+  const [isSearchMode, setIsSearchMode] = useState(false);
 
   const loadCategory = useCallback(async (cat: string) => {
     setLoading(true);
