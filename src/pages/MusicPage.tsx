@@ -458,8 +458,8 @@ const MusicPage = () => {
                   </div>
 
                   {/* Like */}
-                  <button onClick={(e) => { e.stopPropagation(); toggleLike(video.id); }} className="shrink-0 p-1">
-                    <Heart className={`h-3.5 w-3.5 transition-colors ${isLiked ? "text-destructive fill-current" : "text-muted-foreground"}`} />
+                  <button onClick={(e) => { e.stopPropagation(); handleToggleLike(video); }} className="shrink-0 p-1">
+                    <Heart className={`h-3.5 w-3.5 transition-colors ${videoLiked ? "text-destructive fill-current" : "text-muted-foreground"}`} />
                   </button>
 
                   {/* Duration & Play */}
