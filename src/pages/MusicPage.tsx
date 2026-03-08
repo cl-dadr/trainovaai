@@ -128,15 +128,30 @@ const MusicPage = () => {
 
   useEffect(() => { localStorage.setItem("yt_recent", JSON.stringify(recentlyPlayed)); }, [recentlyPlayed]);
 
-  // Load YouTube IFrame API
+  // Load YouTube IFrame API & create player container outside React DOM
   useEffect(() => {
+    // Create a container div outside React's managed DOM
+    const container = document.createElement('div');
+    container.id = 'yt-player-container';
+    container.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;opacity:0;pointer-events:none;overflow:hidden;z-index:-1';
+    const playerDiv = document.createElement('div');
+    playerDiv.id = 'yt-hidden-player';
+    container.appendChild(playerDiv);
+    document.body.appendChild(container);
+
     if (!(window as any).YT) {
       const tag = document.createElement('script');
       tag.src = 'https://www.youtube.com/iframe_api';
       document.head.appendChild(tag);
     }
+
     return () => {
       if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+      if (ytPlayerRef.current?.destroy) {
+        try { ytPlayerRef.current.destroy(); } catch {}
+        ytPlayerRef.current = null;
+      }
+      container.remove();
     };
   }, []);
 
@@ -159,6 +174,17 @@ const MusicPage = () => {
       if (ytPlayerRef.current?.loadVideoById) {
         ytPlayerRef.current.loadVideoById(videoId);
         return;
+      }
+      // If player was destroyed or div replaced, recreate the target div
+      let target = document.getElementById('yt-hidden-player');
+      if (!target) {
+        const container = document.getElementById('yt-player-container');
+        if (container) {
+          target = document.createElement('div');
+          target.id = 'yt-hidden-player';
+          container.innerHTML = '';
+          container.appendChild(target);
+        }
       }
       ytPlayerRef.current = new (window as any).YT.Player('yt-hidden-player', {
         height: '0',
