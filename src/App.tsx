@@ -13,8 +13,7 @@ import StreakPage from "./pages/StreakPage";
 import MusicPage from "./pages/MusicPage";
 import ProfilePage from "./pages/ProfilePage";
 import CameraPage from "./pages/CameraPage";
-
-import HealthReportPage from "./pages/HealthReportPage";
+ortPage";
 import JaxAIPage from "./pages/JaxAIPage";
 import RunningPage from "./pages/RunningPage";
 import PremiumPage from "./pages/PremiumPage";
@@ -23,10 +22,7 @@ import HabitTrackerPage from "./pages/HabitTrackerPage";
 import MentalWellnessPage from "./pages/MentalWellnessPage";
 import WorkoutPlannerPage from "./pages/WorkoutPlannerPage";
 import ProgressPage from "./pages/ProgressPage";
-import BattleArenaPage from "./pages/BattleArenaPage";
-import NotFound from "./pages/NotFound";
-
-const queryClient = new QueryClient();
+import BattleArenaPage from "./pages/BattleArena queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
