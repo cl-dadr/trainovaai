@@ -248,6 +248,7 @@ serve(async (req) => {
   try {
     const { action, query, videoId, category } = await req.json();
     const apiKey = Deno.env.get("YOUTUBE_API_KEY");
+    console.log("API key present:", !!apiKey, "length:", apiKey?.length, "first4:", apiKey?.substring(0, 4), "last4:", apiKey?.substring((apiKey?.length || 0) - 4));
 
     if (action === "search") {
       // 1. Try YouTube Data API v3
