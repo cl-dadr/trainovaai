@@ -124,7 +124,7 @@ const MusicPage = () => {
     <div className="relative min-h-screen pb-24 px-4 pt-6">
       <div className="ambient-glow" />
 
-      {/* Full-screen Now Playing */}
+      {/* Full-screen Now Playing - YouTube Music Style */}
       <AnimatePresence>
         {showNowPlaying && activeVideoId && (
           <motion.div
@@ -133,22 +133,23 @@ const MusicPage = () => {
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
             className="fixed inset-0 z-50 flex flex-col overflow-y-auto"
-            style={{ background: "linear-gradient(180deg, hsl(var(--primary) / 0.08) 0%, hsl(var(--background)) 25%)" }}
+            style={{ background: "linear-gradient(180deg, hsl(var(--muted) / 0.3) 0%, hsl(var(--background)) 40%)" }}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 pt-12 pb-4">
+            {/* Top Bar */}
+            <div className="flex items-center justify-between px-4 pt-12 pb-2">
               <button onClick={() => setShowNowPlaying(false)} className="p-2 rounded-full hover:bg-secondary/50">
-                <ChevronDown className="h-5 w-5 text-foreground" />
+                <ChevronDown className="h-6 w-6 text-foreground" />
               </button>
-              <p className="text-sm font-bold text-foreground tracking-wide">Now Playing</p>
-              <button onClick={() => toggleLike(activeVideoId)} className="p-2 rounded-full hover:bg-secondary/50">
-                <Heart className={`h-5 w-5 ${liked.has(activeVideoId) ? "text-destructive fill-current" : "text-muted-foreground"}`} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button className="p-2 rounded-full hover:bg-secondary/50">
+                  <MoreHorizontal className="h-5 w-5 text-foreground" />
+                </button>
+              </div>
             </div>
 
-            {/* YouTube Embed */}
-            <div className="px-5 mb-4">
-              <div className="rounded-2xl overflow-hidden aspect-video border border-border/20" style={{ boxShadow: "0 0 40px hsl(var(--primary) / 0.15)" }}>
+            {/* Large Artwork / Video Embed */}
+            <div className="px-6 mt-2 flex-shrink-0">
+              <div className="relative w-full aspect-square max-w-sm mx-auto rounded-2xl overflow-hidden" style={{ boxShadow: "0 8px 40px hsl(var(--background) / 0.6)" }}>
                 <iframe
                   key={activeVideoId}
                   src={`https://www.youtube.com/embed/${activeVideoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
@@ -162,60 +163,73 @@ const MusicPage = () => {
             </div>
 
             {/* Track Info */}
-            <div className="px-5">
-              <h2 className="text-base font-bold text-foreground line-clamp-2">{activeVideoTitle}</h2>
-              <div className="flex items-center gap-2 mt-1.5">
-                <Youtube className="h-3.5 w-3.5 text-destructive" />
-                <p className="text-sm text-muted-foreground">{activeVideoAuthor}</p>
-              </div>
+            <div className="px-6 mt-6">
+              <h2 className="text-xl font-bold text-foreground line-clamp-2 leading-tight">{activeVideoTitle}</h2>
+              <p className="text-sm text-muted-foreground mt-1">{activeVideoAuthor}</p>
             </div>
 
-            {/* Waveform */}
-            <div className="px-5 mt-4">
-              <div className="flex items-end gap-[1.5px] h-8 justify-center">
-                {Array.from({ length: 50 }).map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="w-[2px] rounded-full bg-primary"
-                    animate={{ height: [4, 8 + Math.random() * 24, 4] }}
-                    transition={{ repeat: Infinity, duration: 0.4 + Math.random() * 0.5, delay: i * 0.015, ease: "easeInOut" }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Controls */}
-            <div className="flex items-center justify-center gap-8 mt-6 px-5">
-              <button className="p-2 text-muted-foreground hover:text-foreground"><Shuffle className="h-5 w-5" /></button>
+            {/* Playback Controls */}
+            <div className="flex items-center justify-between px-6 mt-8">
+              <button className="p-2 text-muted-foreground hover:text-foreground transition-colors"><Shuffle className="h-5 w-5" /></button>
               <button className="p-2 text-foreground" onClick={() => {
                 const idx = ytVideos.findIndex(v => v.id === activeVideoId);
                 if (idx > 0) handleYtPlay(ytVideos[idx - 1]);
-              }}><SkipBack className="h-6 w-6" /></button>
-              <button className="h-16 w-16 rounded-full gradient-primary flex items-center justify-center neon-glow shadow-lg">
-                <Play className="h-7 w-7 text-primary-foreground ml-1" />
+              }}><SkipBack className="h-7 w-7" /></button>
+              <button className="h-16 w-16 rounded-full bg-foreground flex items-center justify-center shadow-lg">
+                <Pause className="h-7 w-7 text-background" />
               </button>
               <button className="p-2 text-foreground" onClick={() => {
                 const idx = ytVideos.findIndex(v => v.id === activeVideoId);
                 if (idx >= 0 && idx < ytVideos.length - 1) handleYtPlay(ytVideos[idx + 1]);
-              }}><SkipForward className="h-6 w-6" /></button>
-              <button className="p-2 text-muted-foreground hover:text-foreground"><Repeat className="h-5 w-5" /></button>
+              }}><SkipForward className="h-7 w-7" /></button>
+              <button className="p-2 text-muted-foreground hover:text-foreground transition-colors"><Repeat className="h-5 w-5" /></button>
             </div>
 
-            {/* Up Next */}
-            <div className="px-5 mt-8 pb-8">
-              <h3 className="text-sm font-bold text-foreground mb-3">Up Next</h3>
+            {/* Progress Bar */}
+            <div className="px-6 mt-5">
+              <div className="w-full h-1 rounded-full bg-muted relative">
+                <div className="h-full rounded-full bg-foreground" style={{ width: "18%" }} />
+              </div>
+              <div className="flex items-center justify-between mt-1.5">
+                <span className="text-[11px] text-muted-foreground">0:49</span>
+                <span className="text-[11px] text-muted-foreground">4:24</span>
+              </div>
+            </div>
+
+            {/* Action Buttons Row */}
+            <div className="flex items-center gap-2 px-6 mt-4 overflow-x-auto no-scrollbar">
+              <button onClick={() => toggleLike(activeVideoId)} className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/30 bg-secondary/30 shrink-0">
+                <Heart className={`h-4 w-4 ${liked.has(activeVideoId) ? "text-destructive fill-current" : "text-foreground"}`} />
+                <span className="text-xs text-foreground font-medium">Like</span>
+              </button>
+              <button className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/30 bg-secondary/30 shrink-0">
+                <ListMusic className="h-4 w-4 text-foreground" />
+                <span className="text-xs text-foreground font-medium">Save</span>
+              </button>
+              <button className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/30 bg-secondary/30 shrink-0">
+                <Shuffle className="h-4 w-4 text-foreground" />
+                <span className="text-xs text-foreground font-medium">Share</span>
+              </button>
+            </div>
+
+            {/* Your Queue - Swipe up hint */}
+            <div className="px-6 mt-6 pb-8">
+              <div className="flex justify-center mb-3">
+                <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+              </div>
+              <h3 className="text-base font-bold text-foreground text-center mb-4">Your Queue</h3>
               <div className="space-y-1">
-                {ytVideos.filter(v => v.id !== activeVideoId).slice(0, 5).map((video) => (
+                {ytVideos.filter(v => v.id !== activeVideoId).slice(0, 8).map((video) => (
                   <motion.div key={video.id} whileTap={{ scale: 0.97 }} onClick={() => handleYtPlay(video)}
-                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-secondary/30 cursor-pointer">
-                    <div className="h-10 w-10 rounded-lg overflow-hidden shrink-0">
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-secondary/30 cursor-pointer">
+                    <div className="h-11 w-11 rounded-lg overflow-hidden shrink-0">
                       <img src={video.thumbnail} alt="" className="h-full w-full object-cover" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-foreground truncate">{video.title}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{video.author}</p>
+                      <p className="text-sm font-semibold text-foreground truncate">{video.title}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{video.author}</p>
                     </div>
-                    <span className="text-[10px] text-muted-foreground">{video.duration}</span>
+                    <span className="text-[11px] text-muted-foreground">{video.duration}</span>
                   </motion.div>
                 ))}
               </div>
