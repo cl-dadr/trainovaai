@@ -28,7 +28,7 @@ const JaxAIPage = () => {
     {
       id: 1,
       role: "assistant",
-      content: "💪 **Dr. Arjun**: Hey champ! Ready to crush it today?\n\n🌿 **Dr. Priya**: And I'm here for your nutrition and recovery needs!\n\nWe're your 24/7 AI fitness coaches. Ask us anything about workouts, form correction, diet plans, or recovery! 🔥",
+      content: "Hey! I'm **JAX** 🔥 — your personal AI fitness coach.\n\nI cover **everything**: workouts, form correction, nutrition, diet plans, and recovery. Ask me anything and let's crush your goals! 💪",
     },
   ]);
   const [input, setInput] = useState("");
