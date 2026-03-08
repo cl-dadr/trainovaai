@@ -958,8 +958,6 @@ const MusicPage = () => {
         </div>
       )}
 
-      {/* Hidden YouTube Player */}
-      <div id="yt-hidden-player" className="fixed top-0 left-0 w-0 h-0 opacity-0 pointer-events-none" style={{ position: 'fixed', width: 0, height: 0 }} />
 
       {/* Bottom Mini Player */}
       <AnimatePresence>
