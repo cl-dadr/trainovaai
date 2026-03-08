@@ -52,9 +52,6 @@ const MusicPage = () => {
   const [ytVideos, setYtVideos] = useState<YouTubeVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [liked, setLiked] = useState<Set<string>>(() => {
-    try { return new Set(JSON.parse(localStorage.getItem("yt_liked") || "[]")); } catch { return new Set(); }
-  });
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const [activeVideoTitle, setActiveVideoTitle] = useState("");
   const [activeVideoAuthor, setActiveVideoAuthor] = useState("");
@@ -65,6 +62,9 @@ const MusicPage = () => {
   });
   const [activePlaylist, setActivePlaylist] = useState<string | null>(null);
   const [isSearchMode, setIsSearchMode] = useState(false);
+  const [showFavorites, setShowFavorites] = useState(false);
+
+  const { likedSongs, toggleLike, isLiked, loading: likesLoading } = useLikedSongs();
 
   const loadCategory = useCallback(async (cat: string) => {
     setLoading(true);
