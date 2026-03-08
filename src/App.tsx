@@ -13,18 +13,22 @@ import StreakPage from "./pages/StreakPage";
 import MusicPage from "./pages/MusicPage";
 import ProfilePage from "./pages/ProfilePage";
 import CameraPage from "./pages/CameraPage";
-e";
+import HealthReportPage from "./pages/HealthReportPage";
+import JaxAIPage from "./pages/JaxAIPage";
+import RunningPage from "./pages/RunningPage";
 import PremiumPage from "./pages/PremiumPage";
 import NutritionPage from "./pages/NutritionPage";
 import HabitTrackerPage from "./pages/HabitTrackerPage";
 import MentalWellnessPage from "./pages/MentalWellnessPage";
 import WorkoutPlannerPage from "./pages/WorkoutPlannerPage";
 import ProgressPage from "./pages/ProgressPage";
-import BattleArenaPage from "./pages/BattleArena queryClient = new QueryClient();
+import NotFound from "./pages/NotFound";
 
-const Protect) => {
+const queryClient = new QueryClient();
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  ckground flex items-center justify-center"><div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
   if (!user) return <Navigate to="/auth" replace />;
   return <>{children}</>;
 };
@@ -41,18 +45,25 @@ const AppRoutes = () => {
         <Route path="/music" element={<ProtectedRoute><MusicPage /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/camera" element={<ProtectedRoute><CameraPage /></ProtectedRoute>} />
-        <Route path="/activity" element={<ProtectedRoute><ActivityPage /></ProtectedRoute>} />
-        <Route      <Route path="/jax" element={<ProtectedRoute><JaxAIPage /></ProtectedRoute>} />
-        <Route patute path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute><HealthReportPage /></ProtectedRoute>} />
+        <Route path="/jax" element={<ProtectedRoute><JaxAIPage /></ProtectedRoute>} />
+        <Route path="/running" element={<ProtectedRoute><RunningPage /></ProtectedRoute>} />
+        <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
         <Route path="/nutrition" element={<ProtectedRoute><NutritionPage /></ProtectedRoute>} />
         <Route path="/habits" element={<ProtectedRoute><HabitTrackerPage /></ProtectedRoute>} />
         <Route path="/wellness" element={<ProtectedRoute><MentalWellnessPage /></ProtectedRoute>} />
         <Route path="/planner" element={<ProtectedRoute><WorkoutPlannerPage /></ProtectedRoute>} />
         <Route path="/progress" element={<ProtectedRoute><ProgressPage /></ProtectedRoute>} />
-        <Route path="/battles" element={<ProtectedRoute><BattleArenaPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      {user && <NowPlayingBar />}vider client={queryClient}>
+      {user && <NowPlayingBar />}
+      {user && <BottomNav />}
+    </div>
+  );
+};
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
         <AudioPlayerProvider>
