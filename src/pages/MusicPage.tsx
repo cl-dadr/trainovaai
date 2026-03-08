@@ -60,7 +60,12 @@ const MusicPage = () => {
   const [activeVideoThumb, setActiveVideoThumb] = useState("");
   const [activeVideoDuration, setActiveVideoDuration] = useState("");
   const [isYtPlaying, setIsYtPlaying] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [ytProgress, setYtProgress] = useState(0);
+  const [ytCurrentTime, setYtCurrentTime] = useState(0);
+  const [ytDurationSec, setYtDurationSec] = useState(0);
+  const ytPlayerRef = useRef<any>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
   const [showNowPlaying, setShowNowPlaying] = useState(false);
   const [recentlyPlayed, setRecentlyPlayed] = useState<YouTubeVideo[]>(() => {
     try { return JSON.parse(localStorage.getItem("yt_recent") || "[]"); } catch { return []; }
@@ -123,22 +128,80 @@ const MusicPage = () => {
 
   useEffect(() => { localStorage.setItem("yt_recent", JSON.stringify(recentlyPlayed)); }, [recentlyPlayed]);
 
+  // Load YouTube IFrame API
+  useEffect(() => {
+    if (!(window as any).YT) {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(tag);
+    }
+    return () => {
+      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    };
+  }, []);
+
+  const startProgressTracking = useCallback(() => {
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+    progressIntervalRef.current = setInterval(() => {
+      const player = ytPlayerRef.current;
+      if (player?.getCurrentTime && player?.getDuration) {
+        const current = player.getCurrentTime();
+        const total = player.getDuration();
+        setYtCurrentTime(current);
+        setYtDurationSec(total);
+        setYtProgress(total > 0 ? current / total : 0);
+      }
+    }, 500);
+  }, []);
+
+  const loadYtVideo = useCallback((videoId: string) => {
+    const createPlayer = () => {
+      if (ytPlayerRef.current?.loadVideoById) {
+        ytPlayerRef.current.loadVideoById(videoId);
+        return;
+      }
+      ytPlayerRef.current = new (window as any).YT.Player('yt-hidden-player', {
+        height: '0',
+        width: '0',
+        videoId,
+        playerVars: { autoplay: 1, controls: 0, modestbranding: 1, playsinline: 1, rel: 0 },
+        events: {
+          onStateChange: (event: any) => {
+            if (event.data === 1) { setIsYtPlaying(true); startProgressTracking(); }
+            else if (event.data === 2) { setIsYtPlaying(false); }
+            else if (event.data === 0) { setIsYtPlaying(false); if (progressIntervalRef.current) clearInterval(progressIntervalRef.current); }
+          },
+          onReady: () => { startProgressTracking(); },
+        },
+      });
+    };
+
+    if ((window as any).YT?.Player) {
+      createPlayer();
+    } else {
+      (window as any).onYouTubeIframeAPIReady = createPlayer;
+    }
+  }, [startProgressTracking]);
+
   const handleToggleLike = (video: { id: string; title: string; author: string; thumbnail: string; duration: string }) => {
     toggleLike(video);
   };
 
-  const handleYtPlay = (video: YouTubeVideo) => {
+  const handleYtPlay = useCallback((video: YouTubeVideo) => {
     setActiveVideoId(video.id);
     setActiveVideoTitle(video.title);
     setActiveVideoAuthor(video.author);
     setActiveVideoThumb(video.thumbnail);
     setActiveVideoDuration(video.duration);
-    setIsYtPlaying(true);
+    setYtProgress(0);
+    setYtCurrentTime(0);
+    setYtDurationSec(0);
+    loadYtVideo(video.id);
     setRecentlyPlayed(prev => {
       const filtered = prev.filter(v => v.id !== video.id);
       return [video, ...filtered].slice(0, 15);
     });
-  };
+  }, [loadYtVideo]);
 
   const handlePlayLikedSong = (song: { video_id: string; title: string; author: string | null; thumbnail: string | null; duration: string | null }) => {
     setActiveVideoId(song.video_id);
@@ -146,7 +209,8 @@ const MusicPage = () => {
     setActiveVideoAuthor(song.author || "");
     setActiveVideoThumb(song.thumbnail || "");
     setActiveVideoDuration(song.duration || "");
-    setIsYtPlaying(true);
+    setYtProgress(0); setYtCurrentTime(0); setYtDurationSec(0);
+    loadYtVideo(song.video_id);
   };
 
   const handlePlayPlaylistSong = (song: PlaylistSong) => {
@@ -155,18 +219,17 @@ const MusicPage = () => {
     setActiveVideoAuthor(song.author || "");
     setActiveVideoThumb(song.thumbnail || "");
     setActiveVideoDuration(song.duration || "");
-    setIsYtPlaying(true);
+    setYtProgress(0); setYtCurrentTime(0); setYtDurationSec(0);
+    loadYtVideo(song.video_id);
   };
 
   const togglePlayPause = () => {
-    const iframe = iframeRef.current;
-    if (!iframe?.contentWindow) return;
+    const player = ytPlayerRef.current;
+    if (!player) return;
     if (isYtPlaying) {
-      iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-      setIsYtPlaying(false);
+      player.pauseVideo?.();
     } else {
-      iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
-      setIsYtPlaying(true);
+      player.playVideo?.();
     }
   };
 
@@ -185,15 +248,30 @@ const MusicPage = () => {
   };
 
   const seekForward = () => {
-    const iframe = iframeRef.current;
-    if (!iframe?.contentWindow) return;
-    iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "seekBy", args: [10] }), '*');
+    const player = ytPlayerRef.current;
+    if (!player?.getCurrentTime) return;
+    player.seekTo(player.getCurrentTime() + 10, true);
   };
 
   const seekBackward = () => {
-    const iframe = iframeRef.current;
-    if (!iframe?.contentWindow) return;
-    iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "seekBy", args: [-10] }), '*');
+    const player = ytPlayerRef.current;
+    if (!player?.getCurrentTime) return;
+    player.seekTo(Math.max(0, player.getCurrentTime() - 10), true);
+  };
+
+  const handleProgressSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const player = ytPlayerRef.current;
+    if (!player?.getDuration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    player.seekTo(ratio * player.getDuration(), true);
+  };
+
+  const formatSec = (sec: number) => {
+    if (!sec || isNaN(sec)) return "0:00";
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
   const openSaveModal = (video: { id: string; title: string; author: string; thumbnail: string; duration: string }) => {
@@ -855,17 +933,7 @@ const MusicPage = () => {
       )}
 
       {/* Hidden YouTube Player */}
-      {activeVideoId && (
-        <iframe
-          ref={iframeRef}
-          key={activeVideoId}
-          src={`https://www.youtube.com/embed/${activeVideoId}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&playsinline=1`}
-          title="YouTube audio player"
-          allow="autoplay; encrypted-media"
-          className="fixed top-0 left-0 w-0 h-0 opacity-0 pointer-events-none"
-          style={{ position: 'fixed', width: 0, height: 0 }}
-        />
-      )}
+      <div id="yt-hidden-player" className="fixed top-0 left-0 w-0 h-0 opacity-0 pointer-events-none" style={{ position: 'fixed', width: 0, height: 0 }} />
 
       {/* Bottom Mini Player */}
       <AnimatePresence>
@@ -907,9 +975,6 @@ const MusicPage = () => {
                   <p className="text-xs font-semibold text-foreground truncate">{activeVideoTitle}</p>
                   <div className="flex items-center gap-1.5">
                     <p className="text-[10px] text-muted-foreground truncate">{activeVideoAuthor}</p>
-                    {activeVideoDuration && (
-                      <span className="text-[9px] text-primary font-medium shrink-0">• {activeVideoDuration}</span>
-                    )}
                   </div>
                 </div>
                 <button onClick={(e) => { e.stopPropagation(); handleToggleLike({ id: activeVideoId!, title: activeVideoTitle, author: activeVideoAuthor, thumbnail: activeVideoThumb, duration: activeVideoDuration }); }} className="p-1">
@@ -936,6 +1001,25 @@ const MusicPage = () => {
                     <SkipForward className="h-3.5 w-3.5 text-foreground" />
                   </button>
                 </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-[9px] text-muted-foreground w-7 text-right shrink-0">{formatSec(ytCurrentTime)}</span>
+                <div
+                  className="flex-1 h-1.5 rounded-full bg-secondary cursor-pointer relative group"
+                  onClick={handleProgressSeek}
+                >
+                  <motion.div
+                    className="h-full rounded-full gradient-primary absolute left-0 top-0"
+                    style={{ width: `${ytProgress * 100}%` }}
+                  />
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-primary shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ left: `calc(${ytProgress * 100}% - 6px)` }}
+                  />
+                </div>
+                <span className="text-[9px] text-muted-foreground w-7 shrink-0">{formatSec(ytDurationSec)}</span>
               </div>
             </div>
           </motion.div>
