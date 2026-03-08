@@ -34,6 +34,7 @@ export interface HabitWithCompletion extends Habit {
   todayCompletion: HabitCompletion | null;
   streak: number;
   weekCompletions: boolean[];
+  allCompletions: HabitCompletion[];
 }
 
 export interface AISuggestion {
@@ -57,11 +58,12 @@ export function useHabits() {
     setLoading(true);
 
     const today = new Date().toISOString().split("T")[0];
+    const yearAgo = new Date(Date.now() - 365 * 86400000).toISOString().split("T")[0];
     const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
 
     const [{ data: habitsData }, { data: completionsData }] = await Promise.all([
       supabase.from("habits").select("*").eq("user_id", user.id).eq("active", true).order("created_at"),
-      supabase.from("habit_completions").select("*").eq("user_id", user.id).gte("date", weekAgo).lte("date", today),
+      supabase.from("habit_completions").select("*").eq("user_id", user.id).gte("date", yearAgo).lte("date", today),
     ]);
 
     const enriched: HabitWithCompletion[] = (habitsData || []).map((h: any) => {
@@ -75,7 +77,7 @@ export function useHabits() {
         .map((c: any) => c.date)
         .sort()
         .reverse();
-      
+
       if (sortedDates.length > 0) {
         let checkDate = new Date(today);
         for (const d of sortedDates) {
@@ -89,14 +91,14 @@ export function useHabits() {
         }
       }
 
-      // Week completions (Mon-Sun)
+      // Week completions (last 7 days)
       const weekCompletions: boolean[] = [];
       for (let i = 6; i >= 0; i--) {
         const d = new Date(Date.now() - i * 86400000).toISOString().split("T")[0];
         weekCompletions.push(hCompletions.some((c: any) => c.date === d && c.completed));
       }
 
-      return { ...h, todayCompletion, streak, weekCompletions };
+      return { ...h, todayCompletion, streak, weekCompletions, allCompletions: hCompletions };
     });
 
     setHabits(enriched);
@@ -124,6 +126,32 @@ export function useHabits() {
         date: today,
         value: habit.target,
         completed: true,
+      });
+    }
+    await fetchHabits();
+  };
+
+  const incrementHabit = async (habitId: string, amount: number = 1) => {
+    if (!user) return;
+    const today = new Date().toISOString().split("T")[0];
+    const habit = habits.find((h) => h.id === habitId);
+    if (!habit) return;
+
+    if (habit.todayCompletion) {
+      const newValue = Math.max(0, habit.todayCompletion.value + amount);
+      const completed = newValue >= habit.target;
+      await supabase
+        .from("habit_completions")
+        .update({ value: newValue, completed })
+        .eq("id", habit.todayCompletion.id);
+    } else {
+      const value = Math.max(0, amount);
+      await supabase.from("habit_completions").insert({
+        habit_id: habitId,
+        user_id: user.id,
+        date: today,
+        value,
+        completed: value >= habit.target,
       });
     }
     await fetchHabits();
@@ -165,7 +193,6 @@ export function useHabits() {
     setSuggestionsLoading(true);
     try {
       const { data: streakData } = await supabase.from("user_streaks").select("total_workouts").eq("user_id", user.id).maybeSingle();
-
       const res = await supabase.functions.invoke("habit-suggestions", {
         body: {
           existingHabits: habits.map((h) => ({ name: h.name })),
@@ -173,7 +200,6 @@ export function useHabits() {
           goals: goals || "general fitness",
         },
       });
-
       if (res.error) throw res.error;
       setSuggestions(res.data?.suggestions || []);
     } catch (e) {
@@ -191,6 +217,7 @@ export function useHabits() {
     habits,
     loading,
     toggleHabit,
+    incrementHabit,
     createHabit,
     deleteHabit,
     suggestions,
