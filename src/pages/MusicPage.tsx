@@ -456,6 +456,23 @@ const MusicPage = () => {
               </h2>
               <span className="text-sm text-muted-foreground">{likedSongs.length}</span>
             </div>
+            {/* Shuffle Button */}
+            {likedSongs.length > 1 && (
+              <div className="px-4 pt-3">
+                <button
+                  onClick={() => {
+                    const shuffled = [...likedSongs].sort(() => Math.random() - 0.5);
+                    if (shuffled[0]) handlePlayLikedSong(shuffled[0]);
+                    toast({ title: "Shuffle Play", description: `Playing ${shuffled.length} favorites in random order` });
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl gradient-primary text-primary-foreground font-semibold text-sm neon-glow"
+                >
+                  <Shuffle className="h-4 w-4" />
+                  Shuffle Play
+                </button>
+              </div>
+            )}
+
             <div className="flex-1 px-4 pt-4 pb-24">
               {likesLoading ? (
                 <div className="flex items-center justify-center py-12">
