@@ -203,18 +203,6 @@ const AICoachPage = () => {
             </p>
           </div>
         </div>
-        {/* Coach profiles */}
-        <div className="flex gap-2 mb-3">
-          {coachProfiles.map((c) => (
-            <div key={c.name} className="glass-card flex-1 px-3 py-2 flex items-center gap-2">
-              <span className="text-lg">{c.emoji}</span>
-              <div>
-                <p className="text-xs font-bold text-foreground">{c.name}</p>
-                <p className="text-[9px] text-muted-foreground">{c.role}</p>
-              </div>
-            </div>
-          ))}
-        </div>
         {/* Tabs */}
         <div className="flex gap-2">
           {(["exercises", "chat"] as const).map((tab) => (
