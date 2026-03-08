@@ -20,10 +20,6 @@ const quickCommands = [
   { icon: Droplets, label: "Recovery tips", message: "How to recover faster after an intense workout?" },
 ];
 
-const coachProfiles = [
-  { name: "Dr. Arjun", emoji: "💪", role: "Workout & Form Expert", gradient: "gradient-primary" },
-  { name: "Dr. Priya", emoji: "🌿", role: "Nutrition & Wellness", gradient: "gradient-purple" },
-];
 
 const JaxAIPage = () => {
   const { user } = useAuth();
@@ -32,7 +28,7 @@ const JaxAIPage = () => {
     {
       id: 1,
       role: "assistant",
-      content: "💪 **Dr. Arjun**: Hey champ! Ready to crush it today?\n\n🌿 **Dr. Priya**: And I'm here for your nutrition and recovery needs!\n\nWe're your 24/7 AI fitness coaches. Ask us anything about workouts, form correction, diet plans, or recovery! 🔥",
+      content: "Hey! I'm **JAX** 🔥 — your personal AI fitness coach.\n\nI cover **everything**: workouts, form correction, nutrition, diet plans, and recovery. Ask me anything and let's crush your goals! 💪",
     },
   ]);
   const [input, setInput] = useState("");
@@ -140,24 +136,12 @@ const JaxAIPage = () => {
             <Bot className="h-5 w-5 text-foreground" />
           </div>
           <div>
-            <h1 className="text-xl font-display font-bold text-foreground">AI COACH</h1>
+            <h1 className="text-xl font-display font-bold text-foreground">JAX AI COACH</h1>
             <p className="text-xs text-neon-green flex items-center gap-1">
               <span className="h-1.5 w-1.5 rounded-full bg-neon-green inline-block animate-pulse-neon" />
               24/7 Fitness Guidance
             </p>
           </div>
-        </div>
-        {/* Coach Profiles */}
-        <div className="flex gap-2">
-          {coachProfiles.map((c) => (
-            <div key={c.name} className="glass-card flex-1 px-3 py-2 flex items-center gap-2">
-              <span className="text-lg">{c.emoji}</span>
-              <div>
-                <p className="text-xs font-bold text-foreground">{c.name}</p>
-                <p className="text-[9px] text-muted-foreground">{c.role}</p>
-              </div>
-            </div>
-          ))}
         </div>
       </motion.div>
 
@@ -174,7 +158,7 @@ const JaxAIPage = () => {
                 {msg.role === "assistant" && (
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <Sparkles className="h-3 w-3 text-neon-purple" />
-                    <span className="text-[10px] font-bold text-neon-purple">AI COACH</span>
+                    <span className="text-[10px] font-bold text-neon-purple">JAX</span>
                   </div>
                 )}
                 {msg.role === "assistant" ? (

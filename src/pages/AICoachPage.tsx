@@ -70,10 +70,6 @@ const quickCommands = [
   { icon: Droplets, label: "Recovery", message: "Best recovery techniques after intense calisthenics" },
 ];
 
-const coachProfiles = [
-  { name: "Dr. Arjun", emoji: "💪", role: "Workout & Form", gradient: "gradient-primary" },
-  { name: "Dr. Priya", emoji: "🌿", role: "Nutrition & Recovery", gradient: "gradient-purple" },
-];
 
 const AICoachPage = () => {
   const { user } = useAuth();
@@ -88,7 +84,7 @@ const AICoachPage = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1, role: "assistant",
-      content: "💪 **Dr. Arjun**: Ready to perfect your form!\n\n🌿 **Dr. Priya**: And I'll handle your nutrition & recovery!\n\nAsk us anything about exercises, diet, or recovery! 🔥",
+      content: "Hey! I'm **JAX** 🔥 — your personal AI fitness coach.\n\nI cover **everything**: workouts, form correction, nutrition, diet plans, and recovery. Ask me anything and let's crush your goals! 💪",
     },
   ]);
   const [input, setInput] = useState("");
@@ -206,18 +202,6 @@ const AICoachPage = () => {
               3D Exercise Previews + AI Chat
             </p>
           </div>
-        </div>
-        {/* Coach profiles */}
-        <div className="flex gap-2 mb-3">
-          {coachProfiles.map((c) => (
-            <div key={c.name} className="glass-card flex-1 px-3 py-2 flex items-center gap-2">
-              <span className="text-lg">{c.emoji}</span>
-              <div>
-                <p className="text-xs font-bold text-foreground">{c.name}</p>
-                <p className="text-[9px] text-muted-foreground">{c.role}</p>
-              </div>
-            </div>
-          ))}
         </div>
         {/* Tabs */}
         <div className="flex gap-2">
@@ -395,8 +379,8 @@ const AICoachPage = () => {
                   }`}>
                     {msg.role === "assistant" && (
                       <div className="flex items-center gap-1.5 mb-1.5">
-                        <Sparkles className="h-3 w-3 text-neon-purple" />
-                        <span className="text-[10px] font-bold text-neon-purple">AI COACH</span>
+                    <Sparkles className="h-3 w-3 text-neon-purple" />
+                    <span className="text-[10px] font-bold text-neon-purple">JAX</span>
                       </div>
                     )}
                     {msg.role === "assistant" ? (
