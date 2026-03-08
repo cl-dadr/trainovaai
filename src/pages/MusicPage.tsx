@@ -103,16 +103,11 @@ const MusicPage = () => {
     loadCategory(activeCategory);
   }, [activeCategory, loadCategory]);
 
-  // Persist likes & recent
-  useEffect(() => { localStorage.setItem("yt_liked", JSON.stringify([...liked])); }, [liked]);
+  // Persist recent
   useEffect(() => { localStorage.setItem("yt_recent", JSON.stringify(recentlyPlayed)); }, [recentlyPlayed]);
 
-  const toggleLike = (id: string) => {
-    setLiked((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+  const handleToggleLike = (video: YouTubeVideo | { id: string; title: string; author: string; thumbnail: string; duration: string }) => {
+    toggleLike({ id: video.id, title: video.title, author: video.author, thumbnail: video.thumbnail, duration: video.duration });
   };
 
   const handleYtPlay = (video: YouTubeVideo) => {
@@ -127,7 +122,13 @@ const MusicPage = () => {
     });
   };
 
-  const likedVideos = ytVideos.filter(v => liked.has(v.id));
+  const handlePlayLikedSong = (song: { video_id: string; title: string; author: string | null; thumbnail: string | null; duration: string | null }) => {
+    setActiveVideoId(song.video_id);
+    setActiveVideoTitle(song.title);
+    setActiveVideoAuthor(song.author || "");
+    setActiveVideoThumb(song.thumbnail || "");
+    setShowNowPlaying(true);
+  };
 
   return (
     <div className="relative min-h-screen pb-24 px-4 pt-6">
