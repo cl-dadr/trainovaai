@@ -1,4 +1,4 @@
-// Client-side YouTube search fallback using YouTube's public suggestion + oEmbed APIs
+// Client-side YouTube search fallback using multiple free APIs
 // Used when server-side search fails (quota exceeded, free APIs blocked)
 
 export interface ClientYouTubeVideo {
@@ -19,28 +19,29 @@ function formatDuration(seconds: number): string {
   return `${min}:${sec.toString().padStart(2, "0")}`;
 }
 
-// Use YouTube's public noembed/oembed to get video info
-async function getVideoInfo(videoId: string): Promise<{ title: string; author: string } | null> {
-  try {
-    const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`, {
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return {
-      title: data.title || "Unknown",
-      author: data.author_name || "Unknown",
-    };
-  } catch {
-    return null;
-  }
-}
-
-// Use Invidious API from client side (some instances allow CORS)
+// Expanded list of Invidious instances for client-side search
 const CLIENT_INVIDIOUS = [
   "https://inv.nadeko.net",
   "https://vid.puffyan.us",
   "https://invidious.lunar.icu",
+  "https://invidious.privacyredirect.com",
+  "https://iv.datura.network",
+  "https://invidious.nerdvpn.de",
+  "https://invidious.fdn.fr",
+  "https://invidious.perennialte.ch",
+  "https://yt.artemislena.eu",
+  "https://invidious.protokoll-11.de",
+];
+
+// Piped instances for client-side
+const CLIENT_PIPED = [
+  "https://pipedapi.kavin.rocks",
+  "https://pipedapi.r4fo.com",
+  "https://api.piped.yt",
+  "https://pipedapi.adminforge.de",
+  "https://pipedapi.leptons.xyz",
+  "https://pipedapi.drgns.space",
+  "https://pipedapi.in.projectsegfau.lt",
 ];
 
 async function searchInvidiousClient(query: string): Promise<ClientYouTubeVideo[]> {
@@ -48,7 +49,7 @@ async function searchInvidiousClient(query: string): Promise<ClientYouTubeVideo[
     try {
       const res = await fetch(
         `${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&sort_by=relevance`,
-        { signal: AbortSignal.timeout(8000) }
+        { signal: AbortSignal.timeout(6000) }
       );
       if (!res.ok) continue;
       const data = await res.json();
@@ -56,7 +57,7 @@ async function searchInvidiousClient(query: string): Promise<ClientYouTubeVideo[
 
       const items = data
         .filter((item: any) => item.type === "video" && item.lengthSeconds > 0)
-        .slice(0, 15)
+        .slice(0, 20)
         .map((item: any) => ({
           id: item.videoId || "",
           title: item.title || "Unknown",
@@ -78,38 +79,60 @@ async function searchInvidiousClient(query: string): Promise<ClientYouTubeVideo[
   return [];
 }
 
-// Use YouTube's public search suggestion endpoint + scrape video IDs from autocomplete
-// This is a lightweight approach that doesn't require API keys
-async function searchYouTubeSuggestions(query: string): Promise<string[]> {
-  try {
-    const res = await fetch(
-      `https://suggestqueries-clients6.youtube.com/complete/search?client=youtube&ds=yt&q=${encodeURIComponent(query)}`,
-      { signal: AbortSignal.timeout(5000) }
-    );
-    if (!res.ok) return [];
-    const text = await res.text();
-    // Parse JSONP response
-    const match = text.match(/\((\[.*\])\)/);
-    if (!match) return [];
-    const data = JSON.parse(match[1]);
-    // data[1] contains suggestion arrays
-    return (data[1] || []).map((s: any) => (Array.isArray(s) ? s[0] : s)).filter(Boolean).slice(0, 5);
-  } catch {
-    return [];
+async function searchPipedClient(query: string): Promise<ClientYouTubeVideo[]> {
+  for (const instance of CLIENT_PIPED) {
+    try {
+      const res = await fetch(
+        `${instance}/search?q=${encodeURIComponent(query)}&filter=music_songs`,
+        { signal: AbortSignal.timeout(6000) }
+      );
+      if (!res.ok) continue;
+      const data = await res.json();
+      const rawItems = data.items || data.content || [];
+      
+      const items = rawItems
+        .filter((item: any) => (item.type === "stream" || item.url) && (item.duration > 0 || item.lengthSeconds > 0))
+        .slice(0, 20)
+        .map((item: any) => {
+          const videoId = (item.url || "").replace("/watch?v=", "");
+          const secs = item.duration || item.lengthSeconds || 0;
+          return {
+            id: videoId,
+            title: item.title || "Unknown",
+            author: item.uploaderName || item.uploader || "Unknown",
+            thumbnail: item.thumbnail || `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
+            lengthSeconds: secs,
+            duration: formatDuration(secs),
+          };
+        })
+        .filter((item: ClientYouTubeVideo) => item.id);
+
+      if (items.length > 0) {
+        console.log(`Client Piped success: ${instance}, ${items.length} results`);
+        return items;
+      }
+    } catch {
+      // try next instance
+    }
   }
+  return [];
 }
 
 /**
  * Client-side YouTube search fallback.
- * Tries Invidious from browser (different IP than server = may work).
- * Returns empty array if all methods fail.
+ * Races Invidious and Piped from browser (different IP than server).
  */
 export async function clientSideYouTubeSearch(query: string): Promise<ClientYouTubeVideo[]> {
   console.log(`Client-side search fallback for: "${query}"`);
   
-  // Try Invidious from client (browser IP != server datacenter IP)
-  const results = await searchInvidiousClient(query);
-  if (results.length > 0) return results;
+  // Try both in parallel, return first success
+  const [invResults, pipedResults] = await Promise.all([
+    searchInvidiousClient(query).catch(() => [] as ClientYouTubeVideo[]),
+    searchPipedClient(query).catch(() => [] as ClientYouTubeVideo[]),
+  ]);
+
+  if (invResults.length > 0) return invResults;
+  if (pipedResults.length > 0) return pipedResults;
 
   console.log("Client-side search: no results from any source");
   return [];

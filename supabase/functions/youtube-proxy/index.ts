@@ -246,10 +246,62 @@ async function searchInvidious(query: string): Promise<any[]> {
   return [];
 }
 
+// ── YouTube HTML scraping (most reliable — direct from youtube.com) ──
+async function searchYouTubeHTML(query: string): Promise<any[]> {
+  try {
+    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}&sp=EgIQAQ%253D%253D`;
+    const res = await tryFetch(url, 10000);
+    if (!res) return [];
+    const html = await res.text();
+    
+    // Extract ytInitialData JSON from the HTML
+    const dataMatch = html.match(/var ytInitialData = ({.*?});<\/script>/s);
+    if (!dataMatch) return [];
+    
+    const data = JSON.parse(dataMatch[1]);
+    const contents = data?.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents;
+    if (!contents) return [];
+    
+    const items: any[] = [];
+    for (const section of contents) {
+      const videoRenderers = section?.itemSectionRenderer?.contents || [];
+      for (const entry of videoRenderers) {
+        const vr = entry?.videoRenderer;
+        if (!vr?.videoId) continue;
+        
+        const lengthText = vr?.lengthText?.simpleText || "";
+        const parts = lengthText.split(":").map(Number);
+        let lengthSeconds = 0;
+        if (parts.length === 3) lengthSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+        else if (parts.length === 2) lengthSeconds = parts[0] * 60 + parts[1];
+        
+        if (lengthSeconds <= 0) continue; // Skip live streams
+        
+        items.push({
+          id: vr.videoId,
+          title: vr.title?.runs?.[0]?.text || "Unknown",
+          author: vr.ownerText?.runs?.[0]?.text || vr.shortBylineText?.runs?.[0]?.text || "Unknown",
+          thumbnail: `https://i.ytimg.com/vi/${vr.videoId}/mqdefault.jpg`,
+          lengthSeconds,
+        });
+      }
+    }
+    
+    if (items.length > 0) {
+      console.log(`YouTube HTML scrape success: ${items.length} results`);
+    }
+    return items.slice(0, 20);
+  } catch (e) {
+    console.error("YouTube HTML scrape error:", e);
+    return [];
+  }
+}
+
 // ── Combined free API search with race ──
 async function searchFreeAPIs(query: string): Promise<any[]> {
-  // Race Piped vs Invidious — first one with results wins
+  // Race all free methods — first one with results wins
   const result = await Promise.any([
+    searchYouTubeHTML(query).then(r => { if (r.length === 0) throw new Error("empty"); return r; }),
     searchPiped(query).then(r => { if (r.length === 0) throw new Error("empty"); return r; }),
     searchInvidious(query).then(r => { if (r.length === 0) throw new Error("empty"); return r; }),
   ]).catch(() => []);
