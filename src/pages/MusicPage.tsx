@@ -1052,6 +1052,13 @@ const MusicPage = () => {
                   <button onClick={handleSkipNext} className="p-1">
                     <SkipForward className="h-3.5 w-3.5 text-foreground" />
                   </button>
+                  <button onClick={() => setRepeatMode(prev => prev === 'off' ? 'one' : 'off')} className="p-1" title={repeatMode === 'one' ? 'Repeat: On' : 'Repeat: Off'}>
+                    {repeatMode === 'one' ? (
+                      <Repeat1 className="h-3.5 w-3.5 text-primary" />
+                    ) : (
+                      <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
+                    )}
+                  </button>
                 </div>
               </div>
 
