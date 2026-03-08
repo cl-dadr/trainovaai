@@ -11,6 +11,8 @@ const PIPED_INSTANCES = [
   "https://api.piped.yt",
   "https://pipedapi.adminforge.de",
   "https://pipedapi.in.projectsegfau.lt",
+  "https://pipedapi.leptons.xyz",
+  "https://pipedapi.drgns.space",
 ];
 
 const INVIDIOUS_INSTANCES = [
@@ -18,6 +20,8 @@ const INVIDIOUS_INSTANCES = [
   "https://vid.puffyan.us",
   "https://invidious.lunar.icu",
   "https://invidious.privacyredirect.com",
+  "https://iv.datura.network",
+  "https://invidious.nerdvpn.de",
 ];
 
 const CURATED_VIDEOS: Record<string, Array<{id: string; title: string; author: string; lengthSeconds: number}>> = {

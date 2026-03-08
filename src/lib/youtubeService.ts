@@ -30,16 +30,26 @@ function mapItems(items: any[]): YouTubeVideo[] {
   }));
 }
 
+export interface YouTubeSearchResult {
+  items: YouTubeVideo[];
+  source: 'youtube_api' | 'free_api' | 'curated';
+}
+
 export async function searchYouTube(query: string, category?: string): Promise<YouTubeVideo[]> {
+  const result = await searchYouTubeWithSource(query, category);
+  return result.items;
+}
+
+export async function searchYouTubeWithSource(query: string, category?: string): Promise<YouTubeSearchResult> {
   try {
     const { data, error } = await supabase.functions.invoke("youtube-proxy", {
       body: { action: "search", query, category },
     });
     if (error) throw error;
-    return mapItems(data?.items);
+    return { items: mapItems(data?.items), source: data?.source || 'curated' };
   } catch (error) {
     console.error("YouTube search error:", error);
-    return [];
+    return { items: [], source: 'curated' };
   }
 }
 
