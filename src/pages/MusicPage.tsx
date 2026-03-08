@@ -184,6 +184,18 @@ const MusicPage = () => {
     }
   };
 
+  const seekForward = () => {
+    const iframe = iframeRef.current;
+    if (!iframe?.contentWindow) return;
+    iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "seekBy", args: [10] }), '*');
+  };
+
+  const seekBackward = () => {
+    const iframe = iframeRef.current;
+    if (!iframe?.contentWindow) return;
+    iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "seekBy", args: [-10] }), '*');
+  };
+
   const openSaveModal = (video: { id: string; title: string; author: string; thumbnail: string; duration: string }) => {
     setSongToSave(video);
     setShowSaveModal(true);
