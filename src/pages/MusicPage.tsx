@@ -506,8 +506,8 @@ const MusicPage = () => {
                   <p className="text-xs font-semibold text-foreground truncate">{activeVideoTitle}</p>
                   <p className="text-[10px] text-muted-foreground truncate">{activeVideoAuthor}</p>
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); toggleLike(activeVideoId); }} className="p-1">
-                  <Heart className={`h-3.5 w-3.5 ${liked.has(activeVideoId) ? "text-destructive fill-current" : "text-muted-foreground"}`} />
+                <button onClick={(e) => { e.stopPropagation(); handleToggleLike({ id: activeVideoId!, title: activeVideoTitle, author: activeVideoAuthor, thumbnail: activeVideoThumb, duration: "" }); }} className="p-1">
+                  <Heart className={`h-3.5 w-3.5 ${isLiked(activeVideoId!) ? "text-destructive fill-current" : "text-muted-foreground"}`} />
                 </button>
                 <button onClick={(e) => { e.stopPropagation(); setShowNowPlaying(true); }}
                   className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center neon-glow">
