@@ -1024,17 +1024,31 @@ const MusicPage = () => {
             </h2>
             <div className="flex items-center gap-2">
               {searchSource && isSearchMode && (
-                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
-                  searchSource === 'youtube_api' ? 'bg-red-500/20 text-red-400' :
-                  searchSource === 'free_api' ? 'bg-green-500/20 text-green-400' :
-                  searchSource === 'client_fallback' ? 'bg-blue-500/20 text-blue-400' :
-                  'bg-yellow-500/20 text-yellow-400'
-                }`}>
-                  {searchSource === 'youtube_api' ? '⚡ YT API' :
-                   searchSource === 'free_api' ? '🌐 Live' :
-                   searchSource === 'client_fallback' ? '🔄 Client' :
-                   '📦 Curated'}
-                </span>
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full cursor-help ${
+                        searchSource === 'youtube_api' ? 'bg-red-500/20 text-red-400' :
+                        searchSource === 'free_api' ? 'bg-green-500/20 text-green-400' :
+                        searchSource === 'client_fallback' ? 'bg-blue-500/20 text-blue-400' :
+                        'bg-yellow-500/20 text-yellow-400'
+                      }`}>
+                        {searchSource === 'youtube_api' ? '⚡ YT API' :
+                         searchSource === 'free_api' ? '🌐 Live' :
+                         searchSource === 'client_fallback' ? '🔄 Client' :
+                         '📦 Curated'}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[200px] text-center">
+                      <p className="text-xs">
+                        {searchSource === 'youtube_api' ? 'Results from YouTube Data API — real-time, quota-limited.' :
+                         searchSource === 'free_api' ? 'Live results from free YouTube frontends on server.' :
+                         searchSource === 'client_fallback' ? 'Live results fetched from your browser as a fallback.' :
+                         'Pre-curated library — live search unavailable right now.'}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
               <span className="text-[10px] text-muted-foreground">{ytVideos.length} tracks</span>
             </div>
