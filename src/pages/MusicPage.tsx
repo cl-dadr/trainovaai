@@ -31,18 +31,18 @@ const playlists = [
 // Global iconic artists - India & USA
 const favoriteArtists = [
   // 🇮🇳 India
-  { name: "Arijit Singh", image: "https://i.ytimg.com/vi/hoNb6fQ1aBI/mqdefault.jpg", query: "Arijit Singh best songs" },
-  { name: "A.R. Rahman", image: "https://i.ytimg.com/vi/kYgJ1BKajkk/mqdefault.jpg", query: "AR Rahman top hits" },
-  { name: "Honey Singh", image: "https://i.ytimg.com/vi/DGmUKgrS45c/mqdefault.jpg", query: "Yo Yo Honey Singh top songs" },
-  { name: "Badshah", image: "https://i.ytimg.com/vi/VPigFLzuDBQ/mqdefault.jpg", query: "Badshah latest songs" },
-  { name: "Shreya Ghoshal", image: "https://i.ytimg.com/vi/07FBG_ixnfE/mqdefault.jpg", query: "Shreya Ghoshal best songs" },
-  { name: "Diljit Dosanjh", image: "https://i.ytimg.com/vi/OEmSHxiT3BY/mqdefault.jpg", query: "Diljit Dosanjh top songs" },
+  { name: "Arijit Singh", image: "https://ui-avatars.com/api/?name=Arijit+Singh&background=e74c3c&color=fff&size=128&bold=true", query: "Arijit Singh best songs" },
+  { name: "A.R. Rahman", image: "https://ui-avatars.com/api/?name=AR+Rahman&background=f39c12&color=fff&size=128&bold=true", query: "AR Rahman top hits" },
+  { name: "Honey Singh", image: "https://ui-avatars.com/api/?name=Honey+Singh&background=9b59b6&color=fff&size=128&bold=true", query: "Yo Yo Honey Singh top songs" },
+  { name: "Badshah", image: "https://ui-avatars.com/api/?name=Badshah&background=1abc9c&color=fff&size=128&bold=true", query: "Badshah latest songs" },
+  { name: "Shreya Ghoshal", image: "https://ui-avatars.com/api/?name=Shreya+G&background=e91e63&color=fff&size=128&bold=true", query: "Shreya Ghoshal best songs" },
+  { name: "Diljit Dosanjh", image: "https://ui-avatars.com/api/?name=Diljit+D&background=ff5722&color=fff&size=128&bold=true", query: "Diljit Dosanjh top songs" },
   // 🇺🇸 USA
-  { name: "Drake", image: "https://i.ytimg.com/vi/uxpDa-c-4Mc/mqdefault.jpg", query: "Drake top hits" },
-  { name: "The Weeknd", image: "https://i.ytimg.com/vi/4NRXx6U8ABQ/mqdefault.jpg", query: "The Weeknd best songs" },
-  { name: "Eminem", image: "https://i.ytimg.com/vi/YVkUvmDQ3HY/mqdefault.jpg", query: "Eminem greatest hits" },
-  { name: "Taylor Swift", image: "https://i.ytimg.com/vi/IC8JjO4jcZ0/mqdefault.jpg", query: "Taylor Swift popular songs" },
-  { name: "Post Malone", image: "https://i.ytimg.com/vi/UceaB4D0jpo/mqdefault.jpg", query: "Post Malone best songs" },
+  { name: "Drake", image: "https://ui-avatars.com/api/?name=Drake&background=2c3e50&color=fff&size=128&bold=true", query: "Drake top hits" },
+  { name: "The Weeknd", image: "https://ui-avatars.com/api/?name=The+Weeknd&background=c0392b&color=fff&size=128&bold=true", query: "The Weeknd best songs" },
+  { name: "Eminem", image: "https://ui-avatars.com/api/?name=Eminem&background=34495e&color=fff&size=128&bold=true", query: "Eminem greatest hits" },
+  { name: "Taylor Swift", image: "https://ui-avatars.com/api/?name=Taylor+S&background=8e44ad&color=fff&size=128&bold=true", query: "Taylor Swift popular songs" },
+  { name: "Post Malone", image: "https://ui-avatars.com/api/?name=Post+M&background=2980b9&color=fff&size=128&bold=true", query: "Post Malone best songs" },
   { name: "Travis Scott", image: "https://i.ytimg.com/vi/eb2dJmSEaps/mqdefault.jpg", query: "Travis Scott top hits" },
 ];
 
