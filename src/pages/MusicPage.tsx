@@ -58,7 +58,7 @@ const MusicPage = () => {
   const [activeVideoTitle, setActiveVideoTitle] = useState("");
   const [activeVideoAuthor, setActiveVideoAuthor] = useState("");
   const [activeVideoThumb, setActiveVideoThumb] = useState("");
-  const [showNowPlaying, setShowNowPlayie);
+  const [showNowPlaying, setShowNowPlaying] = useState(false);
   const [recentlyPlayed, setRecentlyPlayed] = useState<YouTubeVideo[]>(() => {
     try { return JSON.parse(localStorage.getItem("yt_recent") || "[]"); } catch { return []; }
   });
