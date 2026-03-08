@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Music, Play, Pause, Heart, Loader2, Youtube, ChevronRight, ChevronDown, Shuffle, SkipBack, SkipForward, MoreHorizontal, X, ListMusic, Flame, Zap, Dumbbell, Wind, Plus, Trash2, FolderPlus } from "lucide-react";
+import { Search, Music, Play, Pause, Heart, Loader2, Youtube, ChevronRight, ChevronDown, Shuffle, SkipBack, SkipForward, MoreHorizontal, X, ListMusic, Flame, Zap, Dumbbell, Wind, Plus, Trash2, FolderPlus, RotateCcw, RotateCw } from "lucide-react";
 import { searchYouTube, type YouTubeVideo } from "@/lib/youtubeService";
 import { useLikedSongs } from "@/hooks/useLikedSongs";
 import { usePlaylists, type PlaylistSong } from "@/hooks/usePlaylists";
@@ -182,6 +182,18 @@ const MusicPage = () => {
     if (idx > 0) {
       handleYtPlay(ytVideos[idx - 1]);
     }
+  };
+
+  const seekForward = () => {
+    const iframe = iframeRef.current;
+    if (!iframe?.contentWindow) return;
+    iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "seekBy", args: [10] }), '*');
+  };
+
+  const seekBackward = () => {
+    const iframe = iframeRef.current;
+    if (!iframe?.contentWindow) return;
+    iframe.contentWindow.postMessage(JSON.stringify({ event: "command", func: "seekBy", args: [-10] }), '*');
   };
 
   const openSaveModal = (video: { id: string; title: string; author: string; thumbnail: string; duration: string }) => {
@@ -904,8 +916,11 @@ const MusicPage = () => {
                   <Heart className={`h-3.5 w-3.5 ${isLiked(activeVideoId!) ? "text-destructive fill-current" : "text-muted-foreground"}`} />
                 </button>
                 <div className="flex items-center gap-0.5">
-                  <button onClick={handleSkipPrev} className="p-1.5">
+                  <button onClick={handleSkipPrev} className="p-1">
                     <SkipBack className="h-3.5 w-3.5 text-foreground" />
+                  </button>
+                  <button onClick={seekBackward} className="p-1" title="-10s">
+                    <RotateCcw className="h-3 w-3 text-muted-foreground" />
                   </button>
                   <button onClick={togglePlayPause} className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center neon-glow">
                     {isYtPlaying ? (
@@ -914,7 +929,10 @@ const MusicPage = () => {
                       <Play className="h-3.5 w-3.5 text-primary-foreground ml-0.5" />
                     )}
                   </button>
-                  <button onClick={handleSkipNext} className="p-1.5">
+                  <button onClick={seekForward} className="p-1" title="+10s">
+                    <RotateCw className="h-3 w-3 text-muted-foreground" />
+                  </button>
+                  <button onClick={handleSkipNext} className="p-1">
                     <SkipForward className="h-3.5 w-3.5 text-foreground" />
                   </button>
                 </div>
