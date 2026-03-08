@@ -10,18 +10,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserStats } from "@/hooks/useUserStats";
 import { showRandomInspiration, startInspiringNotifications } from "@/lib/inspiringNotifications";
 
-const todayProgress = [
-  { emoji: "💪", label: "Workout", subLabel: "Track it!", color: "from-neon-green/20 to-neon-cyan/10" },
-  { emoji: "💧", label: "Water", subLabel: "Stay hydrated", color: "from-neon-cyan/20 to-neon-cyan/5" },
-  { emoji: "🤩", label: "Mood", subLabel: "Great", color: "from-neon-orange/20 to-neon-orange/5" },
-];
-
-const aiHints = [
-  "You're getting stronger every session. 🔥",
-  "Try a quick 5 minute workout. 💪",
-  "Consistency beats intensity — keep showing up!",
-];
-
 const quickNav = [
   { icon: PersonStanding, label: "Run", path: "/running", color: "text-neon-cyan" },
   { icon: Bot, label: "AI Coach", path: "/jax", color: "text-neon-purple" },
@@ -39,20 +27,7 @@ const quickNav2 = [
 const HomePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { totalReps, avgFormScore, longestStreak, currentStreak, loading } = useUserStats();
-
-  useEffect(() => {
-    startInspiringNotifications();
-  }, []);
-
-  const stats = [
-    { icon: Trophy, value: loading ? "..." : String(totalReps), label: "Total Reps", color: "text-neon-cyan" },
-    { icon: Target, value: loading ? "..." : `${avgFormScore}%`, label: "Accuracy", color: "text-neon-purple" },
-    { icon: Flame, value: loading ? "..." : String(longestStreak), label: "Best Streak", color: "text-neon-orange" },
-  ];
-
-  const nextMilestone = [100, 250, 500, 1000, 2500, 5000].find(m => m > totalReps) || 10000;
-  const milestoneProgress = Math.min((totalReps / nextMilestone) * 100, 100);
+  const { currentStreak, loading } = useUserStats();
 
   return (
     <div className="relative min-h-screen pb-24 px-4 pt-6">
