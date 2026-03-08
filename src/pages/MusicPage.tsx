@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Music, Play, Pause, Heart, Loader2, Youtube, ChevronRight, SkipBack, SkipForward, ChevronDown, MoreHorizontal, X, ListMusic, Flame, Zap, Dumbbell, Wind, Plus, Trash2, FolderPlus } from "lucide-react";
+import { Search, Music, Play, Pause, Heart, Loader2, Youtube, ChevronRight, SkipBack, SkipForwardreHorizontal, X, ListMusic, Flame, Zap, Dumbbell, Wind, Plus, Trash2, FolderPlus } from "lucide-react";
 import { searchYouTube, type YouTubeVideo } from "@/lib/youtubeService";
 import { useLikedSongs } from "@/hooks/useLikedSongs";
 import { usePlaylists, type PlaylistSong } from "@/hooks/usePlaylists";
@@ -58,7 +58,7 @@ const MusicPage = () => {
   const [activeVideoTitle, setActiveVideoTitle] = useState("");
   const [activeVideoAuthor, setActiveVideoAuthor] = useState("");
   const [activeVideoThumb, setActiveVideoThumb] = useState("");
-  const [showNowPlaying, setShowNowPlaying] = useState(false);
+  const [showNowPlaying, setShowNowPlayie);
   const [recentlyPlayed, setRecentlyPlayed] = useState<YouTubeVideo[]>(() => {
     try { return JSON.parse(localStorage.getItem("yt_recent") || "[]"); } catch { return []; }
   });
