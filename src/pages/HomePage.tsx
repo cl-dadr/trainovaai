@@ -23,10 +23,10 @@ const aiHints = [
 ];
 
 const quickNav = [
-  { icon: Footprints, label: "Activity", path: "/activity", color: "text-neon-green" },
   { icon: PersonStanding, label: "Run", path: "/running", color: "text-neon-cyan" },
   { icon: Bot, label: "AI Coach", path: "/jax", color: "text-neon-purple" },
   { icon: Dumbbell, label: "Planner", path: "/planner", color: "text-neon-orange" },
+  { icon: CheckSquare, label: "Habits", path: "/habits", color: "text-neon-pink" },
 ];
 
 const quickNav2 = [
