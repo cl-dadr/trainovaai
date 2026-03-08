@@ -56,6 +56,101 @@ export type Database = {
         }
         Relationships: []
       }
+      habit_completions: {
+        Row: {
+          completed: boolean
+          created_at: string
+          date: string
+          habit_id: string
+          id: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          date?: string
+          habit_id: string
+          id?: string
+          user_id: string
+          value?: number
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          date?: string
+          habit_id?: string
+          id?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_completions_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habits: {
+        Row: {
+          active: boolean
+          ai_suggested: boolean
+          color: string
+          created_at: string
+          difficulty: string
+          frequency: string
+          icon: string
+          id: string
+          name: string
+          reminder_enabled: boolean
+          reminder_time: string | null
+          target: number
+          time_of_day: string | null
+          unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          ai_suggested?: boolean
+          color?: string
+          created_at?: string
+          difficulty?: string
+          frequency?: string
+          icon?: string
+          id?: string
+          name: string
+          reminder_enabled?: boolean
+          reminder_time?: string | null
+          target?: number
+          time_of_day?: string | null
+          unit?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          ai_suggested?: boolean
+          color?: string
+          created_at?: string
+          difficulty?: string
+          frequency?: string
+          icon?: string
+          id?: string
+          name?: string
+          reminder_enabled?: boolean
+          reminder_time?: string | null
+          target?: number
+          time_of_day?: string | null
+          unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       liked_songs: {
         Row: {
           author: string | null

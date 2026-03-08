@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.ai-coach]
 verify_jwt = false
+
+[functions.habit-suggestions]
+verify_jwt = false
