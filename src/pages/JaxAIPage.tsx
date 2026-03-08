@@ -20,10 +20,6 @@ const quickCommands = [
   { icon: Droplets, label: "Recovery tips", message: "How to recover faster after an intense workout?" },
 ];
 
-const coachProfiles = [
-  { name: "Dr. Arjun", emoji: "💪", role: "Workout & Form Expert", gradient: "gradient-primary" },
-  { name: "Dr. Priya", emoji: "🌿", role: "Nutrition & Wellness", gradient: "gradient-purple" },
-];
 
 const JaxAIPage = () => {
   const { user } = useAuth();
