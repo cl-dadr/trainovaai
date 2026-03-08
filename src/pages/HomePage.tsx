@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Zap, Trophy, Target, Flame, Sparkles, User,
   Footprints, BarChart3, Bot, Bell, PersonStanding,
+  Apple, Brain, CheckSquare, TrendingUp, Dumbbell,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserStats } from "@/hooks/useUserStats";
