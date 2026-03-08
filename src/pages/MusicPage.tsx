@@ -58,6 +58,7 @@ const MusicPage = () => {
   const [activeVideoTitle, setActiveVideoTitle] = useState("");
   const [activeVideoAuthor, setActiveVideoAuthor] = useState("");
   const [activeVideoThumb, setActiveVideoThumb] = useState("");
+  const [activeVideoDuration, setActiveVideoDuration] = useState("");
   const [isYtPlaying, setIsYtPlaying] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [showNowPlaying, setShowNowPlaying] = useState(false);
