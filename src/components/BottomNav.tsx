@@ -1,10 +1,10 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, BotMusic, User, Camera } from "lucide-react";
+import { Home, Bot, Music, User, Camera } from "lucide-react";
 import { motion } from "framer-motion";
 
 const tabs = [
   { path: "/", icon: Home, label: "Home" },
-  { path: "/streak", icon: Flame, label: "Streak" },
+  { path: "/coach", icon: Bot, label: "Coach" },
   { path: "/camera", icon: Camera, label: "", isCenter: true },
   { path: "/music", icon: Music, label: "Music" },
   { path: "/profile", icon: User, label: "Profile" },
