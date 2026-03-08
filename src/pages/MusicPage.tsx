@@ -101,10 +101,12 @@ const MusicPage = () => {
   const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) return;
     setLoading(true);
-    const results = await searchYouTube(searchQuery, activeCategory === "All" ? "Workout" : activeCategory);
+    setIsSearchMode(true);
+    // Search all YouTube without category filter for broader results
+    const results = await searchYouTube(searchQuery);
     setYtVideos(results);
     setLoading(false);
-  }, [searchQuery, activeCategory]);
+  }, [searchQuery]);
 
   const handleArtistClick = useCallback(async (artist: typeof favoriteArtists[0]) => {
     setLoading(true);
