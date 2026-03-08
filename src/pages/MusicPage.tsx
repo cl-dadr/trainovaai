@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Music, Play, Pause, Heart, Loader2, Youtube, ChevronRight, ChevronDown, Shuffle, SkipBack, SkipForward, MoreHorizontal, X, ListMusic, Flame, Zap, Dumbbell, Wind, Plus, Trash2, FolderPlus } from "lucide-react";
 import { searchYouTube, type YouTubeVideo } from "@/lib/youtubeService";
