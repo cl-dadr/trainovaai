@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Music, Play, Pause, Heart, Loader2, Youtube, ChevronRight, Shuffle, SkipBack, SkipForward, Repeat, ChevronDown, MoreHorizontal, X, ListMusic, Flame, Zap, Dumbbell, Wind } from "lucide-react";
+import { Search, Music, Play, Pause, Heart, Loader2, Youtube, ChevronRight, Shuffle, SkipBack, SkipForward, Repeat, ChevronDown, MoreHorizontal, X, ListMusic, Flame, Zap, Dumbbell, Wind, Library } from "lucide-react";
 import { searchYouTube, type YouTubeVideo } from "@/lib/youtubeService";
+import { useLikedSongs } from "@/hooks/useLikedSongs";
 
 const categories = [
   { name: "All", icon: Flame },
