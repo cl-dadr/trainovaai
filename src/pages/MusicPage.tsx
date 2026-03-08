@@ -195,7 +195,7 @@ const MusicPage = () => {
           onStateChange: (event: any) => {
             if (event.data === 1) { setIsYtPlaying(true); startProgressTracking(); }
             else if (event.data === 2) { setIsYtPlaying(false); }
-            else if (event.data === 0) { setIsYtPlaying(false); if (progressIntervalRef.current) clearInterval(progressIntervalRef.current); }
+            else if (event.data === 0) { setIsYtPlaying(false); if (progressIntervalRef.current) clearInterval(progressIntervalRef.current); onEndedRef.current(); }
           },
           onReady: () => { startProgressTracking(); },
         },
