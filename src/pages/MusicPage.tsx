@@ -131,7 +131,7 @@ const MusicPage = () => {
     setActiveVideoTitle(video.title);
     setActiveVideoAuthor(video.author);
     setActiveVideoThumb(video.thumbnail);
-    setShowNowPlaying(true);
+    setIsYtPlaying(true);
     setRecentlyPlayed(prev => {
       const filtered = prev.filter(v => v.id !== video.id);
       return [video, ...filtered].slice(0, 15);
@@ -143,7 +143,7 @@ const MusicPage = () => {
     setActiveVideoTitle(song.title);
     setActiveVideoAuthor(song.author || "");
     setActiveVideoThumb(song.thumbnail || "");
-    setShowNowPlaying(true);
+    setIsYtPlaying(true);
   };
 
   const handlePlayPlaylistSong = (song: PlaylistSong) => {
@@ -151,7 +151,19 @@ const MusicPage = () => {
     setActiveVideoTitle(song.title);
     setActiveVideoAuthor(song.author || "");
     setActiveVideoThumb(song.thumbnail || "");
-    setShowNowPlaying(true);
+    setIsYtPlaying(true);
+  };
+
+  const togglePlayPause = () => {
+    const iframe = iframeRef.current;
+    if (!iframe?.contentWindow) return;
+    if (isYtPlaying) {
+      iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+      setIsYtPlaying(false);
+    } else {
+      iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+      setIsYtPlaying(true);
+    }
   };
 
   const openSaveModal = (video: { id: string; title: string; author: string; thumbnail: string; duration: string }) => {
