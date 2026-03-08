@@ -70,10 +70,6 @@ const quickCommands = [
   { icon: Droplets, label: "Recovery", message: "Best recovery techniques after intense calisthenics" },
 ];
 
-const coachProfiles = [
-  { name: "Dr. Arjun", emoji: "💪", role: "Workout & Form", gradient: "gradient-primary" },
-  { name: "Dr. Priya", emoji: "🌿", role: "Nutrition & Recovery", gradient: "gradient-purple" },
-];
 
 const AICoachPage = () => {
   const { user } = useAuth();
