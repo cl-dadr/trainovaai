@@ -89,6 +89,77 @@ export type Database = {
         }
         Relationships: []
       }
+      playlist_songs: {
+        Row: {
+          added_at: string
+          author: string | null
+          duration: string | null
+          id: string
+          playlist_id: string
+          thumbnail: string | null
+          title: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          added_at?: string
+          author?: string | null
+          duration?: string | null
+          id?: string
+          playlist_id: string
+          thumbnail?: string | null
+          title: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          added_at?: string
+          author?: string | null
+          duration?: string | null
+          id?: string
+          playlist_id?: string
+          thumbnail?: string | null
+          title?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_songs_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playlists: {
+        Row: {
+          created_at: string
+          emoji: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
