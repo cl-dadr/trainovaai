@@ -60,7 +60,12 @@ const MusicPage = () => {
   const [activeVideoThumb, setActiveVideoThumb] = useState("");
   const [activeVideoDuration, setActiveVideoDuration] = useState("");
   const [isYtPlaying, setIsYtPlaying] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [ytProgress, setYtProgress] = useState(0);
+  const [ytCurrentTime, setYtCurrentTime] = useState(0);
+  const [ytDurationSec, setYtDurationSec] = useState(0);
+  const ytPlayerRef = useRef<any>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
   const [showNowPlaying, setShowNowPlaying] = useState(false);
   const [recentlyPlayed, setRecentlyPlayed] = useState<YouTubeVideo[]>(() => {
     try { return JSON.parse(localStorage.getItem("yt_recent") || "[]"); } catch { return []; }
