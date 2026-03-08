@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Music, Play, Pause, Heart, Loader2, Youtube, ChevronRight, ChevronDown, Shuffle, SkipBack, SkipForward, MoreHorizontal, X, ListMusic, Flame, Zap, Dumbbell, Wind, Plus, Trash2, FolderPlus, RotateCcw, RotateCw, Repeat, Repeat1 } from "lucide-react";
+import { Search, Music, Play, Pause, Heart, Loader2, Youtube, ChevronRight, ChevronDown, Shuffle, SkipBack, SkipForward, MoreHorizontal, X, ListMusic, Flame, Zap, Dumbbell, Wind, Plus, Trash2, FolderPlus, RotateCcw, RotateCw, Repeat, Repeat1, Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { searchYouTube, searchYouTubeWithSource, type YouTubeVideo } from "@/lib/youtubeService";
 import { useLikedSongs } from "@/hooks/useLikedSongs";
 import { usePlaylists, type PlaylistSong } from "@/hooks/usePlaylists";
