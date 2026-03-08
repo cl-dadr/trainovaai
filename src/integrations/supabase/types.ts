@@ -297,6 +297,105 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_logs: {
+        Row: {
+          calories: number
+          carbs: number
+          created_at: string
+          date: string
+          emoji: string | null
+          fats: number
+          id: string
+          items: string | null
+          meal_name: string
+          meal_type: string
+          protein: number
+          user_id: string
+        }
+        Insert: {
+          calories?: number
+          carbs?: number
+          created_at?: string
+          date?: string
+          emoji?: string | null
+          fats?: number
+          id?: string
+          items?: string | null
+          meal_name: string
+          meal_type: string
+          protein?: number
+          user_id: string
+        }
+        Update: {
+          calories?: number
+          carbs?: number
+          created_at?: string
+          date?: string
+          emoji?: string | null
+          fats?: number
+          id?: string
+          items?: string | null
+          meal_name?: string
+          meal_type?: string
+          protein?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      nutrition_profiles: {
+        Row: {
+          activity_level: string
+          age: number
+          body_goal: string
+          carbs_target: number
+          created_at: string
+          diet_preference: string
+          fats_target: number
+          gender: string
+          height_cm: number
+          id: string
+          protein_target: number
+          tdee_calories: number
+          updated_at: string
+          user_id: string
+          weight_kg: number
+        }
+        Insert: {
+          activity_level?: string
+          age: number
+          body_goal?: string
+          carbs_target?: number
+          created_at?: string
+          diet_preference?: string
+          fats_target?: number
+          gender?: string
+          height_cm: number
+          id?: string
+          protein_target?: number
+          tdee_calories?: number
+          updated_at?: string
+          user_id: string
+          weight_kg: number
+        }
+        Update: {
+          activity_level?: string
+          age?: number
+          body_goal?: string
+          carbs_target?: number
+          created_at?: string
+          diet_preference?: string
+          fats_target?: number
+          gender?: string
+          height_cm?: number
+          id?: string
+          protein_target?: number
+          tdee_calories?: number
+          updated_at?: string
+          user_id?: string
+          weight_kg?: number
+        }
+        Relationships: []
+      }
       playlist_songs: {
         Row: {
           added_at: string
@@ -438,6 +537,30 @@ export type Database = {
           total_reps?: number
           total_workouts?: number
           total_xp?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      water_logs: {
+        Row: {
+          date: string
+          glasses: number
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          date?: string
+          glasses?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          date?: string
+          glasses?: number
+          id?: string
           updated_at?: string
           user_id?: string
         }
