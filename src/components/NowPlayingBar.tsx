@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, SkipForward, SkipBack, X } from "lucide-react";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useLocation } from "react-router-dom";
 
 function formatTime(sec: number): string {
   if (!sec || isNaN(sec)) return "0:00";
@@ -11,8 +12,10 @@ function formatTime(sec: number): string {
 
 const NowPlayingBar = () => {
   const { currentTrack, isPlaying, progress, currentTime, duration, pause, resume, next, prev, seek, stop } = useAudioPlayer();
+  const location = useLocation();
 
-  if (!currentTrack) return null;
+  // Hide on music page (it has its own mini player)
+  if (!currentTrack || location.pathname === "/music") return null;
 
   return (
     <AnimatePresence>
@@ -22,13 +25,13 @@ const NowPlayingBar = () => {
         exit={{ y: 100, opacity: 0 }}
         className="fixed bottom-16 left-0 right-0 z-40 px-3"
       >
-        <div className="max-w-md mx-auto glass-card p-3 border border-neon-green/20" style={{ boxShadow: "0 0 20px hsl(160 100% 50% / 0.15)" }}>
+        <div className="max-w-md mx-auto glass-card p-3 border border-primary/20 rounded-2xl" style={{ boxShadow: "0 0 20px hsl(var(--primary) / 0.15)" }}>
           {/* Waveform */}
           <div className="flex items-end gap-[2px] h-5 justify-center mb-2">
             {Array.from({ length: 30 }).map((_, i) => (
               <motion.div
                 key={i}
-                className="w-[2px] rounded-full gradient-primary"
+                className="w-[2px] rounded-full bg-primary"
                 animate={isPlaying ? {
                   height: [3, 6 + Math.random() * 14, 3],
                 } : { height: 3 }}
@@ -45,9 +48,9 @@ const NowPlayingBar = () => {
           <div className="flex items-center gap-3">
             {/* Album Art */}
             {currentTrack.artworkUrl ? (
-              <img src={currentTrack.artworkUrl} alt={currentTrack.title} className="h-11 w-11 rounded-lg object-cover shrink-0" />
+              <img src={currentTrack.artworkUrl} alt={currentTrack.title} className="h-11 w-11 rounded-xl object-cover shrink-0 border border-border/10" />
             ) : (
-              <div className="h-11 w-11 rounded-lg gradient-purple shrink-0" />
+              <div className="h-11 w-11 rounded-xl gradient-primary shrink-0" />
             )}
 
             {/* Track Info */}
