@@ -208,8 +208,8 @@ const MusicPage = () => {
 
             {/* Action Buttons Row */}
             <div className="flex items-center gap-2 px-6 mt-4 overflow-x-auto no-scrollbar">
-              <button onClick={() => toggleLike(activeVideoId)} className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/30 bg-secondary/30 shrink-0">
-                <Heart className={`h-4 w-4 ${liked.has(activeVideoId) ? "text-destructive fill-current" : "text-foreground"}`} />
+              <button onClick={() => handleToggleLike({ id: activeVideoId, title: activeVideoTitle, author: activeVideoAuthor, thumbnail: activeVideoThumb, duration: "" })} className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/30 bg-secondary/30 shrink-0">
+                <Heart className={`h-4 w-4 ${isLiked(activeVideoId) ? "text-destructive fill-current" : "text-foreground"}`} />
                 <span className="text-xs text-foreground font-medium">Like</span>
               </button>
               <button className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/30 bg-secondary/30 shrink-0">
