@@ -55,7 +55,7 @@ const MusicPage = () => {
     try { return JSON.parse(localStorage.getItem("yt_recent") || "[]"); } catch { return []; }
   });
   const [activePlaylist, setActivePlaylist] = useState<string | null>(null);
-  const [showSearch, setShowSearch] = useState(false);
+  const [isSearchMode, setIsSearchMode] = useState(false);
 
   const loadCategory = useCallback(async (cat: string) => {
     setLoading(true);
@@ -225,45 +225,38 @@ const MusicPage = () => {
       </AnimatePresence>
 
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 flex items-center justify-between mb-5">
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-destructive/20 flex items-center justify-center">
             <Youtube className="h-5 w-5 text-destructive" />
           </div>
           <div>
             <h1 className="text-xl font-display font-bold text-foreground">GYM BEATS</h1>
-            <p className="text-[10px] text-muted-foreground">YouTube workout music 🔥</p>
+            <p className="text-[10px] text-muted-foreground">Play any YouTube song 🎵</p>
           </div>
         </div>
-        <button onClick={() => setShowSearch(!showSearch)} className="p-2 rounded-xl glass-card">
-          <Search className="h-4 w-4 text-muted-foreground" />
-        </button>
       </motion.div>
 
-      {/* Search */}
-      <AnimatePresence>
-        {showSearch && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="relative z-10 mb-4 overflow-hidden">
-            <div className="glass-card flex items-center gap-3 px-4 py-3 rounded-xl">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                placeholder="Search gym songs, artists..."
-                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-                autoFocus
-              />
-              {searchQuery && (
-                <button onClick={() => { setSearchQuery(""); loadCategory(activeCategory); }} className="p-1">
-                  <X className="h-3.5 w-3.5 text-muted-foreground" />
-                </button>
-              )}
-              <button onClick={handleSearch} className="gradient-primary px-3 py-1.5 rounded-lg text-xs font-bold text-primary-foreground">GO</button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Always-visible Search */}
+      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="relative z-10 mb-4">
+        <div className="glass-card flex items-center gap-3 px-4 py-3 rounded-xl border border-border/20">
+          <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            onFocus={() => setIsSearchMode(true)}
+            placeholder="Search any song, artist, genre..."
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+          />
+          {searchQuery && (
+            <button onClick={() => { setSearchQuery(""); setIsSearchMode(false); loadCategory(activeCategory); }} className="p-1">
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          )}
+          <button onClick={handleSearch} className="gradient-primary px-3 py-1.5 rounded-lg text-xs font-bold text-primary-foreground">GO</button>
+        </div>
+      </motion.div>
 
       {/* Categories */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="relative z-10 flex gap-2 mb-5 overflow-x-auto no-scrollbar">
