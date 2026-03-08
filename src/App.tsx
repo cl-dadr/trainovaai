@@ -9,12 +9,11 @@ import NowPlayingBar from "./components/NowPlayingBar";
 import BottomNav from "./components/BottomNav";
 import AuthPage from "./pages/AuthPage";
 import HomePage from "./pages/HomePage";
-import StreakPage from "./pages/StreakPage";
 import MusicPage from "./pages/MusicPage";
 import ProfilePage from "./pages/ProfilePage";
 import CameraPage from "./pages/CameraPage";
 import HealthReportPage from "./pages/HealthReportPage";
-import JaxAIPage from "./pages/JaxAIPage";
+import AICoachPage from "./pages/AICoachPage";
 import RunningPage from "./pages/RunningPage";
 import PremiumPage from "./pages/PremiumPage";
 import NutritionPage from "./pages/NutritionPage";
@@ -22,6 +21,7 @@ import HabitTrackerPage from "./pages/HabitTrackerPage";
 import MentalWellnessPage from "./pages/MentalWellnessPage";
 import WorkoutPlannerPage from "./pages/WorkoutPlannerPage";
 import ProgressPage from "./pages/ProgressPage";
+import StreakPage from "./pages/StreakPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,12 +41,12 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
         <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-        <Route path="/streak" element={<ProtectedRoute><StreakPage /></ProtectedRoute>} />
+        <Route path="/coach" element={<ProtectedRoute><AICoachPage /></ProtectedRoute>} />
+        <Route path="/jax" element={<ProtectedRoute><AICoachPage /></ProtectedRoute>} />
         <Route path="/music" element={<ProtectedRoute><MusicPage /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/camera" element={<ProtectedRoute><CameraPage /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><HealthReportPage /></ProtectedRoute>} />
-        <Route path="/jax" element={<ProtectedRoute><JaxAIPage /></ProtectedRoute>} />
         <Route path="/running" element={<ProtectedRoute><RunningPage /></ProtectedRoute>} />
         <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
         <Route path="/nutrition" element={<ProtectedRoute><NutritionPage /></ProtectedRoute>} />
@@ -54,6 +54,7 @@ const AppRoutes = () => {
         <Route path="/wellness" element={<ProtectedRoute><MentalWellnessPage /></ProtectedRoute>} />
         <Route path="/planner" element={<ProtectedRoute><WorkoutPlannerPage /></ProtectedRoute>} />
         <Route path="/progress" element={<ProtectedRoute><ProgressPage /></ProtectedRoute>} />
+        <Route path="/streak" element={<ProtectedRoute><StreakPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {user && <NowPlayingBar />}
