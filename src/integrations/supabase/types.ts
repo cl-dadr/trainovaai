@@ -56,6 +56,39 @@ export type Database = {
         }
         Relationships: []
       }
+      liked_songs: {
+        Row: {
+          author: string | null
+          created_at: string
+          duration: string | null
+          id: string
+          thumbnail: string | null
+          title: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          author?: string | null
+          created_at?: string
+          duration?: string | null
+          id?: string
+          thumbnail?: string | null
+          title: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          author?: string | null
+          created_at?: string
+          duration?: string | null
+          id?: string
+          thumbnail?: string | null
+          title?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Music, Play, Pause, Heart, Loader2, Youtube, ChevronRight, Shuffle, SkipBack, SkipForward, Repeat, ChevronDown, MoreHorizontal, X, ListMusic, Flame, Zap, Dumbbell, Wind } from "lucide-react";
+import { Search, Music, Play, Pause, Heart, Loader2, Youtube, ChevronRight, Shuffle, SkipBack, SkipForward, Repeat, ChevronDown, MoreHorizontal, X, ListMusic, Flame, Zap, Dumbbell, Wind, Library } from "lucide-react";
 import { searchYouTube, type YouTubeVideo } from "@/lib/youtubeService";
+import { useLikedSongs } from "@/hooks/useLikedSongs";
 
 const categories = [
   { name: "All", icon: Flame },
@@ -51,9 +52,6 @@ const MusicPage = () => {
   const [ytVideos, setYtVideos] = useState<YouTubeVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [liked, setLiked] = useState<Set<string>>(() => {
-    try { return new Set(JSON.parse(localStorage.getItem("yt_liked") || "[]")); } catch { return new Set(); }
-  });
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const [activeVideoTitle, setActiveVideoTitle] = useState("");
   const [activeVideoAuthor, setActiveVideoAuthor] = useState("");
@@ -64,6 +62,9 @@ const MusicPage = () => {
   });
   const [activePlaylist, setActivePlaylist] = useState<string | null>(null);
   const [isSearchMode, setIsSearchMode] = useState(false);
+  const [showFavorites, setShowFavorites] = useState(false);
+
+  const { likedSongs, toggleLike, isLiked, loading: likesLoading } = useLikedSongs();
 
   const loadCategory = useCallback(async (cat: string) => {
     setLoading(true);
@@ -102,16 +103,11 @@ const MusicPage = () => {
     loadCategory(activeCategory);
   }, [activeCategory, loadCategory]);
 
-  // Persist likes & recent
-  useEffect(() => { localStorage.setItem("yt_liked", JSON.stringify([...liked])); }, [liked]);
+  // Persist recent
   useEffect(() => { localStorage.setItem("yt_recent", JSON.stringify(recentlyPlayed)); }, [recentlyPlayed]);
 
-  const toggleLike = (id: string) => {
-    setLiked((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+  const handleToggleLike = (video: YouTubeVideo | { id: string; title: string; author: string; thumbnail: string; duration: string }) => {
+    toggleLike({ id: video.id, title: video.title, author: video.author, thumbnail: video.thumbnail, duration: video.duration });
   };
 
   const handleYtPlay = (video: YouTubeVideo) => {
@@ -126,11 +122,89 @@ const MusicPage = () => {
     });
   };
 
-  const likedVideos = ytVideos.filter(v => liked.has(v.id));
+  const handlePlayLikedSong = (song: { video_id: string; title: string; author: string | null; thumbnail: string | null; duration: string | null }) => {
+    setActiveVideoId(song.video_id);
+    setActiveVideoTitle(song.title);
+    setActiveVideoAuthor(song.author || "");
+    setActiveVideoThumb(song.thumbnail || "");
+    setShowNowPlaying(true);
+  };
 
   return (
     <div className="relative min-h-screen pb-24 px-4 pt-6">
       <div className="ambient-glow" />
+
+      {/* Full Favorites Screen */}
+      <AnimatePresence>
+        {showFavorites && (
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-background"
+          >
+            <div className="flex items-center justify-between px-4 pt-12 pb-4 border-b border-border/20">
+              <button onClick={() => setShowFavorites(false)} className="p-2 rounded-full hover:bg-secondary/50">
+                <ChevronDown className="h-6 w-6 text-foreground" />
+              </button>
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <Heart className="h-5 w-5 text-destructive fill-current" /> My Favorites
+              </h2>
+              <span className="text-sm text-muted-foreground">{likedSongs.length}</span>
+            </div>
+            <div className="flex-1 px-4 pt-4 pb-24">
+              {likesLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                </div>
+              ) : likedSongs.length === 0 ? (
+                <div className="text-center py-16">
+                  <Heart className="mx-auto h-12 w-12 text-muted-foreground/30 mb-3" />
+                  <p className="text-sm text-muted-foreground">No liked songs yet</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">Tap the ❤️ on any song to add it here</p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {likedSongs.map((song, i) => (
+                    <motion.div
+                      key={song.video_id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: Math.min(0.03 * i, 0.3) }}
+                      onClick={() => handlePlayLikedSong(song)}
+                      className={`flex items-center gap-3 p-2.5 rounded-2xl transition-all cursor-pointer ${
+                        activeVideoId === song.video_id ? "glass-card border border-primary/20" : "hover:bg-secondary/30"
+                      }`}
+                    >
+                      <div className="relative h-12 w-12 rounded-xl overflow-hidden shrink-0 border border-border/10">
+                        {song.thumbnail ? (
+                          <img src={song.thumbnail} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="h-full w-full bg-destructive/10 flex items-center justify-center">
+                            <Music className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-semibold truncate ${activeVideoId === song.video_id ? "text-primary" : "text-foreground"}`}>{song.title}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">{song.author || "Unknown"}</p>
+                      </div>
+                      <button onClick={(e) => { e.stopPropagation(); handleToggleLike({ id: song.video_id, title: song.title, author: song.author || "", thumbnail: song.thumbnail || "", duration: song.duration || "" }); }} className="shrink-0 p-1">
+                        <Heart className="h-3.5 w-3.5 text-destructive fill-current" />
+                      </button>
+                      <span className="text-[10px] text-muted-foreground shrink-0">{song.duration || ""}</span>
+                      <button className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 bg-primary/10">
+                        <Play className="h-3.5 w-3.5 ml-0.5 text-primary" />
+                      </button>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Full-screen Now Playing - YouTube Music Style */}
       <AnimatePresence>
@@ -206,8 +280,8 @@ const MusicPage = () => {
 
             {/* Action Buttons Row */}
             <div className="flex items-center gap-2 px-6 mt-4 overflow-x-auto no-scrollbar">
-              <button onClick={() => toggleLike(activeVideoId)} className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/30 bg-secondary/30 shrink-0">
-                <Heart className={`h-4 w-4 ${liked.has(activeVideoId) ? "text-destructive fill-current" : "text-foreground"}`} />
+              <button onClick={() => handleToggleLike({ id: activeVideoId, title: activeVideoTitle, author: activeVideoAuthor, thumbnail: activeVideoThumb, duration: "" })} className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/30 bg-secondary/30 shrink-0">
+                <Heart className={`h-4 w-4 ${isLiked(activeVideoId) ? "text-destructive fill-current" : "text-foreground"}`} />
                 <span className="text-xs text-foreground font-medium">Like</span>
               </button>
               <button className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/30 bg-secondary/30 shrink-0">
@@ -257,6 +331,12 @@ const MusicPage = () => {
             <p className="text-[10px] text-muted-foreground">Play any YouTube song 🎵</p>
           </div>
         </div>
+        <button onClick={() => setShowFavorites(true)} className="relative h-10 w-10 rounded-xl bg-destructive/10 flex items-center justify-center hover:bg-destructive/20 transition-colors">
+          <Heart className="h-5 w-5 text-destructive" />
+          {likedSongs.length > 0 && (
+            <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground flex items-center justify-center">{likedSongs.length}</span>
+          )}
+        </button>
       </motion.div>
 
       {/* Always-visible Search */}
@@ -377,22 +457,22 @@ const MusicPage = () => {
         </motion.div>
       )}
 
-      {/* Liked Songs */}
-      {likedVideos.length > 0 && (
+      {/* Liked Songs Quick Preview */}
+      {likedSongs.length > 0 && !showFavorites && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative z-10 mb-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
               <Heart className="h-3.5 w-3.5 text-destructive fill-current" /> Liked Songs
             </h2>
-            <span className="text-[10px] text-muted-foreground">{likedVideos.length}</span>
+            <button onClick={() => setShowFavorites(true)} className="text-[10px] text-primary font-semibold">View All ({likedSongs.length})</button>
           </div>
           <div className="flex gap-3 overflow-x-auto no-scrollbar">
-            {likedVideos.slice(0, 6).map((video) => (
-              <motion.div key={video.id} whileTap={{ scale: 0.95 }} onClick={() => handleYtPlay(video)} className="shrink-0 w-24 cursor-pointer">
+            {likedSongs.slice(0, 6).map((song) => (
+              <motion.div key={song.video_id} whileTap={{ scale: 0.95 }} onClick={() => handlePlayLikedSong(song)} className="shrink-0 w-24 cursor-pointer">
                 <div className="h-24 w-24 rounded-xl overflow-hidden mb-1.5 border border-destructive/20">
-                  <img src={video.thumbnail} alt="" className="h-full w-full object-cover" />
+                  {song.thumbnail ? <img src={song.thumbnail} alt="" className="h-full w-full object-cover" /> : <div className="h-full w-full bg-destructive/10 flex items-center justify-center"><Heart className="h-6 w-6 text-destructive" /></div>}
                 </div>
-                <p className="text-[10px] font-semibold text-foreground line-clamp-1">{video.title}</p>
+                <p className="text-[10px] font-semibold text-foreground line-clamp-1">{song.title}</p>
               </motion.div>
             ))}
           </div>
@@ -420,7 +500,7 @@ const MusicPage = () => {
           <div className="space-y-1">
             {ytVideos.map((video, i) => {
               const isActive = activeVideoId === video.id;
-              const isLiked = liked.has(video.id);
+              const videoLiked = isLiked(video.id);
               return (
                 <motion.div
                   key={video.id}
@@ -456,8 +536,8 @@ const MusicPage = () => {
                   </div>
 
                   {/* Like */}
-                  <button onClick={(e) => { e.stopPropagation(); toggleLike(video.id); }} className="shrink-0 p-1">
-                    <Heart className={`h-3.5 w-3.5 transition-colors ${isLiked ? "text-destructive fill-current" : "text-muted-foreground"}`} />
+                  <button onClick={(e) => { e.stopPropagation(); handleToggleLike(video); }} className="shrink-0 p-1">
+                    <Heart className={`h-3.5 w-3.5 transition-colors ${videoLiked ? "text-destructive fill-current" : "text-muted-foreground"}`} />
                   </button>
 
                   {/* Duration & Play */}
@@ -504,8 +584,8 @@ const MusicPage = () => {
                   <p className="text-xs font-semibold text-foreground truncate">{activeVideoTitle}</p>
                   <p className="text-[10px] text-muted-foreground truncate">{activeVideoAuthor}</p>
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); toggleLike(activeVideoId); }} className="p-1">
-                  <Heart className={`h-3.5 w-3.5 ${liked.has(activeVideoId) ? "text-destructive fill-current" : "text-muted-foreground"}`} />
+                <button onClick={(e) => { e.stopPropagation(); handleToggleLike({ id: activeVideoId!, title: activeVideoTitle, author: activeVideoAuthor, thumbnail: activeVideoThumb, duration: "" }); }} className="p-1">
+                  <Heart className={`h-3.5 w-3.5 ${isLiked(activeVideoId!) ? "text-destructive fill-current" : "text-muted-foreground"}`} />
                 </button>
                 <button onClick={(e) => { e.stopPropagation(); setShowNowPlaying(true); }}
                   className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center neon-glow">
