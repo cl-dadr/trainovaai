@@ -111,14 +111,26 @@ const MusicPage = () => {
     setLoading(true);
     setIsSearchMode(true);
     const result = await searchYouTubeWithSource(searchQuery);
-    setYtVideos(result.items);
+    
+    // If server returned curated fallback, try client-side search
     if (result.source === 'curated') {
+      console.log("Server returned curated, trying client-side fallback...");
+      const { clientSideYouTubeSearch } = await import("@/lib/youtubeClientSearch");
+      const clientResults = await clientSideYouTubeSearch(searchQuery);
+      if (clientResults.length > 0) {
+        setYtVideos(clientResults);
+        setLoading(false);
+        return;
+      }
+      // Both failed, show curated with toast
       toast({
         title: "YouTube API quota exceeded",
         description: "Showing curated results instead. Try again later for live search.",
         variant: "destructive",
       });
     }
+    
+    setYtVideos(result.items);
     setLoading(false);
   }, [searchQuery]);
 
