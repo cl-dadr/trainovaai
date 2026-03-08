@@ -23,6 +23,7 @@ import HabitTrackerPage from "./pages/HabitTrackerPage";
 import MentalWellnessPage from "./pages/MentalWellnessPage";
 import WorkoutPlannerPage from "./pages/WorkoutPlannerPage";
 import ProgressPage from "./pages/ProgressPage";
+import BattleArenaPage from "./pages/BattleArenaPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
