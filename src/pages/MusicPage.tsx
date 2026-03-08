@@ -102,9 +102,15 @@ const MusicPage = () => {
     if (!searchQuery.trim()) return;
     setLoading(true);
     setIsSearchMode(true);
-    // Search all YouTube without category filter for broader results
-    const results = await searchYouTube(searchQuery);
-    setYtVideos(results);
+    const result = await searchYouTubeWithSource(searchQuery);
+    setYtVideos(result.items);
+    if (result.source === 'curated') {
+      toast({
+        title: "YouTube API quota exceeded",
+        description: "Showing curated results instead. Try again later for live search.",
+        variant: "destructive",
+      });
+    }
     setLoading(false);
   }, [searchQuery]);
 
