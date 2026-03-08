@@ -230,9 +230,9 @@ const MusicPage = () => {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-50 flex flex-col"
+            className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-background"
             style={{
-              background: "linear-gradient(180deg, hsl(var(--primary) / 0.15) 0%, hsl(var(--background)) 40%)",
+              background: "linear-gradient(180deg, hsl(160 100% 50% / 0.08) 0%, hsl(220 30% 6%) 25%)",
             }}
           >
             <div className="flex items-center justify-between px-5 pt-12 pb-4">
