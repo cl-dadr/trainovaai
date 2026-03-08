@@ -80,6 +80,7 @@ const MusicPage = () => {
   });
   const [activeCuratedPlaylist, setActiveCuratedPlaylist] = useState<string | null>(null);
   const [isSearchMode, setIsSearchMode] = useState(false);
+  const [searchSource, setSearchSource] = useState<'youtube_api' | 'free_api' | 'client_fallback' | 'curated' | null>(null);
   const [showFavorites, setShowFavorites] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
 
@@ -100,6 +101,7 @@ const MusicPage = () => {
 
   const loadCategory = useCallback(async (cat: string) => {
     setLoading(true);
+    setSearchSource(null);
     const query = cat === "All" ? "gym workout music mix 2025" : `${cat} gym workout music`;
     const results = await searchYouTube(query, cat === "All" ? "Workout" : cat);
     setYtVideos(results);
@@ -119,15 +121,19 @@ const MusicPage = () => {
       const clientResults = await clientSideYouTubeSearch(searchQuery);
       if (clientResults.length > 0) {
         setYtVideos(clientResults);
+        setSearchSource('client_fallback');
         setLoading(false);
         return;
       }
       // Both failed, show curated with toast
+      setSearchSource('curated');
       toast({
         title: "YouTube API quota exceeded",
         description: "Showing curated results instead. Try again later for live search.",
         variant: "destructive",
       });
+    } else {
+      setSearchSource(result.source);
     }
     
     setYtVideos(result.items);
@@ -1015,7 +1021,22 @@ const MusicPage = () => {
             <h2 className="text-sm font-bold text-foreground">
               {searchQuery ? `Results for "${searchQuery}"` : activeCuratedPlaylist ? curatedPlaylists.find(p => p.id === activeCuratedPlaylist)?.name : `${activeCategory} Tracks`}
             </h2>
-            <span className="text-[10px] text-muted-foreground">{ytVideos.length} tracks</span>
+            <div className="flex items-center gap-2">
+              {searchSource && isSearchMode && (
+                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                  searchSource === 'youtube_api' ? 'bg-red-500/20 text-red-400' :
+                  searchSource === 'free_api' ? 'bg-green-500/20 text-green-400' :
+                  searchSource === 'client_fallback' ? 'bg-blue-500/20 text-blue-400' :
+                  'bg-yellow-500/20 text-yellow-400'
+                }`}>
+                  {searchSource === 'youtube_api' ? '⚡ YT API' :
+                   searchSource === 'free_api' ? '🌐 Live' :
+                   searchSource === 'client_fallback' ? '🔄 Client' :
+                   '📦 Curated'}
+                </span>
+              )}
+              <span className="text-[10px] text-muted-foreground">{ytVideos.length} tracks</span>
+            </div>
           </div>
 
           <div className="space-y-1">
