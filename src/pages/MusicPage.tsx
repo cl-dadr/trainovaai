@@ -747,24 +747,98 @@ const MusicPage = () => {
       </motion.div>
 
       {/* Search */}
-      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="relative z-10 mb-4">
+      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="relative z-20 mb-4">
         <div className="glass-card flex items-center gap-3 px-4 py-3 rounded-xl border border-border/20">
           <Search className="h-4 w-4 text-muted-foreground shrink-0" />
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            onFocus={() => setIsSearchMode(true)}
+            onKeyDown={(e) => e.key === "Enter" && { ...handleSearch(), setSearchFocused(false) }}
+            onFocus={() => { setIsSearchMode(true); setSearchFocused(true); }}
+            onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
             placeholder="Search any song, artist, genre..."
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
           />
           {searchQuery && (
-            <button onClick={() => { setSearchQuery(""); setIsSearchMode(false); loadCategory(activeCategory); }} className="p-1">
+            <button onClick={() => { setSearchQuery(""); setIsSearchMode(false); setSearchFocused(false); loadCategory(activeCategory); }} className="p-1">
               <X className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
           )}
-          <button onClick={handleSearch} className="gradient-primary px-3 py-1.5 rounded-lg text-xs font-bold text-primary-foreground">GO</button>
+          <button onClick={() => { handleSearch(); setSearchFocused(false); }} className="gradient-primary px-3 py-1.5 rounded-lg text-xs font-bold text-primary-foreground">GO</button>
         </div>
+
+        {/* Search Suggestions Dropdown */}
+        <AnimatePresence>
+          {searchFocused && !searchQuery && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+              className="absolute left-0 right-0 top-full mt-1.5 glass-card border border-border/20 rounded-xl overflow-hidden shadow-lg max-h-64 overflow-y-auto"
+            >
+              <div className="px-3 pt-3 pb-1.5">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">🔥 Trending</p>
+              </div>
+              <div className="px-2 pb-2 flex flex-wrap gap-1.5">
+                {trendingSuggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setSearchQuery(suggestion);
+                      setSearchFocused(false);
+                      setIsSearchMode(true);
+                      setLoading(true);
+                      searchYouTubeWithSource(suggestion).then((result) => {
+                        setYtVideos(result.items);
+                        if (result.source === 'curated') {
+                          toast({ title: "YouTube API quota exceeded", description: "Showing curated results instead.", variant: "destructive" });
+                        }
+                        setLoading(false);
+                      });
+                    }}
+                    className="px-3 py-1.5 rounded-full text-xs font-medium bg-secondary/50 text-foreground hover:bg-primary/20 hover:text-primary transition-all border border-border/10"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+              {recentlyPlayed.length > 0 && (
+                <>
+                  <div className="px-3 pt-2 pb-1.5 border-t border-border/10">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">⏱ Recently Played</p>
+                  </div>
+                  <div className="px-2 pb-2 space-y-0.5">
+                    {recentlyPlayed.slice(0, 5).map((song) => (
+                      <button
+                        key={song.id}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          setSearchQuery(song.title);
+                          setSearchFocused(false);
+                          setIsSearchMode(true);
+                          setLoading(true);
+                          searchYouTubeWithSource(song.title).then((result) => {
+                            setYtVideos(result.items);
+                            setLoading(false);
+                          });
+                        }}
+                        className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-secondary/30 transition-colors"
+                      >
+                        <img src={song.thumbnail} alt="" className="h-8 w-8 rounded-md object-cover" />
+                        <div className="flex-1 min-w-0 text-left">
+                          <p className="text-xs font-medium text-foreground truncate">{song.title}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{song.author}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* Categories */}
