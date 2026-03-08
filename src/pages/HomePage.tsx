@@ -32,8 +32,8 @@ const quickNav = [
 const quickNav2 = [
   { icon: Apple, label: "Nutrition", path: "/nutrition", color: "text-neon-green" },
   { icon: Brain, label: "Wellness", path: "/wellness", color: "text-neon-cyan" },
-  { icon: CheckSquare, label: "Habits", path: "/habits", color: "text-neon-pink" },
   { icon: TrendingUp, label: "Progress", path: "/progress", color: "text-neon-purple" },
+  { icon: Footprints, label: "Streak", path: "/streak", color: "text-neon-green" },
 ];
 
 const HomePage = () => {

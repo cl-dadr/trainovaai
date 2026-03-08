@@ -265,6 +265,37 @@ const HabitTrackerPage = () => {
         ))}
       </motion.div>
 
+      {/* Achievement Badges Section */}
+      {habits.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="relative z-10 mb-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Trophy className="h-4 w-4 text-neon-orange" />
+            <h3 className="text-xs font-bold text-foreground">Streak Achievements</h3>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {STREAK_MILESTONES.slice(0, 8).map(milestone => {
+              const bestStreak = Math.max(...habits.map(h => h.streak), 0);
+              const unlocked = bestStreak >= milestone.days;
+              const MIcon = milestone.icon;
+              return (
+                <motion.div
+                  key={milestone.days}
+                  whileHover={{ scale: 1.05 }}
+                  className={`glass-card p-2.5 text-center transition-all ${unlocked ? `${milestone.border} border` : "opacity-40 grayscale"}`}
+                >
+                  <div className={`h-8 w-8 rounded-lg ${unlocked ? milestone.bg : "bg-secondary/30"} flex items-center justify-center mx-auto mb-1.5`}>
+                    <MIcon className={`h-4 w-4 ${unlocked ? milestone.color : "text-muted-foreground"}`} />
+                  </div>
+                  <p className="text-[9px] font-bold text-foreground">{milestone.label}</p>
+                  <p className="text-[8px] text-muted-foreground">{milestone.days}d streak</p>
+                  {unlocked && <p className="text-[8px] mt-0.5">{milestone.emoji}</p>}
+                </motion.div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+
       {/* Main Tabs */}
       <Tabs defaultValue="todos" className="relative z-10">
         <TabsList className="w-full bg-card/60 border border-border/30 mb-4">
