@@ -45,6 +45,18 @@ const dateStr = (d: Date) => d.toISOString().split("T")[0];
 const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const monthLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+// Streak milestone definitions
+const STREAK_MILESTONES = [
+  { days: 7, label: "Week Warrior", icon: Shield, emoji: "🛡️", color: "text-neon-cyan", bg: "bg-neon-cyan/15", border: "border-neon-cyan/30", message: "7-day streak! You're building a real habit 🔥" },
+  { days: 14, label: "Fortnight Fighter", icon: Star, emoji: "⭐", color: "text-neon-purple", bg: "bg-neon-purple/15", border: "border-neon-purple/30", message: "14 days strong! Discipline is your superpower 💪" },
+  { days: 21, label: "Habit Forged", icon: Flame, emoji: "🔥", color: "text-neon-orange", bg: "bg-neon-orange/15", border: "border-neon-orange/30", message: "21 days — habit officially formed! 🧬" },
+  { days: 30, label: "Monthly Master", icon: Medal, emoji: "🏅", color: "text-neon-green", bg: "bg-neon-green/15", border: "border-neon-green/30", message: "30-day streak! You're unstoppable 🏅" },
+  { days: 50, label: "Half Century", icon: Trophy, emoji: "🏆", color: "text-neon-cyan", bg: "bg-neon-cyan/15", border: "border-neon-cyan/30", message: "50 days! Half a century of consistency 🏆" },
+  { days: 100, label: "Centurion", icon: Crown, emoji: "👑", color: "text-neon-orange", bg: "bg-neon-orange/15", border: "border-neon-orange/30", message: "100-DAY STREAK! You are LEGENDARY 👑🔥" },
+  { days: 200, label: "Bicentennial", icon: Crown, emoji: "💎", color: "text-neon-purple", bg: "bg-neon-purple/15", border: "border-neon-purple/30", message: "200 days! Diamond-level dedication 💎" },
+  { days: 365, label: "Year Beast", icon: Crown, emoji: "🐉", color: "text-neon-green", bg: "bg-neon-green/15", border: "border-neon-green/30", message: "365-DAY STREAK! A FULL YEAR! 🐉👑" },
+];
+
 const HabitTrackerPage = () => {
   const navigate = useNavigate();
   const {
@@ -59,11 +71,33 @@ const HabitTrackerPage = () => {
   const [insightPeriod, setInsightPeriod] = useState<"week" | "month" | "year">("week");
   const [heatmapDays, setHeatmapDays] = useState(30);
   const heatmapRef = useRef<HTMLDivElement>(null);
+  const notifiedStreaksRef = useRef<Set<string>>(new Set());
 
   const [newHabit, setNewHabit] = useState({
     name: "", icon: "dumbbell", color: "neon-green", target: 1,
     unit: "session", frequency: "daily", time_of_day: "anytime", difficulty: "medium",
   });
+
+  // Streak milestone notifications
+  useEffect(() => {
+    habits.forEach(habit => {
+      STREAK_MILESTONES.forEach(milestone => {
+        const key = `${habit.id}-${milestone.days}`;
+        if (habit.streak >= milestone.days && !notifiedStreaksRef.current.has(key)) {
+          notifiedStreaksRef.current.add(key);
+          toast(`${milestone.emoji} ${habit.name}: ${milestone.message}`, {
+            duration: 6000,
+            style: {
+              background: "hsl(240 12% 8% / 0.95)",
+              border: "1px solid hsl(160 100% 50% / 0.3)",
+              color: "hsl(0 0% 95%)",
+              boxShadow: "0 0 20px hsl(160 100% 50% / 0.2)",
+            },
+          });
+        }
+      });
+    });
+  }, [habits]);
 
   const handleCreate = async () => {
     if (!newHabit.name.trim()) return;
