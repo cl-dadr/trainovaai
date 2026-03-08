@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Music, Play, Pause, Heart, Loader2, Youtube, ChevronRight, Shuffle, SkipBack, SkipForward, Repeat, ChevronDown, MoreHorizontal, X, ListMusic, Flame, Zap, Dumbbell, Wind, Plus, Trash2, FolderPlus } from "lucide-react";
+import { Search, Music, Play, Pause, Heart, Loader2, Youtube, ChevronRight, ChevronDown, SkipBack, SkipForward, MoreHorizontal, X, ListMusic, Flame, Zap, Dumbbell, Wind, Plus, Trash2, FolderPlus } from "lucide-react";
 import { searchYouTube, type YouTubeVideo } from "@/lib/youtubeService";
 import { useLikedSongs } from "@/hooks/useLikedSongs";
 import { usePlaylists, type PlaylistSong } from "@/hooks/usePlaylists";
@@ -492,119 +492,6 @@ const MusicPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Full-screen Now Playing - YouTube Music Style */}
-      <AnimatePresence>
-        {showNowPlaying && activeVideoId && (
-          <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-0 z-50 flex flex-col overflow-y-auto"
-            style={{ background: "linear-gradient(180deg, hsl(var(--muted) / 0.3) 0%, hsl(var(--background)) 40%)" }}
-          >
-            {/* Top Bar */}
-            <div className="flex items-center justify-between px-4 pt-12 pb-2">
-              <button onClick={() => setShowNowPlaying(false)} className="p-2 rounded-full hover:bg-secondary/50">
-                <ChevronDown className="h-6 w-6 text-foreground" />
-              </button>
-              <div className="flex items-center gap-2">
-                <button className="p-2 rounded-full hover:bg-secondary/50">
-                  <MoreHorizontal className="h-5 w-5 text-foreground" />
-                </button>
-              </div>
-            </div>
-
-            {/* Large Artwork / Video Embed */}
-            <div className="px-6 mt-2 flex-shrink-0">
-              <div className="relative w-full aspect-square max-w-sm mx-auto rounded-2xl overflow-hidden" style={{ boxShadow: "0 8px 40px hsl(var(--background) / 0.6)" }}>
-                <iframe
-                  key={activeVideoId}
-                  src={`https://www.youtube.com/embed/${activeVideoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
-                  title="YouTube video player"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="w-full h-full border-0"
-                />
-              </div>
-            </div>
-
-            {/* Track Info */}
-            <div className="px-6 mt-6">
-              <h2 className="text-xl font-bold text-foreground line-clamp-2 leading-tight">{activeVideoTitle}</h2>
-              <p className="text-sm text-muted-foreground mt-1">{activeVideoAuthor}</p>
-            </div>
-
-            {/* Playback Controls */}
-            <div className="flex items-center justify-between px-6 mt-8">
-              <button className="p-2 text-muted-foreground hover:text-foreground transition-colors"><Shuffle className="h-5 w-5" /></button>
-              <button className="p-2 text-foreground" onClick={() => {
-                const idx = ytVideos.findIndex(v => v.id === activeVideoId);
-                if (idx > 0) handleYtPlay(ytVideos[idx - 1]);
-              }}><SkipBack className="h-7 w-7" /></button>
-              <button className="h-16 w-16 rounded-full bg-foreground flex items-center justify-center shadow-lg">
-                <Pause className="h-7 w-7 text-background" />
-              </button>
-              <button className="p-2 text-foreground" onClick={() => {
-                const idx = ytVideos.findIndex(v => v.id === activeVideoId);
-                if (idx >= 0 && idx < ytVideos.length - 1) handleYtPlay(ytVideos[idx + 1]);
-              }}><SkipForward className="h-7 w-7" /></button>
-              <button className="p-2 text-muted-foreground hover:text-foreground transition-colors"><Repeat className="h-5 w-5" /></button>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="px-6 mt-5">
-              <div className="w-full h-1 rounded-full bg-muted relative">
-                <div className="h-full rounded-full bg-foreground" style={{ width: "18%" }} />
-              </div>
-              <div className="flex items-center justify-between mt-1.5">
-                <span className="text-[11px] text-muted-foreground">0:49</span>
-                <span className="text-[11px] text-muted-foreground">4:24</span>
-              </div>
-            </div>
-
-            {/* Action Buttons Row */}
-            <div className="flex items-center gap-2 px-6 mt-4 overflow-x-auto no-scrollbar">
-              <button onClick={() => handleToggleLike({ id: activeVideoId, title: activeVideoTitle, author: activeVideoAuthor, thumbnail: activeVideoThumb, duration: "" })} className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/30 bg-secondary/30 shrink-0">
-                <Heart className={`h-4 w-4 ${isLiked(activeVideoId) ? "text-destructive fill-current" : "text-foreground"}`} />
-                <span className="text-xs text-foreground font-medium">Like</span>
-              </button>
-              <button onClick={() => openSaveModal({ id: activeVideoId, title: activeVideoTitle, author: activeVideoAuthor, thumbnail: activeVideoThumb, duration: "" })} className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/30 bg-secondary/30 shrink-0">
-                <ListMusic className="h-4 w-4 text-foreground" />
-                <span className="text-xs text-foreground font-medium">Save</span>
-              </button>
-              <button className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/30 bg-secondary/30 shrink-0">
-                <Shuffle className="h-4 w-4 text-foreground" />
-                <span className="text-xs text-foreground font-medium">Share</span>
-              </button>
-            </div>
-
-            {/* Your Queue */}
-            <div className="px-6 mt-6 pb-8">
-              <div className="flex justify-center mb-3">
-                <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-              </div>
-              <h3 className="text-base font-bold text-foreground text-center mb-4">Your Queue</h3>
-              <div className="space-y-1">
-                {ytVideos.filter(v => v.id !== activeVideoId).slice(0, 8).map((video) => (
-                  <motion.div key={video.id} whileTap={{ scale: 0.97 }} onClick={() => handleYtPlay(video)}
-                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-secondary/30 cursor-pointer">
-                    <div className="h-11 w-11 rounded-lg overflow-hidden shrink-0">
-                      <img src={video.thumbnail} alt="" className="h-full w-full object-cover" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">{video.title}</p>
-                      <p className="text-[11px] text-muted-foreground truncate">{video.author}</p>
-                    </div>
-                    <span className="text-[11px] text-muted-foreground">{video.duration}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 flex items-center justify-between mb-4">
@@ -891,7 +778,7 @@ const MusicPage = () => {
 
       {/* Bottom Mini Player */}
       <AnimatePresence>
-        {activeVideoId && !showNowPlaying && (
+        {activeVideoId && (
           <motion.div
             initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -899,9 +786,8 @@ const MusicPage = () => {
             className="fixed bottom-16 left-0 right-0 z-40 px-3"
           >
             <div
-              className="max-w-md mx-auto glass-card p-3 rounded-2xl border border-primary/20 cursor-pointer"
+              className="max-w-md mx-auto glass-card p-3 rounded-2xl border border-primary/20"
               style={{ boxShadow: "0 0 20px hsl(var(--primary) / 0.15)" }}
-              onClick={() => setShowNowPlaying(true)}
             >
               <div className="flex items-center gap-3">
                 <div className="h-11 w-11 rounded-xl overflow-hidden shrink-0 border border-border/10">
@@ -917,10 +803,9 @@ const MusicPage = () => {
                 <button onClick={(e) => { e.stopPropagation(); openSaveModal({ id: activeVideoId!, title: activeVideoTitle, author: activeVideoAuthor, thumbnail: activeVideoThumb, duration: "" }); }} className="p-1">
                   <ListMusic className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); setShowNowPlaying(true); }}
-                  className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center neon-glow">
+                <div className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center neon-glow">
                   <Play className="h-3.5 w-3.5 text-primary-foreground ml-0.5" />
-                </button>
+                </div>
               </div>
             </div>
           </motion.div>
