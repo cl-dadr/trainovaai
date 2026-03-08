@@ -81,6 +81,7 @@ const MusicPage = () => {
   const [activeCuratedPlaylist, setActiveCuratedPlaylist] = useState<string | null>(null);
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
 
   // Playlist states
   const [showSaveModal, setShowSaveModal] = useState(false);
