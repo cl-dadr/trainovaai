@@ -23,17 +23,17 @@ const aiHints = [
 ];
 
 const quickNav = [
-  { icon: Footprints, label: "Activity", path: "/activity", color: "text-neon-green" },
   { icon: PersonStanding, label: "Run", path: "/running", color: "text-neon-cyan" },
   { icon: Bot, label: "AI Coach", path: "/jax", color: "text-neon-purple" },
   { icon: Dumbbell, label: "Planner", path: "/planner", color: "text-neon-orange" },
+  { icon: CheckSquare, label: "Habits", path: "/habits", color: "text-neon-pink" },
 ];
 
 const quickNav2 = [
   { icon: Apple, label: "Nutrition", path: "/nutrition", color: "text-neon-green" },
   { icon: Brain, label: "Wellness", path: "/wellness", color: "text-neon-cyan" },
-  { icon: CheckSquare, label: "Habits", path: "/habits", color: "text-neon-pink" },
   { icon: TrendingUp, label: "Progress", path: "/progress", color: "text-neon-purple" },
+  { icon: Footprints, label: "Streak", path: "/streak", color: "text-neon-green" },
 ];
 
 const HomePage = () => {

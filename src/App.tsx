@@ -13,7 +13,6 @@ import StreakPage from "./pages/StreakPage";
 import MusicPage from "./pages/MusicPage";
 import ProfilePage from "./pages/ProfilePage";
 import CameraPage from "./pages/CameraPage";
-import ActivityPage from "./pages/ActivityPage";
 import HealthReportPage from "./pages/HealthReportPage";
 import JaxAIPage from "./pages/JaxAIPage";
 import RunningPage from "./pages/RunningPage";
@@ -23,7 +22,6 @@ import HabitTrackerPage from "./pages/HabitTrackerPage";
 import MentalWellnessPage from "./pages/MentalWellnessPage";
 import WorkoutPlannerPage from "./pages/WorkoutPlannerPage";
 import ProgressPage from "./pages/ProgressPage";
-import BattleArenaPage from "./pages/BattleArenaPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,7 +45,6 @@ const AppRoutes = () => {
         <Route path="/music" element={<ProtectedRoute><MusicPage /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/camera" element={<ProtectedRoute><CameraPage /></ProtectedRoute>} />
-        <Route path="/activity" element={<ProtectedRoute><ActivityPage /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><HealthReportPage /></ProtectedRoute>} />
         <Route path="/jax" element={<ProtectedRoute><JaxAIPage /></ProtectedRoute>} />
         <Route path="/running" element={<ProtectedRoute><RunningPage /></ProtectedRoute>} />
@@ -57,7 +54,6 @@ const AppRoutes = () => {
         <Route path="/wellness" element={<ProtectedRoute><MentalWellnessPage /></ProtectedRoute>} />
         <Route path="/planner" element={<ProtectedRoute><WorkoutPlannerPage /></ProtectedRoute>} />
         <Route path="/progress" element={<ProtectedRoute><ProgressPage /></ProtectedRoute>} />
-        <Route path="/battles" element={<ProtectedRoute><BattleArenaPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {user && <NowPlayingBar />}
