@@ -49,6 +49,13 @@ const favoriteArtists = [
 
 const playlistEmojis = ["🎵", "🔥", "💪", "🎧", "🏋️", "🎶", "⚡", "🎸", "🥁", "🎤"];
 
+const trendingSuggestions = [
+  "Shape of You", "Blinding Lights", "Starboy", "Levitating", "Stay",
+  "Heat Waves", "As It Was", "Bad Guy", "Sunflower", "Believer",
+  "Phonk Mix 2025", "Lofi Beats", "Gym Motivation", "Bollywood Hits",
+  "Drake Top Hits", "Arijit Singh", "Travis Scott", "EDM Festival Mix",
+];
+
 const MusicPage = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [ytVideos, setYtVideos] = useState<YouTubeVideo[]>([]);
