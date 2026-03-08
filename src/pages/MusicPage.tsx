@@ -933,17 +933,7 @@ const MusicPage = () => {
       )}
 
       {/* Hidden YouTube Player */}
-      {activeVideoId && (
-        <iframe
-          ref={iframeRef}
-          key={activeVideoId}
-          src={`https://www.youtube.com/embed/${activeVideoId}?autoplay=1&enablejsapi=1&rel=0&modestbranding=1&playsinline=1`}
-          title="YouTube audio player"
-          allow="autoplay; encrypted-media"
-          className="fixed top-0 left-0 w-0 h-0 opacity-0 pointer-events-none"
-          style={{ position: 'fixed', width: 0, height: 0 }}
-        />
-      )}
+      <div id="yt-hidden-player" className="fixed top-0 left-0 w-0 h-0 opacity-0 pointer-events-none" style={{ position: 'fixed', width: 0, height: 0 }} />
 
       {/* Bottom Mini Player */}
       <AnimatePresence>
@@ -985,9 +975,6 @@ const MusicPage = () => {
                   <p className="text-xs font-semibold text-foreground truncate">{activeVideoTitle}</p>
                   <div className="flex items-center gap-1.5">
                     <p className="text-[10px] text-muted-foreground truncate">{activeVideoAuthor}</p>
-                    {activeVideoDuration && (
-                      <span className="text-[9px] text-primary font-medium shrink-0">• {activeVideoDuration}</span>
-                    )}
                   </div>
                 </div>
                 <button onClick={(e) => { e.stopPropagation(); handleToggleLike({ id: activeVideoId!, title: activeVideoTitle, author: activeVideoAuthor, thumbnail: activeVideoThumb, duration: activeVideoDuration }); }} className="p-1">
@@ -1014,6 +1001,25 @@ const MusicPage = () => {
                     <SkipForward className="h-3.5 w-3.5 text-foreground" />
                   </button>
                 </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-[9px] text-muted-foreground w-7 text-right shrink-0">{formatSec(ytCurrentTime)}</span>
+                <div
+                  className="flex-1 h-1.5 rounded-full bg-secondary cursor-pointer relative group"
+                  onClick={handleProgressSeek}
+                >
+                  <motion.div
+                    className="h-full rounded-full gradient-primary absolute left-0 top-0"
+                    style={{ width: `${ytProgress * 100}%` }}
+                  />
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-primary shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ left: `calc(${ytProgress * 100}% - 6px)` }}
+                  />
+                </div>
+                <span className="text-[9px] text-muted-foreground w-7 shrink-0">{formatSec(ytDurationSec)}</span>
               </div>
             </div>
           </motion.div>
