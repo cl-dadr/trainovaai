@@ -125,13 +125,14 @@ async function searchPipedClient(query: string): Promise<ClientYouTubeVideo[]> {
 export async function clientSideYouTubeSearch(query: string): Promise<ClientYouTubeVideo[]> {
   console.log(`Client-side search fallback for: "${query}"`);
   
-  // Race both approaches
-  const result = await Promise.any([
-    searchInvidiousClient(query).then(r => { if (r.length === 0) throw new Error("empty"); return r; }),
-    searchPipedClient(query).then(r => { if (r.length === 0) throw new Error("empty"); return r; }),
-  ]).catch(() => []);
+  // Try both in parallel, return first success
+  const [invResults, pipedResults] = await Promise.all([
+    searchInvidiousClient(query).catch(() => [] as ClientYouTubeVideo[]),
+    searchPipedClient(query).catch(() => [] as ClientYouTubeVideo[]),
+  ]);
 
-  if (result.length > 0) return result;
+  if (invResults.length > 0) return invResults;
+  if (pipedResults.length > 0) return pipedResults;
 
   console.log("Client-side search: no results from any source");
   return [];
