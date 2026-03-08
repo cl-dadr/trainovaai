@@ -916,8 +916,11 @@ const MusicPage = () => {
                   <Heart className={`h-3.5 w-3.5 ${isLiked(activeVideoId!) ? "text-destructive fill-current" : "text-muted-foreground"}`} />
                 </button>
                 <div className="flex items-center gap-0.5">
-                  <button onClick={handleSkipPrev} className="p-1.5">
+                  <button onClick={handleSkipPrev} className="p-1">
                     <SkipBack className="h-3.5 w-3.5 text-foreground" />
+                  </button>
+                  <button onClick={seekBackward} className="p-1" title="-10s">
+                    <RotateCcw className="h-3 w-3 text-muted-foreground" />
                   </button>
                   <button onClick={togglePlayPause} className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center neon-glow">
                     {isYtPlaying ? (
@@ -926,7 +929,10 @@ const MusicPage = () => {
                       <Play className="h-3.5 w-3.5 text-primary-foreground ml-0.5" />
                     )}
                   </button>
-                  <button onClick={handleSkipNext} className="p-1.5">
+                  <button onClick={seekForward} className="p-1" title="+10s">
+                    <RotateCw className="h-3 w-3 text-muted-foreground" />
+                  </button>
+                  <button onClick={handleSkipNext} className="p-1">
                     <SkipForward className="h-3.5 w-3.5 text-foreground" />
                   </button>
                 </div>
