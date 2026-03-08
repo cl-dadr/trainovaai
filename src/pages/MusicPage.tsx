@@ -101,6 +101,7 @@ const MusicPage = () => {
 
   const loadCategory = useCallback(async (cat: string) => {
     setLoading(true);
+    setSearchSource(null);
     const query = cat === "All" ? "gym workout music mix 2025" : `${cat} gym workout music`;
     const results = await searchYouTube(query, cat === "All" ? "Workout" : cat);
     setYtVideos(results);
