@@ -18,6 +18,11 @@ import HealthReportPage from "./pages/HealthReportPage";
 import JaxAIPage from "./pages/JaxAIPage";
 import RunningPage from "./pages/RunningPage";
 import PremiumPage from "./pages/PremiumPage";
+import NutritionPage from "./pages/NutritionPage";
+import HabitTrackerPage from "./pages/HabitTrackerPage";
+import MentalWellnessPage from "./pages/MentalWellnessPage";
+import WorkoutPlannerPage from "./pages/WorkoutPlannerPage";
+import ProgressPage from "./pages/ProgressPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +51,11 @@ const AppRoutes = () => {
         <Route path="/jax" element={<ProtectedRoute><JaxAIPage /></ProtectedRoute>} />
         <Route path="/running" element={<ProtectedRoute><RunningPage /></ProtectedRoute>} />
         <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
+        <Route path="/nutrition" element={<ProtectedRoute><NutritionPage /></ProtectedRoute>} />
+        <Route path="/habits" element={<ProtectedRoute><HabitTrackerPage /></ProtectedRoute>} />
+        <Route path="/wellness" element={<ProtectedRoute><MentalWellnessPage /></ProtectedRoute>} />
+        <Route path="/planner" element={<ProtectedRoute><WorkoutPlannerPage /></ProtectedRoute>} />
+        <Route path="/progress" element={<ProtectedRoute><ProgressPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {user && <NowPlayingBar />}

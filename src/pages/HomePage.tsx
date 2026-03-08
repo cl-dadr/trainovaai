@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Zap, Trophy, Target, Flame, Sparkles, User,
   Footprints, BarChart3, Bot, Bell, PersonStanding,
+  Apple, Brain, CheckSquare, TrendingUp, Dumbbell,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserStats } from "@/hooks/useUserStats";
@@ -24,8 +25,15 @@ const aiHints = [
 const quickNav = [
   { icon: Footprints, label: "Activity", path: "/activity", color: "text-neon-green" },
   { icon: PersonStanding, label: "Run", path: "/running", color: "text-neon-cyan" },
-  { icon: BarChart3, label: "Reports", path: "/reports", color: "text-neon-orange" },
-  { icon: Bot, label: "JAX AI", path: "/jax", color: "text-neon-purple" },
+  { icon: Bot, label: "AI Coach", path: "/jax", color: "text-neon-purple" },
+  { icon: Dumbbell, label: "Planner", path: "/planner", color: "text-neon-orange" },
+];
+
+const quickNav2 = [
+  { icon: Apple, label: "Nutrition", path: "/nutrition", color: "text-neon-green" },
+  { icon: Brain, label: "Wellness", path: "/wellness", color: "text-neon-cyan" },
+  { icon: CheckSquare, label: "Habits", path: "/habits", color: "text-neon-orange" },
+  { icon: TrendingUp, label: "Progress", path: "/progress", color: "text-neon-purple" },
 ];
 
 const HomePage = () => {
@@ -87,8 +95,16 @@ const HomePage = () => {
       </motion.button>
 
       {/* Quick Nav */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="relative z-10 grid grid-cols-4 gap-2 mb-6">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="relative z-10 grid grid-cols-4 gap-2 mb-3">
         {quickNav.map((item) => (
+          <button key={item.label} onClick={() => navigate(item.path)} className="glass-card p-3 text-center hover:bg-secondary/50 transition-colors">
+            <item.icon className={`mx-auto h-5 w-5 mb-1.5 ${item.color}`} />
+            <span className="text-[10px] text-muted-foreground font-medium">{item.label}</span>
+          </button>
+        ))}
+      </motion.div>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.17 }} className="relative z-10 grid grid-cols-4 gap-2 mb-6">
+        {quickNav2.map((item) => (
           <button key={item.label} onClick={() => navigate(item.path)} className="glass-card p-3 text-center hover:bg-secondary/50 transition-colors">
             <item.icon className={`mx-auto h-5 w-5 mb-1.5 ${item.color}`} />
             <span className="text-[10px] text-muted-foreground font-medium">{item.label}</span>
