@@ -5,6 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Piped API instances (free YouTube frontends)
 const PIPED_INSTANCES = [
   "https://pipedapi.kavin.rocks",
   "https://pipedapi.r4fo.com",
@@ -15,6 +16,7 @@ const PIPED_INSTANCES = [
   "https://pipedapi.drgns.space",
 ];
 
+// Invidious API instances (free YouTube frontends)
 const INVIDIOUS_INSTANCES = [
   "https://inv.nadeko.net",
   "https://vid.puffyan.us",
@@ -24,6 +26,7 @@ const INVIDIOUS_INSTANCES = [
   "https://invidious.nerdvpn.de",
 ];
 
+// ── Curated fallback library ──
 const CURATED_VIDEOS: Record<string, Array<{id: string; title: string; author: string; lengthSeconds: number}>> = {
   "Workout": [
     { id: "h9EUxjJsMM8", title: "Best Gym Workout Music 2025 🔥 Top Motivational Songs", author: "Trap Music", lengthSeconds: 3600 },
@@ -116,50 +119,19 @@ const CURATED_VIDEOS: Record<string, Array<{id: string; title: string; author: s
   ],
 };
 
-async function tryFetch(url: string, timeout = 5000): Promise<Response | null> {
+// ── Helpers ──
+
+async function tryFetch(url: string, timeout = 8000): Promise<Response | null> {
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timer);
     if (res.ok) return res;
+    // Consume body to prevent leak
+    try { await res.text(); } catch {}
   } catch { /* skip */ }
   return null;
-}
-
-// YouTube Data API v3 search
-async function searchYouTubeAPI(query: string, apiKey: string): Promise<any[]> {
-  try {
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=20&q=${encodeURIComponent(query)}&key=${apiKey}`;
-    const res = await fetch(url);
-    if (!res.ok) {
-      console.error("YouTube API error:", res.status, await res.text());
-      return [];
-    }
-    const data = await res.json();
-    const videoIds = (data.items || []).map((item: any) => item.id?.videoId).filter(Boolean);
-    if (videoIds.length === 0) return [];
-
-    const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds.join(",")}&key=${apiKey}`;
-    const detailsRes = await fetch(detailsUrl);
-    if (!detailsRes.ok) return [];
-    const detailsData = await detailsRes.json();
-
-    return (detailsData.items || []).map((item: any) => {
-      const duration = item.contentDetails?.duration || "PT0S";
-      const seconds = parseDuration(duration);
-      return {
-        id: item.id,
-        title: item.snippet?.title || "Unknown",
-        author: item.snippet?.channelTitle || "Unknown",
-        thumbnail: item.snippet?.thumbnails?.medium?.url || `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`,
-        lengthSeconds: seconds,
-      };
-    });
-  } catch (e) {
-    console.error("YouTube API search error:", e);
-    return [];
-  }
 }
 
 function parseDuration(iso: string): number {
@@ -168,60 +140,124 @@ function parseDuration(iso: string): number {
   return parseInt(match[1] || "0") * 3600 + parseInt(match[2] || "0") * 60 + parseInt(match[3] || "0");
 }
 
-// Piped/Invidious fallback search
-async function searchFreeAPIs(query: string): Promise<any[]> {
-  const promises = [
-    ...PIPED_INSTANCES.map(async (instance) => {
-      try {
-        const res = await tryFetch(`${instance}/search?q=${encodeURIComponent(query)}&filter=music_songs`);
-        if (res) {
-          const data = await res.json();
-          const items = (data.items || [])
-            .filter((item: any) => item.type === "stream" && item.duration > 0)
-            .slice(0, 20)
-            .map((item: any) => ({
-              id: item.url?.replace("/watch?v=", "") || "",
-              title: item.title || "Unknown",
-              author: item.uploaderName || "Unknown",
-              thumbnail: item.thumbnail || `https://i.ytimg.com/vi/${item.url?.replace("/watch?v=", "") || ""}/mqdefault.jpg`,
-              lengthSeconds: item.duration || 0,
-            }));
-          if (items.length > 0) return items;
-        }
-      } catch { /* skip */ }
+// ── YouTube Data API v3 (quota-limited) ──
+async function searchYouTubeAPI(query: string, apiKey: string): Promise<any[]> {
+  try {
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=20&q=${encodeURIComponent(query)}&key=${apiKey}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("YouTube API error:", res.status, text);
       return [];
-    }),
-    ...INVIDIOUS_INSTANCES.map(async (instance) => {
-      try {
-        const res = await tryFetch(`${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&sort_by=relevance`);
-        if (res) {
-          const data = await res.json();
-          if (Array.isArray(data)) {
-            const items = data
-              .filter((item: any) => item.type === "video" && item.lengthSeconds > 0)
-              .slice(0, 20)
-              .map((item: any) => ({
-                id: item.videoId || "",
-                title: item.title || "Unknown",
-                author: item.author || "Unknown",
-                thumbnail: `https://i.ytimg.com/vi/${item.videoId}/mqdefault.jpg`,
-                lengthSeconds: item.lengthSeconds || 0,
-              }));
-            if (items.length > 0) return items;
-          }
-        }
-      } catch { /* skip */ }
-      return [];
-    }),
-  ];
+    }
+    const data = await res.json();
+    const videoIds = (data.items || []).map((item: any) => item.id?.videoId).filter(Boolean);
+    if (videoIds.length === 0) return [];
 
-  const results = await Promise.allSettled(promises);
-  for (const r of results) {
-    if (r.status === "fulfilled" && r.value.length > 0) return r.value;
+    const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds.join(",")}&key=${apiKey}`;
+    const detailsRes = await fetch(detailsUrl);
+    if (!detailsRes.ok) { try { await detailsRes.text(); } catch {} return []; }
+    const detailsData = await detailsRes.json();
+
+    return (detailsData.items || []).map((item: any) => ({
+      id: item.id,
+      title: item.snippet?.title || "Unknown",
+      author: item.snippet?.channelTitle || "Unknown",
+      thumbnail: item.snippet?.thumbnails?.medium?.url || `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`,
+      lengthSeconds: parseDuration(item.contentDetails?.duration || "PT0S"),
+    }));
+  } catch (e) {
+    console.error("YouTube API search error:", e);
+    return [];
+  }
+}
+
+// ── Piped search (try multiple filters for better results) ──
+async function searchPiped(query: string): Promise<any[]> {
+  const filters = ["music_songs", "videos", "music"];
+  
+  for (const instance of PIPED_INSTANCES) {
+    for (const filter of filters) {
+      try {
+        const res = await tryFetch(
+          `${instance}/search?q=${encodeURIComponent(query)}&filter=${filter}`,
+          6000
+        );
+        if (!res) continue;
+        
+        const data = await res.json();
+        const rawItems = data.items || data.content || [];
+        const items = rawItems
+          .filter((item: any) => (item.type === "stream" || item.url) && (item.duration > 0 || item.lengthSeconds > 0))
+          .slice(0, 20)
+          .map((item: any) => {
+            const videoId = (item.url || "").replace("/watch?v=", "");
+            return {
+              id: videoId,
+              title: item.title || "Unknown",
+              author: item.uploaderName || item.uploader || "Unknown",
+              thumbnail: item.thumbnail || `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
+              lengthSeconds: item.duration || item.lengthSeconds || 0,
+            };
+          })
+          .filter((item: any) => item.id);
+        
+        if (items.length > 0) {
+          console.log(`Piped success: ${instance} filter=${filter} results=${items.length}`);
+          return items;
+        }
+      } catch { /* try next */ }
+    }
   }
   return [];
 }
 
+// ── Invidious search ──
+async function searchInvidious(query: string): Promise<any[]> {
+  for (const instance of INVIDIOUS_INSTANCES) {
+    try {
+      const res = await tryFetch(
+        `${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&sort_by=relevance`,
+        6000
+      );
+      if (!res) continue;
+      
+      const data = await res.json();
+      if (!Array.isArray(data)) continue;
+      
+      const items = data
+        .filter((item: any) => item.type === "video" && item.lengthSeconds > 0)
+        .slice(0, 20)
+        .map((item: any) => ({
+          id: item.videoId || "",
+          title: item.title || "Unknown",
+          author: item.author || "Unknown",
+          thumbnail: `https://i.ytimg.com/vi/${item.videoId}/mqdefault.jpg`,
+          lengthSeconds: item.lengthSeconds || 0,
+        }))
+        .filter((item: any) => item.id);
+      
+      if (items.length > 0) {
+        console.log(`Invidious success: ${instance} results=${items.length}`);
+        return items;
+      }
+    } catch { /* try next */ }
+  }
+  return [];
+}
+
+// ── Combined free API search with race ──
+async function searchFreeAPIs(query: string): Promise<any[]> {
+  // Race Piped vs Invidious — first one with results wins
+  const result = await Promise.any([
+    searchPiped(query).then(r => { if (r.length === 0) throw new Error("empty"); return r; }),
+    searchInvidious(query).then(r => { if (r.length === 0) throw new Error("empty"); return r; }),
+  ]).catch(() => []);
+  
+  return result;
+}
+
+// ── Curated helpers ──
 function getCuratedVideos(category: string): any[] {
   const cat = Object.keys(CURATED_VIDEOS).find(k => k.toLowerCase() === category.toLowerCase()) || "Workout";
   return (CURATED_VIDEOS[cat] || CURATED_VIDEOS["Workout"]).map(v => ({
@@ -244,6 +280,7 @@ function getAllCurated(): any[] {
   return all;
 }
 
+// ── Main handler ──
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -252,11 +289,23 @@ serve(async (req) => {
   try {
     const { action, query, videoId, category } = await req.json();
     const apiKey = Deno.env.get("YOUTUBE_API_KEY");
-    console.log("API key present:", !!apiKey, "length:", apiKey?.length, "first4:", apiKey?.substring(0, 4), "last4:", apiKey?.substring((apiKey?.length || 0) - 4));
 
     if (action === "search") {
-      // 1. Try YouTube Data API v3
+      // 1. Try free APIs FIRST (no quota limits)
+      console.log(`Searching free APIs for: "${query}"`);
+      const freePromise = searchFreeAPIs(query);
+      const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 12000));
+      const freeResults = await Promise.race([freePromise, timeoutPromise]);
+      
+      if (freeResults.length > 0) {
+        return new Response(JSON.stringify({ items: freeResults, source: "free_api" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // 2. Try YouTube Data API v3 as backup
       if (apiKey) {
+        console.log("Free APIs failed, trying YouTube Data API...");
         const ytResults = await searchYouTubeAPI(query, apiKey);
         if (ytResults.length > 0) {
           return new Response(JSON.stringify({ items: ytResults, source: "youtube_api" }), {
@@ -265,17 +314,8 @@ serve(async (req) => {
         }
       }
 
-      // 2. Try Piped/Invidious free APIs (8s timeout)
-      const freePromise = searchFreeAPIs(query);
-      const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 8000));
-      const freeResults = await Promise.race([freePromise, timeoutPromise]);
-      if (freeResults.length > 0) {
-        return new Response(JSON.stringify({ items: freeResults, source: "free_api" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
       // 3. Fallback to curated
+      console.log("All APIs failed, falling back to curated");
       const curated = getCuratedVideos(category || "Workout");
       return new Response(JSON.stringify({ items: curated, source: "curated" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
