@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Music, Play, Pause, Heart, Loader2, Youtube, ChevronRight, Shuffle, SkipBack, SkipForward, Repeat, ChevronDown, MoreHorizontal, X, ListMusic, Flame, Zap, Dumbbell, Wind, Library } from "lucide-react";
+import { Search, Music, Play, Pause, Heart, Loader2, Youtube, ChevronRight, Shuffle, SkipBack, SkipForward, Repeat, ChevronDown, MoreHorizontal, X, ListMusic, Flame, Zap, Dumbbell, Wind, Plus, Trash2, FolderPlus } from "lucide-react";
 import { searchYouTube, type YouTubeVideo } from "@/lib/youtubeService";
 import { useLikedSongs } from "@/hooks/useLikedSongs";
+import { usePlaylists, type PlaylistSong } from "@/hooks/usePlaylists";
+import { toast } from "@/hooks/use-toast";
 
 const categories = [
   { name: "All", icon: Flame },
@@ -20,7 +22,7 @@ const categories = [
 ];
 
 // Curated playlists
-const playlists = [
+const curatedPlaylists = [
   { id: "gym-beast", name: "Gym Beast Mode", emoji: "💪", category: "Workout", color: "from-red-500/30 to-orange-500/30" },
   { id: "phonk-drift", name: "Phonk & Drift", emoji: "🏎️", category: "Phonk", color: "from-purple-500/30 to-pink-500/30" },
   { id: "funk-groove", name: "Funk & Groove", emoji: "🕺", category: "Funk", color: "from-yellow-500/30 to-green-500/30" },
@@ -31,14 +33,12 @@ const playlists = [
 
 // Global iconic artists - India & USA
 const favoriteArtists = [
-  // 🇮🇳 India
   { name: "Arijit Singh", image: "https://ui-avatars.com/api/?name=Arijit+Singh&background=e74c3c&color=fff&size=128&bold=true", query: "Arijit Singh best songs" },
   { name: "A.R. Rahman", image: "https://ui-avatars.com/api/?name=AR+Rahman&background=f39c12&color=fff&size=128&bold=true", query: "AR Rahman top hits" },
   { name: "Honey Singh", image: "https://ui-avatars.com/api/?name=Honey+Singh&background=9b59b6&color=fff&size=128&bold=true", query: "Yo Yo Honey Singh top songs" },
   { name: "Badshah", image: "https://ui-avatars.com/api/?name=Badshah&background=1abc9c&color=fff&size=128&bold=true", query: "Badshah latest songs" },
   { name: "Shreya Ghoshal", image: "https://ui-avatars.com/api/?name=Shreya+G&background=e91e63&color=fff&size=128&bold=true", query: "Shreya Ghoshal best songs" },
   { name: "Diljit Dosanjh", image: "https://ui-avatars.com/api/?name=Diljit+D&background=ff5722&color=fff&size=128&bold=true", query: "Diljit Dosanjh top songs" },
-  // 🇺🇸 USA
   { name: "Drake", image: "https://ui-avatars.com/api/?name=Drake&background=2c3e50&color=fff&size=128&bold=true", query: "Drake top hits" },
   { name: "The Weeknd", image: "https://ui-avatars.com/api/?name=The+Weeknd&background=c0392b&color=fff&size=128&bold=true", query: "The Weeknd best songs" },
   { name: "Eminem", image: "https://ui-avatars.com/api/?name=Eminem&background=34495e&color=fff&size=128&bold=true", query: "Eminem greatest hits" },
@@ -46,6 +46,8 @@ const favoriteArtists = [
   { name: "Post Malone", image: "https://ui-avatars.com/api/?name=Post+M&background=2980b9&color=fff&size=128&bold=true", query: "Post Malone best songs" },
   { name: "Travis Scott", image: "https://i.ytimg.com/vi/eb2dJmSEaps/mqdefault.jpg", query: "Travis Scott top hits" },
 ];
+
+const playlistEmojis = ["🎵", "🔥", "💪", "🎧", "🏋️", "🎶", "⚡", "🎸", "🥁", "🎤"];
 
 const MusicPage = () => {
   const [activeCategory, setActiveCategory] = useState("All");
@@ -60,11 +62,24 @@ const MusicPage = () => {
   const [recentlyPlayed, setRecentlyPlayed] = useState<YouTubeVideo[]>(() => {
     try { return JSON.parse(localStorage.getItem("yt_recent") || "[]"); } catch { return []; }
   });
-  const [activePlaylist, setActivePlaylist] = useState<string | null>(null);
+  const [activeCuratedPlaylist, setActiveCuratedPlaylist] = useState<string | null>(null);
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
 
+  // Playlist states
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [songToSave, setSongToSave] = useState<{ id: string; title: string; author: string; thumbnail: string; duration: string } | null>(null);
+  const [showCreatePlaylist, setShowCreatePlaylist] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState("");
+  const [newPlaylistEmoji, setNewPlaylistEmoji] = useState("🎵");
+  const [showPlaylistView, setShowPlaylistView] = useState(false);
+  const [viewingPlaylistId, setViewingPlaylistId] = useState<string | null>(null);
+  const [playlistSongs, setPlaylistSongs] = useState<PlaylistSong[]>([]);
+  const [playlistSongsLoading, setPlaylistSongsLoading] = useState(false);
+  const [showMyPlaylists, setShowMyPlaylists] = useState(false);
+
   const { likedSongs, toggleLike, isLiked, loading: likesLoading } = useLikedSongs();
+  const { playlists: userPlaylists, createPlaylist, deletePlaylist, addSongToPlaylist, removeSongFromPlaylist, getPlaylistSongs, loading: playlistsLoading } = usePlaylists();
 
   const loadCategory = useCallback(async (cat: string) => {
     setLoading(true);
@@ -90,8 +105,8 @@ const MusicPage = () => {
     setLoading(false);
   }, []);
 
-  const handlePlaylistClick = useCallback(async (playlist: typeof playlists[0]) => {
-    setActivePlaylist(playlist.id);
+  const handleCuratedPlaylistClick = useCallback(async (playlist: typeof curatedPlaylists[0]) => {
+    setActiveCuratedPlaylist(playlist.id);
     setActiveCategory(playlist.category);
     setLoading(true);
     const results = await searchYouTube(`${playlist.name} music mix`, playlist.category);
@@ -103,11 +118,10 @@ const MusicPage = () => {
     loadCategory(activeCategory);
   }, [activeCategory, loadCategory]);
 
-  // Persist recent
   useEffect(() => { localStorage.setItem("yt_recent", JSON.stringify(recentlyPlayed)); }, [recentlyPlayed]);
 
-  const handleToggleLike = (video: YouTubeVideo | { id: string; title: string; author: string; thumbnail: string; duration: string }) => {
-    toggleLike({ id: video.id, title: video.title, author: video.author, thumbnail: video.thumbnail, duration: video.duration });
+  const handleToggleLike = (video: { id: string; title: string; author: string; thumbnail: string; duration: string }) => {
+    toggleLike(video);
   };
 
   const handleYtPlay = (video: YouTubeVideo) => {
@@ -130,9 +144,281 @@ const MusicPage = () => {
     setShowNowPlaying(true);
   };
 
+  const handlePlayPlaylistSong = (song: PlaylistSong) => {
+    setActiveVideoId(song.video_id);
+    setActiveVideoTitle(song.title);
+    setActiveVideoAuthor(song.author || "");
+    setActiveVideoThumb(song.thumbnail || "");
+    setShowNowPlaying(true);
+  };
+
+  const openSaveModal = (video: { id: string; title: string; author: string; thumbnail: string; duration: string }) => {
+    setSongToSave(video);
+    setShowSaveModal(true);
+  };
+
+  const handleSaveToPlaylist = async (playlistId: string) => {
+    if (!songToSave) return;
+    await addSongToPlaylist(playlistId, songToSave);
+    toast({ title: "Saved!", description: "Song added to playlist" });
+    setShowSaveModal(false);
+    setSongToSave(null);
+  };
+
+  const handleCreateAndSave = async () => {
+    if (!newPlaylistName.trim()) return;
+    const pl = await createPlaylist(newPlaylistName.trim(), newPlaylistEmoji);
+    if (pl && songToSave) {
+      await addSongToPlaylist(pl.id, songToSave);
+      toast({ title: "Created!", description: `Playlist "${pl.name}" created and song added` });
+    }
+    setNewPlaylistName("");
+    setNewPlaylistEmoji("🎵");
+    setShowCreatePlaylist(false);
+    setShowSaveModal(false);
+    setSongToSave(null);
+  };
+
+  const openPlaylistView = async (playlistId: string) => {
+    setViewingPlaylistId(playlistId);
+    setShowPlaylistView(true);
+    setPlaylistSongsLoading(true);
+    const songs = await getPlaylistSongs(playlistId);
+    setPlaylistSongs(songs);
+    setPlaylistSongsLoading(false);
+  };
+
+  const handleRemoveFromPlaylist = async (playlistId: string, videoId: string) => {
+    await removeSongFromPlaylist(playlistId, videoId);
+    setPlaylistSongs(prev => prev.filter(s => s.video_id !== videoId));
+  };
+
+  const viewingPlaylist = userPlaylists.find(p => p.id === viewingPlaylistId);
+
   return (
     <div className="relative min-h-screen pb-24 px-4 pt-6">
       <div className="ambient-glow" />
+
+      {/* Save to Playlist Modal */}
+      <AnimatePresence>
+        {showSaveModal && songToSave && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm flex items-end justify-center"
+            onClick={() => { setShowSaveModal(false); setSongToSave(null); }}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="w-full max-w-md bg-card border border-border/20 rounded-t-3xl p-5 pb-8"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-center mb-3">
+                <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+              </div>
+              <h3 className="text-base font-bold text-foreground mb-1">Save to Playlist</h3>
+              <p className="text-xs text-muted-foreground mb-4 truncate">{songToSave.title}</p>
+
+              {showCreatePlaylist ? (
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    {playlistEmojis.map(e => (
+                      <button key={e} onClick={() => setNewPlaylistEmoji(e)}
+                        className={`text-xl p-1.5 rounded-lg transition-all ${newPlaylistEmoji === e ? "bg-primary/20 ring-1 ring-primary" : "hover:bg-secondary/50"}`}>
+                        {e}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    value={newPlaylistName}
+                    onChange={(e) => setNewPlaylistName(e.target.value)}
+                    placeholder="Playlist name..."
+                    autoFocus
+                    className="w-full bg-secondary/30 text-sm text-foreground placeholder:text-muted-foreground rounded-xl px-4 py-3 outline-none border border-border/20 focus:border-primary/40"
+                    onKeyDown={(e) => e.key === "Enter" && handleCreateAndSave()}
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={() => setShowCreatePlaylist(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground bg-secondary/30">Cancel</button>
+                    <button onClick={handleCreateAndSave} className="flex-1 py-2.5 rounded-xl text-sm font-bold gradient-primary text-primary-foreground">Create & Save</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <button
+                    onClick={() => setShowCreatePlaylist(true)}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl border border-dashed border-primary/30 hover:bg-primary/5 transition-colors"
+                  >
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Plus className="h-5 w-5 text-primary" />
+                    </div>
+                    <span className="text-sm font-semibold text-primary">Create New Playlist</span>
+                  </button>
+
+                  {userPlaylists.map((pl) => (
+                    <button
+                      key={pl.id}
+                      onClick={() => handleSaveToPlaylist(pl.id)}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-secondary/30 transition-colors"
+                    >
+                      <div className="h-10 w-10 rounded-xl bg-secondary/50 flex items-center justify-center text-lg">
+                        {pl.emoji}
+                      </div>
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">{pl.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{pl.song_count || 0} songs</p>
+                      </div>
+                    </button>
+                  ))}
+
+                  {userPlaylists.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-3">No playlists yet. Create one above!</p>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Playlist View Overlay */}
+      <AnimatePresence>
+        {showPlaylistView && viewingPlaylist && (
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-background"
+          >
+            <div className="flex items-center justify-between px-4 pt-12 pb-4 border-b border-border/20">
+              <button onClick={() => setShowPlaylistView(false)} className="p-2 rounded-full hover:bg-secondary/50">
+                <ChevronDown className="h-6 w-6 text-foreground" />
+              </button>
+              <div className="text-center">
+                <span className="text-2xl">{viewingPlaylist.emoji}</span>
+                <h2 className="text-lg font-bold text-foreground">{viewingPlaylist.name}</h2>
+              </div>
+              <button onClick={async () => {
+                await deletePlaylist(viewingPlaylist.id);
+                setShowPlaylistView(false);
+                toast({ title: "Deleted", description: "Playlist removed" });
+              }} className="p-2 rounded-full hover:bg-destructive/10">
+                <Trash2 className="h-5 w-5 text-destructive" />
+              </button>
+            </div>
+
+            <div className="flex-1 px-4 pt-4 pb-24">
+              {playlistSongsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                </div>
+              ) : playlistSongs.length === 0 ? (
+                <div className="text-center py-16">
+                  <ListMusic className="mx-auto h-12 w-12 text-muted-foreground/30 mb-3" />
+                  <p className="text-sm text-muted-foreground">No songs in this playlist</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">Search for songs and tap "Save" to add them</p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {playlistSongs.map((song, i) => (
+                    <motion.div
+                      key={song.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: Math.min(0.03 * i, 0.3) }}
+                      onClick={() => handlePlayPlaylistSong(song)}
+                      className={`flex items-center gap-3 p-2.5 rounded-2xl transition-all cursor-pointer ${
+                        activeVideoId === song.video_id ? "glass-card border border-primary/20" : "hover:bg-secondary/30"
+                      }`}
+                    >
+                      <div className="relative h-12 w-12 rounded-xl overflow-hidden shrink-0 border border-border/10">
+                        {song.thumbnail ? (
+                          <img src={song.thumbnail} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="h-full w-full bg-primary/10 flex items-center justify-center">
+                            <Music className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-semibold truncate ${activeVideoId === song.video_id ? "text-primary" : "text-foreground"}`}>{song.title}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">{song.author || "Unknown"}</p>
+                      </div>
+                      <button onClick={(e) => { e.stopPropagation(); handleRemoveFromPlaylist(viewingPlaylist.id, song.video_id); }} className="shrink-0 p-1">
+                        <X className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive transition-colors" />
+                      </button>
+                      <span className="text-[10px] text-muted-foreground shrink-0">{song.duration || ""}</span>
+                      <button className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 bg-primary/10">
+                        <Play className="h-3.5 w-3.5 ml-0.5 text-primary" />
+                      </button>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* My Playlists Full Screen */}
+      <AnimatePresence>
+        {showMyPlaylists && (
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-background"
+          >
+            <div className="flex items-center justify-between px-4 pt-12 pb-4 border-b border-border/20">
+              <button onClick={() => setShowMyPlaylists(false)} className="p-2 rounded-full hover:bg-secondary/50">
+                <ChevronDown className="h-6 w-6 text-foreground" />
+              </button>
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <ListMusic className="h-5 w-5 text-primary" /> My Playlists
+              </h2>
+              <span className="text-sm text-muted-foreground">{userPlaylists.length}</span>
+            </div>
+            <div className="flex-1 px-4 pt-4 pb-24">
+              {playlistsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                </div>
+              ) : userPlaylists.length === 0 ? (
+                <div className="text-center py-16">
+                  <FolderPlus className="mx-auto h-12 w-12 text-muted-foreground/30 mb-3" />
+                  <p className="text-sm text-muted-foreground">No playlists yet</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">Tap "Save" on any song to create your first playlist</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {userPlaylists.map((pl) => (
+                    <motion.div
+                      key={pl.id}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => { setShowMyPlaylists(false); openPlaylistView(pl.id); }}
+                      className="flex items-center gap-3 p-3 rounded-2xl hover:bg-secondary/30 cursor-pointer transition-colors"
+                    >
+                      <div className="h-14 w-14 rounded-xl bg-secondary/50 flex items-center justify-center text-2xl shrink-0">
+                        {pl.emoji}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-foreground truncate">{pl.name}</p>
+                        <p className="text-[11px] text-muted-foreground">{pl.song_count || 0} songs</p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Full Favorites Screen */}
       <AnimatePresence>
@@ -284,7 +570,7 @@ const MusicPage = () => {
                 <Heart className={`h-4 w-4 ${isLiked(activeVideoId) ? "text-destructive fill-current" : "text-foreground"}`} />
                 <span className="text-xs text-foreground font-medium">Like</span>
               </button>
-              <button className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/30 bg-secondary/30 shrink-0">
+              <button onClick={() => openSaveModal({ id: activeVideoId, title: activeVideoTitle, author: activeVideoAuthor, thumbnail: activeVideoThumb, duration: "" })} className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-border/30 bg-secondary/30 shrink-0">
                 <ListMusic className="h-4 w-4 text-foreground" />
                 <span className="text-xs text-foreground font-medium">Save</span>
               </button>
@@ -294,7 +580,7 @@ const MusicPage = () => {
               </button>
             </div>
 
-            {/* Your Queue - Swipe up hint */}
+            {/* Your Queue */}
             <div className="px-6 mt-6 pb-8">
               <div className="flex justify-center mb-3">
                 <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
@@ -331,15 +617,23 @@ const MusicPage = () => {
             <p className="text-[10px] text-muted-foreground">Play any YouTube song 🎵</p>
           </div>
         </div>
-        <button onClick={() => setShowFavorites(true)} className="relative h-10 w-10 rounded-xl bg-destructive/10 flex items-center justify-center hover:bg-destructive/20 transition-colors">
-          <Heart className="h-5 w-5 text-destructive" />
-          {likedSongs.length > 0 && (
-            <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground flex items-center justify-center">{likedSongs.length}</span>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowMyPlaylists(true)} className="relative h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center hover:bg-primary/20 transition-colors">
+            <ListMusic className="h-5 w-5 text-primary" />
+            {userPlaylists.length > 0 && (
+              <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 rounded-full bg-primary text-[9px] font-bold text-primary-foreground flex items-center justify-center">{userPlaylists.length}</span>
+            )}
+          </button>
+          <button onClick={() => setShowFavorites(true)} className="relative h-10 w-10 rounded-xl bg-destructive/10 flex items-center justify-center hover:bg-destructive/20 transition-colors">
+            <Heart className="h-5 w-5 text-destructive" />
+            {likedSongs.length > 0 && (
+              <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground flex items-center justify-center">{likedSongs.length}</span>
+            )}
+          </button>
+        </div>
       </motion.div>
 
-      {/* Always-visible Search */}
+      {/* Search */}
       <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="relative z-10 mb-4">
         <div className="glass-card flex items-center gap-3 px-4 py-3 rounded-xl border border-border/20">
           <Search className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -365,7 +659,7 @@ const MusicPage = () => {
         {categories.map((cat) => (
           <button
             key={cat.name}
-            onClick={() => { setActiveCategory(cat.name); setActivePlaylist(null); setSearchQuery(""); }}
+            onClick={() => { setActiveCategory(cat.name); setActiveCuratedPlaylist(null); setSearchQuery(""); }}
             className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
               activeCategory === cat.name ? "gradient-primary text-primary-foreground neon-glow" : "glass-card text-muted-foreground"
             }`}
@@ -376,7 +670,7 @@ const MusicPage = () => {
         ))}
       </motion.div>
 
-      {/* Playlists */}
+      {/* Curated Playlists */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="relative z-10 mb-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
@@ -384,13 +678,13 @@ const MusicPage = () => {
           </h2>
         </div>
         <div className="flex gap-3 overflow-x-auto no-scrollbar">
-          {playlists.map((pl) => (
+          {curatedPlaylists.map((pl) => (
             <motion.div
               key={pl.id}
               whileTap={{ scale: 0.95 }}
-              onClick={() => handlePlaylistClick(pl)}
+              onClick={() => handleCuratedPlaylistClick(pl)}
               className={`shrink-0 w-32 p-3 rounded-2xl cursor-pointer border transition-all ${
-                activePlaylist === pl.id ? "border-primary/40 neon-glow" : "border-border/10"
+                activeCuratedPlaylist === pl.id ? "border-primary/40 neon-glow" : "border-border/10"
               } glass-card`}
             >
               <div className={`h-16 w-full rounded-xl bg-gradient-to-br ${pl.color} flex items-center justify-center mb-2`}>
@@ -402,6 +696,34 @@ const MusicPage = () => {
           ))}
         </div>
       </motion.div>
+
+      {/* My Playlists Quick Row */}
+      {userPlaylists.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.17 }} className="relative z-10 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <FolderPlus className="h-4 w-4 text-primary" /> My Playlists
+            </h2>
+            <button onClick={() => setShowMyPlaylists(true)} className="text-[10px] text-primary font-semibold">View All</button>
+          </div>
+          <div className="flex gap-3 overflow-x-auto no-scrollbar">
+            {userPlaylists.slice(0, 6).map((pl) => (
+              <motion.div
+                key={pl.id}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => openPlaylistView(pl.id)}
+                className="shrink-0 w-28 cursor-pointer"
+              >
+                <div className="h-20 w-28 rounded-xl bg-secondary/30 border border-border/20 flex items-center justify-center mb-1.5">
+                  <span className="text-3xl">{pl.emoji}</span>
+                </div>
+                <p className="text-[10px] font-semibold text-foreground line-clamp-1">{pl.name}</p>
+                <p className="text-[9px] text-muted-foreground">{pl.song_count || 0} songs</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Favorite Artists */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="relative z-10 mb-6">
@@ -492,7 +814,7 @@ const MusicPage = () => {
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-bold text-foreground">
-              {searchQuery ? `Results for "${searchQuery}"` : activePlaylist ? playlists.find(p => p.id === activePlaylist)?.name : `${activeCategory} Tracks`}
+              {searchQuery ? `Results for "${searchQuery}"` : activeCuratedPlaylist ? curatedPlaylists.find(p => p.id === activeCuratedPlaylist)?.name : `${activeCategory} Tracks`}
             </h2>
             <span className="text-[10px] text-muted-foreground">{ytVideos.length} tracks</span>
           </div>
@@ -538,6 +860,11 @@ const MusicPage = () => {
                   {/* Like */}
                   <button onClick={(e) => { e.stopPropagation(); handleToggleLike(video); }} className="shrink-0 p-1">
                     <Heart className={`h-3.5 w-3.5 transition-colors ${videoLiked ? "text-destructive fill-current" : "text-muted-foreground"}`} />
+                  </button>
+
+                  {/* Save to playlist */}
+                  <button onClick={(e) => { e.stopPropagation(); openSaveModal(video); }} className="shrink-0 p-1">
+                    <ListMusic className="h-3.5 w-3.5 text-muted-foreground hover:text-primary transition-colors" />
                   </button>
 
                   {/* Duration & Play */}
@@ -586,6 +913,9 @@ const MusicPage = () => {
                 </div>
                 <button onClick={(e) => { e.stopPropagation(); handleToggleLike({ id: activeVideoId!, title: activeVideoTitle, author: activeVideoAuthor, thumbnail: activeVideoThumb, duration: "" }); }} className="p-1">
                   <Heart className={`h-3.5 w-3.5 ${isLiked(activeVideoId!) ? "text-destructive fill-current" : "text-muted-foreground"}`} />
+                </button>
+                <button onClick={(e) => { e.stopPropagation(); openSaveModal({ id: activeVideoId!, title: activeVideoTitle, author: activeVideoAuthor, thumbnail: activeVideoThumb, duration: "" }); }} className="p-1">
+                  <ListMusic className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
                 <button onClick={(e) => { e.stopPropagation(); setShowNowPlaying(true); }}
                   className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center neon-glow">
