@@ -13,8 +13,7 @@ import StreakPage from "./pages/StreakPage";
 import MusicPage from "./pages/MusicPage";
 import ProfilePage from "./pages/ProfilePage";
 import CameraPage from "./pages/CameraPage";
-ortPage";
-import JaxAIPage from "./pages/JaxAIPage";
+ge";
 import RunningPage from "./pages/RunningPage";
 import PremiumPage from "./pages/PremiumPage";
 import NutritionPage from "./pages/NutritionPage";
@@ -24,7 +23,7 @@ import WorkoutPlannerPage from "./pages/WorkoutPlannerPage";
 import ProgressPage from "./pages/ProgressPage";
 import BattleArenaPage from "./pages/BattleArena queryClient = new QueryClient();
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+const Protect) => {
   const { user, loading } = useAuth();
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
   if (!user) return <Navigate to="/auth" replace />;
@@ -44,8 +43,7 @@ const AppRoutes = () => {
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/camera" element={<ProtectedRoute><CameraPage /></ProtectedRoute>} />
         <Route path="/activity" element={<ProtectedRoute><ActivityPage /></ProtectedRoute>} />
-        <Route path="/reports" element={<ProtectedRoute><HealthReportPage /></ProtectedRoute>} />
-        <Route path="/jax" element={<ProtectedRoute><JaxAIPage /></ProtectedRoute>} />
+        <Route      <Route path="/jax" element={<ProtectedRoute><JaxAIPage /></ProtectedRoute>} />
         <Route path="/running" element={<ProtectedRoute><RunningPage /></ProtectedRoute>} />
         <Route path="/premium" element={<ProtectedRoute><PremiumPage /></ProtectedRoute>} />
         <Route path="/nutrition" element={<ProtectedRoute><NutritionPage /></ProtectedRoute>} />
