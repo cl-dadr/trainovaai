@@ -753,7 +753,7 @@ const MusicPage = () => {
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && { ...handleSearch(), setSearchFocused(false) }}
+            onKeyDown={(e) => { if (e.key === "Enter") { handleSearch(); setSearchFocused(false); } }}
             onFocus={() => { setIsSearchMode(true); setSearchFocused(true); }}
             onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
             placeholder="Search any song, artist, genre..."
