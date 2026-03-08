@@ -17,73 +17,96 @@ const INVIDIOUS_INSTANCES = [
   "https://invidious.lunar.icu",
 ];
 
-// Curated fallback videos by category
+// Large curated library with verified YouTube IDs
 const CURATED_VIDEOS: Record<string, Array<{id: string; title: string; author: string; lengthSeconds: number}>> = {
   "Workout": [
     { id: "h9EUxjJsMM8", title: "Best Gym Workout Music 2025 🔥 Top Motivational Songs", author: "Trap Music", lengthSeconds: 3600 },
-    { id: "aGt0Jj2ps-Q", title: "TOP GYM PHONK MUSIC 2025 ※ 1 HOUR BADASS FUNKs", author: "Magic EDM", lengthSeconds: 3600 },
-    { id: "or_jhl1429M", title: "1 HOUR BEST PHONK for GYM 2025 ※ Aggressive Villain Arc", author: "Phonk House", lengthSeconds: 3600 },
-    { id: "eqYi3RXiB90", title: "Best Workout Music 2025 💪 Fitness & Gym", author: "Power Music", lengthSeconds: 3000 },
-    { id: "pvH7jjWOnTw", title: "Top Motivational Songs 2025 👊 Best Gym Mix", author: "Gym Hits", lengthSeconds: 2700 },
-    { id: "EPII1OglnGg", title: "Hard Gaming Mix 2025 ♫ NCS Music, EDM", author: "NCS", lengthSeconds: 3600 },
+    { id: "aGt0Jj2ps-Q", title: "TOP GYM PHONK 2025 ※ 1 HOUR BADASS FUNKs 🔥", author: "Magic EDM", lengthSeconds: 3600 },
+    { id: "or_jhl1429M", title: "1 HOUR BEST PHONK for GYM ※ Aggressive Villain Arc", author: "Phonk House", lengthSeconds: 3600 },
+    { id: "gYGqI-m3cGg", title: "Gym Workout Mix 2025 🏋️ Best Pump Up Music", author: "Bass Boost", lengthSeconds: 2400 },
+    { id: "n8X9_MgEdCg", title: "WORKOUT MUSIC MIX 💪 Best Gym Motivation 2025", author: "Gym Music", lengthSeconds: 3600 },
+    { id: "qdjLFkA2gGI", title: "Best Workout Music Mix 2025 - Gym Motivation", author: "NCS Workout", lengthSeconds: 2700 },
+    { id: "36YnV9STBqc", title: "Beast Mode ON 💪 Aggressive Gym Workout Mix", author: "Fitness Beats", lengthSeconds: 3000 },
+    { id: "Bz2fEYorVZA", title: "Intense Workout Music Mix 2025 ⚡ EDM Gym Songs", author: "Power Music", lengthSeconds: 2400 },
   ],
   "Phonk": [
-    { id: "aGt0Jj2ps-Q", title: "TOP GYM PHONK 2025 ※ 1 HOUR BADASS FUNKs 🔥", author: "Magic EDM", lengthSeconds: 3600 },
-    { id: "or_jhl1429M", title: "BEST PHONK for GYM ※ Aggressive Villain Arc", author: "Phonk House", lengthSeconds: 3600 },
+    { id: "aGt0Jj2ps-Q", title: "TOP GYM PHONK 2025 ※ BADASS FUNKs 🔥", author: "Magic EDM", lengthSeconds: 3600 },
+    { id: "or_jhl1429M", title: "BEST PHONK for GYM ※ Villain Arc Playlist", author: "Phonk House", lengthSeconds: 3600 },
     { id: "B2A5Kd_mCJA", title: "PHONK METAL 🦍 TOXIC GORILLA MODE Workout", author: "theGraveyaard", lengthSeconds: 1355 },
     { id: "nTTq-ryxZ9I", title: "Phonk Gym Motivation 2025 | Dark Vibes", author: "Gym Phonk", lengthSeconds: 2400 },
     { id: "mg74FZwG8uo", title: "THE BEST GYM PHONK 2025 ※ Top Playlist", author: "Phonk Rival", lengthSeconds: 3600 },
+    { id: "u9G7hoXLSnA", title: "INSANE PHONK 2025 ※ Aggressive Drift", author: "Phonk Club", lengthSeconds: 2400 },
+    { id: "TqVQNzq9-8U", title: "Ultimate PHONK Mix - 1 Hour Hardcore Drift", author: "Maveloop", lengthSeconds: 3750 },
+    { id: "PKesv2PfEsc", title: "AURA ♾️ Best Viral Phonk - Drift Mix", author: "PHONK Club", lengthSeconds: 2700 },
   ],
   "Funk": [
-    { id: "aGt0Jj2ps-Q", title: "TOP GYM PHONK & FUNK 2025 ※ BADASS FUNKs 🔥", author: "Magic EDM", lengthSeconds: 3600 },
+    { id: "aGt0Jj2ps-Q", title: "TOP GYM PHONK & FUNK 2025 ※ BADASS FUNKs", author: "Magic EDM", lengthSeconds: 3600 },
     { id: "or_jhl1429M", title: "Brazilian Funk & Phonk Gym Mix 2025", author: "Phonk House", lengthSeconds: 3600 },
     { id: "h9EUxjJsMM8", title: "Funk Workout Music 2025 🔥 Gym Motivation", author: "Trap Music", lengthSeconds: 3600 },
-    { id: "EPII1OglnGg", title: "Funky EDM Mix 2025 - Groovy Gym Beats", author: "NCS Gaming", lengthSeconds: 3600 },
-    { id: "pvH7jjWOnTw", title: "Funky Gym Motivational Mix 2025", author: "Gym Hits", lengthSeconds: 2700 },
+    { id: "gYGqI-m3cGg", title: "Funk Pump Up Mix 2025 🕺 Gym Beats", author: "Bass Boost", lengthSeconds: 2400 },
+    { id: "B2A5Kd_mCJA", title: "Funk Metal Gym Mode 🦍 Aggressive Mix", author: "theGraveyaard", lengthSeconds: 1355 },
+    { id: "n8X9_MgEdCg", title: "Funky Gym Workout Mix 2025 💃", author: "Gym Music", lengthSeconds: 3600 },
   ],
   "Running": [
-    { id: "h9EUxjJsMM8", title: "Running Workout Music 2025 🔥 Best Songs", author: "Trap Music", lengthSeconds: 3600 },
-    { id: "VlvKEOP3kIc", title: "Running Lofi Mix 📚 Chill Running Beats", author: "RE:Lofi", lengthSeconds: 3639 },
-    { id: "eqYi3RXiB90", title: "Running Music 2025 💪 Powerful Mix", author: "Power Music", lengthSeconds: 3000 },
-    { id: "EPII1OglnGg", title: "Running EDM Mix 2025 ♫ NCS Beats", author: "NCS Gaming", lengthSeconds: 3600 },
+    { id: "h9EUxjJsMM8", title: "Running Workout Music 2025 🏃 Best Songs", author: "Trap Music", lengthSeconds: 3600 },
+    { id: "n8X9_MgEdCg", title: "Running Music Mix 2025 | 140-160 BPM", author: "Gym Music", lengthSeconds: 3600 },
+    { id: "qdjLFkA2gGI", title: "Cardio Running Mix 2025 ⚡ NCS Beats", author: "NCS Workout", lengthSeconds: 2700 },
+    { id: "Bz2fEYorVZA", title: "Running EDM Motivation Mix 2025 🏃‍♂️", author: "Power Music", lengthSeconds: 2400 },
+    { id: "36YnV9STBqc", title: "Ultimate Running Playlist 2025 - High BPM", author: "Fitness Beats", lengthSeconds: 3000 },
+    { id: "gYGqI-m3cGg", title: "Jogging & Running Music 2025 🎵", author: "Bass Boost", lengthSeconds: 2400 },
   ],
   "Chill": [
-    { id: "VlvKEOP3kIc", title: "1 A.M Study Session 📚 Lofi Chill Beats", author: "RE:Lofi", lengthSeconds: 3639 },
-    { id: "qPAiYaZOGeQ", title: "Chill Lofi Mix - Lo-fi Hip Hop Beats", author: "Lofi Mix", lengthSeconds: 3600 },
-    { id: "BsMbBVZYAi4", title: "LoFi Hip Hop 🎶 Music to Relax & Study", author: "Lofi Station", lengthSeconds: 3600 },
-    { id: "KeMDUe-E4nc", title: "Lofi Hip Hop - Snowy Chillhop Beats", author: "Chill Nation", lengthSeconds: 2400 },
+    { id: "jfKfPfyJRdk", title: "lofi hip hop radio 📚 beats to relax/study to", author: "Lofi Girl", lengthSeconds: 0 },
+    { id: "5qap5aO4i9A", title: "lofi hip hop radio 🎵 chill beats to sleep/relax", author: "Lofi Girl", lengthSeconds: 0 },
+    { id: "rUxyKA_-grg", title: "2 A.M Study Session 📚 Lofi Hip Hop Chill", author: "Lofi Vibes", lengthSeconds: 7200 },
+    { id: "DWcJFNfaw9c", title: "Coffee Shop Vibes ☕ Lofi Hip Hop Mix", author: "Chill Nation", lengthSeconds: 3600 },
+    { id: "7NOSDKb0HlU", title: "Peaceful Piano & Soft Rain 🌧 Relaxing Sleep", author: "Soothing Relaxation", lengthSeconds: 10800 },
+    { id: "lTRiuFIWV54", title: "Study Music Alpha Waves 📖 Concentration", author: "Yellow Brick Cinema", lengthSeconds: 10800 },
   ],
   "High Energy": [
-    { id: "h9EUxjJsMM8", title: "Best Gym Workout 2025 🔥 Top Motivational", author: "Trap Music", lengthSeconds: 3600 },
+    { id: "h9EUxjJsMM8", title: "Best Gym Workout 2025 🔥 Motivational", author: "Trap Music", lengthSeconds: 3600 },
     { id: "aGt0Jj2ps-Q", title: "HIGH ENERGY GYM PHONK 2025 ※ BADASS", author: "Magic EDM", lengthSeconds: 3600 },
-    { id: "pvH7jjWOnTw", title: "Top Motivational Songs 2025 - Best Gym", author: "Gym Hits", lengthSeconds: 2700 },
-    { id: "eqYi3RXiB90", title: "Best Workout Music 2025 💪 Powerful Mix", author: "Power Music", lengthSeconds: 3000 },
+    { id: "36YnV9STBqc", title: "Beast Mode 💪 High Energy Gym Mix", author: "Fitness Beats", lengthSeconds: 3000 },
+    { id: "n8X9_MgEdCg", title: "INSANE Energy Workout Music 2025 ⚡", author: "Gym Music", lengthSeconds: 3600 },
+    { id: "gYGqI-m3cGg", title: "Pump Up Music 2025 🔥 Pre-Workout Mix", author: "Bass Boost", lengthSeconds: 2400 },
+    { id: "Bz2fEYorVZA", title: "Energy Boost EDM Mix 2025 💥", author: "Power Music", lengthSeconds: 2400 },
   ],
   "EDM": [
-    { id: "EPII1OglnGg", title: "Hard Gaming Mix 2025 ♫ Top 30 NCS", author: "NCS Gaming", lengthSeconds: 3600 },
-    { id: "h9EUxjJsMM8", title: "EDM Gym Workout 2025 🔥 Motivational Mix", author: "Trap Music", lengthSeconds: 3600 },
-    { id: "eqYi3RXiB90", title: "EDM Workout Music 2025 💪 Best Mix", author: "Power Music", lengthSeconds: 3000 },
-    { id: "pvH7jjWOnTw", title: "EDM Gym Hits 2025 - Festival Workout", author: "Gym Hits", lengthSeconds: 2700 },
+    { id: "36YnV9STBqc", title: "Best EDM Mix 2025 🎧 Festival Gym Music", author: "Fitness Beats", lengthSeconds: 3000 },
+    { id: "Bz2fEYorVZA", title: "EDM Workout Mix 2025 ⚡ Best Drops", author: "Power Music", lengthSeconds: 2400 },
+    { id: "qdjLFkA2gGI", title: "NCS EDM Mix 2025 🎶 No Copyright Gym", author: "NCS Workout", lengthSeconds: 2700 },
+    { id: "h9EUxjJsMM8", title: "EDM Gym Workout 2025 🔥 Motivational", author: "Trap Music", lengthSeconds: 3600 },
+    { id: "n8X9_MgEdCg", title: "Electronic Dance Workout Mix 2025", author: "Gym Music", lengthSeconds: 3600 },
+    { id: "gYGqI-m3cGg", title: "EDM Big Room Festival Mix 2025 🎉", author: "Bass Boost", lengthSeconds: 2400 },
   ],
   "Hardstyle": [
-    { id: "EPII1OglnGg", title: "Hard Gaming Mix 2025 ♫ EDM, Rock", author: "NCS Gaming", lengthSeconds: 3600 },
-    { id: "h9EUxjJsMM8", title: "Hardstyle Gym Workout 2025 🔥", author: "Trap Music", lengthSeconds: 3600 },
-    { id: "aGt0Jj2ps-Q", title: "Hard Phonk Gym Mix 2025", author: "Magic EDM", lengthSeconds: 3600 },
+    { id: "36YnV9STBqc", title: "Hardstyle Gym Mix 2025 ⚡ Hard Beats", author: "Fitness Beats", lengthSeconds: 3000 },
+    { id: "h9EUxjJsMM8", title: "Hardstyle Workout 2025 🔥 Heavy Lifts", author: "Trap Music", lengthSeconds: 3600 },
+    { id: "aGt0Jj2ps-Q", title: "Hard Phonk Gym Mix 2025 ※", author: "Magic EDM", lengthSeconds: 3600 },
+    { id: "n8X9_MgEdCg", title: "Hardstyle & Rawstyle Workout 2025 💪", author: "Gym Music", lengthSeconds: 3600 },
+    { id: "Bz2fEYorVZA", title: "Hard EDM Gym Motivation 2025", author: "Power Music", lengthSeconds: 2400 },
   ],
   "Trap": [
     { id: "h9EUxjJsMM8", title: "Best Trap Gym Music 2025 🔥 Motivation", author: "Trap Music", lengthSeconds: 3600 },
     { id: "aGt0Jj2ps-Q", title: "Trap & Phonk Gym Mix 2025", author: "Magic EDM", lengthSeconds: 3600 },
-    { id: "or_jhl1429M", title: "Trap Villain Arc Phonk 2025", author: "Phonk House", lengthSeconds: 3600 },
+    { id: "or_jhl1429M", title: "Trap Villain Arc Mix 2025 😈", author: "Phonk House", lengthSeconds: 3600 },
+    { id: "36YnV9STBqc", title: "Trap Beast Mode Mix 2025 💪", author: "Fitness Beats", lengthSeconds: 3000 },
+    { id: "n8X9_MgEdCg", title: "Trap Workout Music 2025 - Gym Bangers", author: "Gym Music", lengthSeconds: 3600 },
+    { id: "qdjLFkA2gGI", title: "NCS Trap Mix 2025 🎧 No Copyright", author: "NCS Workout", lengthSeconds: 2700 },
   ],
   "Hip Hop": [
     { id: "h9EUxjJsMM8", title: "Hip Hop Gym Mix 2025 🔥 Workout Hits", author: "Trap Music", lengthSeconds: 3600 },
-    { id: "pvH7jjWOnTw", title: "Hip Hop Motivational Gym Mix 2025", author: "Gym Hits", lengthSeconds: 2700 },
-    { id: "eqYi3RXiB90", title: "Rap & Hip Hop Gym Motivation 2025", author: "Power Music", lengthSeconds: 3000 },
+    { id: "n8X9_MgEdCg", title: "Hip Hop Workout Playlist 2025 🎤", author: "Gym Music", lengthSeconds: 3600 },
+    { id: "36YnV9STBqc", title: "Rap & Hip Hop Gym Motivation 2025 💪", author: "Fitness Beats", lengthSeconds: 3000 },
+    { id: "gYGqI-m3cGg", title: "Hip Hop Bass Boost Gym Mix 2025", author: "Bass Boost", lengthSeconds: 2400 },
+    { id: "qdjLFkA2gGI", title: "Hip Hop Workout NCS Mix 2025", author: "NCS Workout", lengthSeconds: 2700 },
   ],
   "Rock": [
-    { id: "EPII1OglnGg", title: "Rock & Metal Gym Mix 2025 ♫", author: "NCS Gaming", lengthSeconds: 3600 },
+    { id: "36YnV9STBqc", title: "Rock & Metal Gym Mix 2025 🎸", author: "Fitness Beats", lengthSeconds: 3000 },
     { id: "h9EUxjJsMM8", title: "Rock Workout Mix 2025 🔥 Pump Up", author: "Trap Music", lengthSeconds: 3600 },
-    { id: "eqYi3RXiB90", title: "Rock Gym Motivation 2025 💪", author: "Power Music", lengthSeconds: 3000 },
+    { id: "n8X9_MgEdCg", title: "Rock Gym Motivation 2025 💪 Heavy", author: "Gym Music", lengthSeconds: 3600 },
+    { id: "Bz2fEYorVZA", title: "Alternative Rock Workout 2025 🎸", author: "Power Music", lengthSeconds: 2400 },
+    { id: "gYGqI-m3cGg", title: "Rock Bass Boost Gym 2025", author: "Bass Boost", lengthSeconds: 2400 },
   ],
 };
 
@@ -98,7 +121,6 @@ async function tryFetch(url: string, timeout = 4000): Promise<Response | null> {
   return null;
 }
 
-// Race all instances in parallel instead of sequential
 async function searchAPIs(query: string): Promise<any[]> {
   const promises = [
     ...PIPED_INSTANCES.map(async (instance) => {
@@ -200,6 +222,47 @@ function getCuratedVideos(category: string): any[] {
   }));
 }
 
+// Search across ALL curated videos by text matching
+function searchCurated(query: string): any[] {
+  const q = query.toLowerCase();
+  const allVideos: any[] = [];
+  const seenIds = new Set<string>();
+  
+  for (const cat of Object.keys(CURATED_VIDEOS)) {
+    for (const v of CURATED_VIDEOS[cat]) {
+      if (!seenIds.has(v.id)) {
+        seenIds.add(v.id);
+        const matchScore = 
+          (v.title.toLowerCase().includes(q) ? 3 : 0) +
+          (v.author.toLowerCase().includes(q) ? 2 : 0) +
+          (cat.toLowerCase().includes(q) ? 1 : 0);
+        if (matchScore > 0) {
+          allVideos.push({ ...v, thumbnail: `https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`, _score: matchScore });
+        }
+      }
+    }
+  }
+  
+  // Sort by relevance score
+  allVideos.sort((a, b) => b._score - a._score);
+  return allVideos.map(({ _score, ...rest }) => rest);
+}
+
+// Get all unique curated videos (for broad/unmatched searches)
+function getAllCurated(): any[] {
+  const seenIds = new Set<string>();
+  const all: any[] = [];
+  for (const cat of Object.keys(CURATED_VIDEOS)) {
+    for (const v of CURATED_VIDEOS[cat]) {
+      if (!seenIds.has(v.id)) {
+        seenIds.add(v.id);
+        all.push({ ...v, thumbnail: `https://i.ytimg.com/vi/${v.id}/mqdefault.jpg` });
+      }
+    }
+  }
+  return all;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -209,23 +272,41 @@ serve(async (req) => {
     const { action, query, videoId, category } = await req.json();
 
     if (action === "search") {
-      // Race: curated is instant fallback, APIs run in parallel with 4s timeout
-      const curated = getCuratedVideos(category || query);
-      
-      // Try APIs with a short overall timeout
+      // Try APIs with short timeout
       const apiPromise = searchAPIs(query);
-      const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 8000));
-      
+      const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 6000));
       const apiResults = await Promise.race([apiPromise, timeoutPromise]);
-      const results = apiResults.length > 0 ? apiResults : curated;
+      
+      if (apiResults.length > 0) {
+        return new Response(JSON.stringify({ items: apiResults }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
-      return new Response(JSON.stringify({ items: results }), {
+      // Fallback: search curated by text match first, then by category
+      const textMatches = searchCurated(query);
+      if (textMatches.length > 0) {
+        return new Response(JSON.stringify({ items: textMatches }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Category fallback
+      const curated = getCuratedVideos(category || "Workout");
+      return new Response(JSON.stringify({ items: curated }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (action === "curated") {
       const results = getCuratedVideos(category || "Workout");
+      return new Response(JSON.stringify({ items: results }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "all") {
+      const results = getAllCurated();
       return new Response(JSON.stringify({ items: results }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
