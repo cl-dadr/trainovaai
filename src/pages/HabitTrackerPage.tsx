@@ -1,12 +1,13 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Dumbbell, Droplets, Moon, Brain, Footprints, Check, Plus, Trophy,
   TrendingUp, Heart, Apple, Timer, Sun, Sparkles, Trash2, Flame, Zap, Target,
   BarChart3, PieChart, Calendar, CheckSquare, Filter, ChevronDown, ChevronUp,
   Clock, Award, Percent, ListChecks, LayoutGrid, Table2, Minus, ChevronLeft,
-  ChevronRight, CalendarDays, CalendarRange, Infinity
+  ChevronRight, CalendarDays, CalendarRange, Infinity, Medal, Crown, Star, Shield
 } from "lucide-react";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useHabits, type AISuggestion } from "@/hooks/useHabits";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
