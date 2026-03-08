@@ -58,6 +58,7 @@ const MusicPage = () => {
   const [activeVideoTitle, setActiveVideoTitle] = useState("");
   const [activeVideoAuthor, setActiveVideoAuthor] = useState("");
   const [activeVideoThumb, setActiveVideoThumb] = useState("");
+  const [activeVideoDuration, setActiveVideoDuration] = useState("");
   const [isYtPlaying, setIsYtPlaying] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [showNowPlaying, setShowNowPlaying] = useState(false);
@@ -131,6 +132,7 @@ const MusicPage = () => {
     setActiveVideoTitle(video.title);
     setActiveVideoAuthor(video.author);
     setActiveVideoThumb(video.thumbnail);
+    setActiveVideoDuration(video.duration);
     setIsYtPlaying(true);
     setRecentlyPlayed(prev => {
       const filtered = prev.filter(v => v.id !== video.id);
@@ -143,6 +145,7 @@ const MusicPage = () => {
     setActiveVideoTitle(song.title);
     setActiveVideoAuthor(song.author || "");
     setActiveVideoThumb(song.thumbnail || "");
+    setActiveVideoDuration(song.duration || "");
     setIsYtPlaying(true);
   };
 
@@ -151,6 +154,7 @@ const MusicPage = () => {
     setActiveVideoTitle(song.title);
     setActiveVideoAuthor(song.author || "");
     setActiveVideoThumb(song.thumbnail || "");
+    setActiveVideoDuration(song.duration || "");
     setIsYtPlaying(true);
   };
 
@@ -163,6 +167,20 @@ const MusicPage = () => {
     } else {
       iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
       setIsYtPlaying(true);
+    }
+  };
+
+  const handleSkipNext = () => {
+    const idx = ytVideos.findIndex(v => v.id === activeVideoId);
+    if (idx >= 0 && idx < ytVideos.length - 1) {
+      handleYtPlay(ytVideos[idx + 1]);
+    }
+  };
+
+  const handleSkipPrev = () => {
+    const idx = ytVideos.findIndex(v => v.id === activeVideoId);
+    if (idx > 0) {
+      handleYtPlay(ytVideos[idx - 1]);
     }
   };
 
@@ -875,21 +893,31 @@ const MusicPage = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-foreground truncate">{activeVideoTitle}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{activeVideoAuthor}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[10px] text-muted-foreground truncate">{activeVideoAuthor}</p>
+                    {activeVideoDuration && (
+                      <span className="text-[9px] text-primary font-medium shrink-0">• {activeVideoDuration}</span>
+                    )}
+                  </div>
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); handleToggleLike({ id: activeVideoId!, title: activeVideoTitle, author: activeVideoAuthor, thumbnail: activeVideoThumb, duration: "" }); }} className="p-1">
+                <button onClick={(e) => { e.stopPropagation(); handleToggleLike({ id: activeVideoId!, title: activeVideoTitle, author: activeVideoAuthor, thumbnail: activeVideoThumb, duration: activeVideoDuration }); }} className="p-1">
                   <Heart className={`h-3.5 w-3.5 ${isLiked(activeVideoId!) ? "text-destructive fill-current" : "text-muted-foreground"}`} />
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); openSaveModal({ id: activeVideoId!, title: activeVideoTitle, author: activeVideoAuthor, thumbnail: activeVideoThumb, duration: "" }); }} className="p-1">
-                  <ListMusic className="h-3.5 w-3.5 text-muted-foreground" />
-                </button>
-                <button onClick={togglePlayPause} className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center neon-glow">
-                  {isYtPlaying ? (
-                    <Pause className="h-3.5 w-3.5 text-primary-foreground" />
-                  ) : (
-                    <Play className="h-3.5 w-3.5 text-primary-foreground ml-0.5" />
-                  )}
-                </button>
+                <div className="flex items-center gap-0.5">
+                  <button onClick={handleSkipPrev} className="p-1.5">
+                    <SkipBack className="h-3.5 w-3.5 text-foreground" />
+                  </button>
+                  <button onClick={togglePlayPause} className="h-9 w-9 rounded-full gradient-primary flex items-center justify-center neon-glow">
+                    {isYtPlaying ? (
+                      <Pause className="h-3.5 w-3.5 text-primary-foreground" />
+                    ) : (
+                      <Play className="h-3.5 w-3.5 text-primary-foreground ml-0.5" />
+                    )}
+                  </button>
+                  <button onClick={handleSkipNext} className="p-1.5">
+                    <SkipForward className="h-3.5 w-3.5 text-foreground" />
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>
