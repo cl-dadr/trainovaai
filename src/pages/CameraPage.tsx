@@ -292,19 +292,25 @@ const CameraPage = () => {
 
     speakSessionEnd(totalReps, avgForm, totalCals);
 
-    await supabase.from("workout_sessions").insert({
-      user_id: user.id, exercise_type: exType, reps: totalReps,
-      form_score: avgForm, duration_seconds: duration, calories_burned: totalCals,
-    });
-
-    for (const [ex, count] of Object.entries(exerciseHistory)) {
-      if (ex !== exType && count > 0) {
-        await supabase.from("workout_sessions").insert({
-          user_id: user.id, exercise_type: ex, reps: count, form_score: avgForm,
-          duration_seconds: Math.round(duration * (count / totalReps)),
-          calories_burned: Math.round(count * calcCaloriesPerSecond(ex as ExerciseType, userWeight) * 60 * 10) / 10,
-        });
+    // Save each exercise individually with proper names
+    const exerciseEntries = Object.entries(exerciseHistory);
+    if (exerciseEntries.length > 0) {
+      for (const [ex, count] of exerciseEntries) {
+        if (count > 0) {
+          const exDuration = totalReps > 0 ? Math.round(duration * (count / totalReps)) : 0;
+          const exCals = Math.round(count * calcCaloriesPerSecond(ex as ExerciseType, userWeight) * 60 * 10) / 10;
+          await supabase.from("workout_sessions").insert({
+            user_id: user.id, exercise_type: ex, reps: count, form_score: avgForm,
+            duration_seconds: exDuration, calories_burned: exCals,
+          });
+        }
       }
+    } else {
+      // Fallback: save as single session
+      await supabase.from("workout_sessions").insert({
+        user_id: user.id, exercise_type: exType, reps: totalReps,
+        form_score: avgForm, duration_seconds: duration, calories_burned: totalCals,
+      });
     }
 
     for (const item of todoList) {
