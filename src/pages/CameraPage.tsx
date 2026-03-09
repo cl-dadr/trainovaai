@@ -546,25 +546,62 @@ const CameraPage = () => {
     return () => { if (calorieIntervalRef.current) clearInterval(calorieIntervalRef.current); };
   }, [isDetecting, userWeight]);
 
+  const poseRef = useRef<Pose | null>(null);
+
   const startDetection = useCallback(() => {
-    const video = webcamRef.current?.video;
-    if (!video) return;
-    const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` });
-    pose.setOptions({ modelComplexity: 2, smoothLandmarks: true, enableSegmentation: false, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
-    pose.onResults(onResults);
-    const camera = new cam.Camera(video, { onFrame: async () => { await pose.send({ image: video }); }, width: 640, height: 480 });
-    camera.start();
-    cameraRef.current = camera;
     setIsDetecting(true);
     sessionStartRef.current = new Date();
     setSessionElapsed(0); setLiveCalories(0); setSessionXP(0); setCombo(0); setBestCombo(0);
     setEarnedAchievements([]); setShowSessionReport(false);
     formScoresRef.current = []; comboRef.current = 0;
     resetDetection();
-  }, [onResults]);
+  }, []);
+
+  // Initialize MediaPipe when detecting starts — runs after render so video element is mounted
+  useEffect(() => {
+    if (!isDetecting) return;
+    let cancelled = false;
+
+    const initPose = () => {
+      const video = webcamRef.current?.video;
+      if (!video || cancelled) return;
+
+      // Wait until video is ready
+      if (!video.readyState || video.readyState < 2) {
+        video.addEventListener("loadeddata", () => { if (!cancelled) initPose(); }, { once: true });
+        return;
+      }
+
+      const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` });
+      pose.setOptions({ modelComplexity: 2, smoothLandmarks: true, enableSegmentation: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+      pose.onResults(onResults);
+      poseRef.current = pose;
+
+      const camera = new cam.Camera(video, {
+        onFrame: async () => {
+          if (poseRef.current) {
+            try { await poseRef.current.send({ image: video }); } catch {}
+          }
+        },
+        width: 640,
+        height: 480,
+      });
+      camera.start();
+      cameraRef.current = camera;
+    };
+
+    // Small delay to ensure Webcam component has mounted and video is streaming
+    const timeout = setTimeout(initPose, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
+  }, [isDetecting, onResults]);
 
   const stopDetection = () => {
     if (cameraRef.current) { cameraRef.current.stop(); cameraRef.current = null; }
+    if (poseRef.current) { poseRef.current.close(); poseRef.current = null; }
     setIsDetecting(false);
     resetDetection();
     if (totalReps > 0 && user) saveSession();
@@ -732,8 +769,9 @@ const CameraPage = () => {
     return (
       <div className="fixed inset-0 z-50 bg-black flex flex-col">
         <div className="relative flex-1">
-          <Webcam ref={webcamRef} audio={false} mirrored className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0 }}
-            videoConstraints={{ facingMode: "user", width: 640, height: 480 }} />
+          <Webcam ref={webcamRef} audio={false} mirrored className="absolute inset-0 w-full h-full object-cover"
+            videoConstraints={{ facingMode: "user", width: 640, height: 480 }}
+            style={{ opacity: 0 }} />
           <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
 
           {/* Rep flash overlay */}
@@ -929,14 +967,10 @@ const CameraPage = () => {
           <div className="relative z-10 aspect-[3/4] max-h-[55vh] rounded-2xl bg-secondary/30 border border-border/50 overflow-hidden mb-3 mx-auto">
             <Webcam ref={webcamRef} audio={false} mirrored className="absolute inset-0 w-full h-full object-cover"
               videoConstraints={{ facingMode: "user", width: 640, height: 480 }} />
-            <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover" style={{ transform: "scaleX(-1)", opacity: 0 }} />
             <div className="absolute inset-3 border-2 border-primary/20 rounded-xl pointer-events-none" />
-            <div className="absolute inset-0 flex items-center justify-center bg-background/30">
-              <div className="text-center">
-                <Camera className="mx-auto h-12 w-12 text-muted-foreground/30 mb-2" />
-                <p className="text-xs text-muted-foreground">Full body in frame</p>
-                <p className="text-[9px] text-muted-foreground/60">33 keypoints • Voice coaching • Gamification</p>
-              </div>
+            <div className="absolute bottom-3 left-3 right-3 bg-black/50 backdrop-blur-sm rounded-xl p-2 text-center">
+              <p className="text-xs text-white font-bold">Position your full body in frame</p>
+              <p className="text-[9px] text-white/60">9 exercises • AI detection • Voice coaching</p>
             </div>
           </div>
 
