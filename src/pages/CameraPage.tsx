@@ -670,6 +670,7 @@ const CameraPage = () => {
     setCorrections([]); setCurrentExercise("unknown"); setFeedback("Position yourself in frame");
     setExerciseHistory({}); formScoresRef.current = []; resetDetection(); repFeedbackCounter.current = 0;
     setSessionXP(0); setCombo(0); setBestCombo(0); setEarnedAchievements([]); comboRef.current = 0;
+    setBestRepForm(0); resetBestRepScore();
   };
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
