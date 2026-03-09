@@ -144,14 +144,16 @@ const CameraPage = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [{ data: profile }, { data: sessions }, { data: np }] = await Promise.all([
+      const [{ data: profile }, { data: sessions }, { data: np }, { data: todos }] = await Promise.all([
         supabase.from("profiles").select("body_goal").eq("user_id", user.id).maybeSingle(),
         supabase.from("workout_sessions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
         supabase.from("nutrition_profiles").select("weight_kg").eq("user_id", user.id).maybeSingle(),
+        supabase.from("workout_todos").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
       ]);
       if (profile?.body_goal) setBodyGoal(profile.body_goal as BodyGoalId);
       if (sessions) setPastSessions(sessions as SessionRecord[]);
       if (np?.weight_kg) setUserWeight(np.weight_kg);
+      if (todos) setTodoList(todos.map((t: any) => ({ id: t.id, exercise: t.exercise_type as ExerciseType, targetReps: t.target_reps, status: t.status, actualReps: t.actual_reps })));
     };
     load();
 
