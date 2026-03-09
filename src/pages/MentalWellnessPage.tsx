@@ -160,16 +160,23 @@ const MentalWellnessPage = () => {
         <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
           <Wind className="h-4 w-4 text-neon-cyan" /> Breathing Exercises
         </h3>
-        {breathingExercises.map((ex, i) => (
-          <button key={i} onClick={startBreathing} className="w-full glass-card p-4 mb-3 flex items-center gap-3 text-left">
-            <span className="text-2xl">{ex.emoji}</span>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-foreground">{ex.name}</p>
-              <p className="text-xs text-muted-foreground">{ex.desc}</p>
-            </div>
-            <span className="text-xs text-neon-cyan">{ex.duration}</span>
-          </button>
-        ))}
+        {canUseFeature("wellness") ? (
+          <>
+            <PremiumGate remainingUses={getRemainingUses("wellness")} feature="sessions" />
+            {breathingExercises.map((ex, i) => (
+              <button key={i} onClick={startBreathing} className="w-full glass-card p-4 mb-3 flex items-center gap-3 text-left">
+                <span className="text-2xl">{ex.emoji}</span>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">{ex.name}</p>
+                  <p className="text-xs text-muted-foreground">{ex.desc}</p>
+                </div>
+                <span className="text-xs text-neon-cyan">{ex.duration}</span>
+              </button>
+            ))}
+          </>
+        ) : (
+          <PremiumGate remainingUses={0} feature="sessions" />
+        )}
       </motion.div>
 
       {/* AI Recommendations */}

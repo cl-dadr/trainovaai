@@ -505,11 +505,16 @@ Format with emojis and make it visually appealing.`,
           <Sparkles className="h-5 w-5 text-primary" />
           <h3 className="font-bold text-foreground">AI Cyclic Meal Plan</h3>
         </div>
-        <p className="text-xs text-muted-foreground mb-4">Personalized for your {profile.body_goal.replace("_", " ")} goal • Changes daily</p>
-
-        <button onClick={generateCyclicMealPlan} disabled={generating} className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
-          {generating ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating today's plan...</> : <><Sparkles className="h-4 w-4" /> Get Today's Meal Plan</>}
-        </button>
+        {canUseFeature("nutrition") ? (
+          <>
+            <PremiumGate remainingUses={getRemainingUses("nutrition")} feature="meal plans" />
+            <button onClick={generateCyclicMealPlan} disabled={generating} className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+              {generating ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating today's plan...</> : <><Sparkles className="h-4 w-4" /> Get Today's Meal Plan</>}
+            </button>
+          </>
+        ) : (
+          <PremiumGate remainingUses={0} feature="meal plans" />
+        )}
 
         {mealPlan && (
           <div className="mt-4 p-4 rounded-xl bg-secondary/50 border border-border/30">
