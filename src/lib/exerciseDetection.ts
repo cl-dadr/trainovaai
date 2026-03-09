@@ -1,4 +1,4 @@
-// Utility functions for calculating joint angles and detecting exercises
+// AI Exercise Detection Engine with EMA smoothing and precision thresholds
 
 export type Landmark = {
   x: number;
@@ -15,13 +15,21 @@ export interface ExerciseResult {
   exercise: ExerciseType;
   state: ExerciseState;
   repCompleted: boolean;
-  formScore: number; // 0-100
+  formScore: number;
   feedback: string;
   confidence: number;
+  angles: {
+    leftElbow: number;
+    rightElbow: number;
+    leftKnee: number;
+    rightKnee: number;
+    leftHip: number;
+    rightHip: number;
+  };
 }
 
 // MediaPipe Pose landmark indices
-const LANDMARK = {
+const LM = {
   NOSE: 0,
   LEFT_SHOULDER: 11,
   RIGHT_SHOULDER: 12,
@@ -37,6 +45,7 @@ const LANDMARK = {
   RIGHT_ANKLE: 28,
 };
 
+// ─── Angle Calculation ───
 function calcAngle(a: Landmark, b: Landmark, c: Landmark): number {
   const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
   let angle = Math.abs((radians * 180) / Math.PI);
@@ -48,63 +57,109 @@ function avgPoint(a: Landmark, b: Landmark): Landmark {
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, z: (a.z + b.z) / 2 };
 }
 
-function isVisible(landmarks: Landmark[], indices: number[], threshold = 0.5): boolean {
+// ─── EMA Smoothing for stable readings ───
+const EMA_ALPHA = 0.35; // Higher = more responsive, lower = smoother
+const smoothedAngles: Record<string, number> = {};
+
+function smoothAngle(key: string, raw: number): number {
+  if (!(key in smoothedAngles)) {
+    smoothedAngles[key] = raw;
+    return raw;
+  }
+  smoothedAngles[key] = EMA_ALPHA * raw + (1 - EMA_ALPHA) * smoothedAngles[key];
+  return smoothedAngles[key];
+}
+
+// ─── Visibility Check ───
+function isVisible(landmarks: Landmark[], indices: number[], threshold = 0.55): boolean {
   return indices.every((i) => (landmarks[i]?.visibility ?? 0) > threshold);
 }
 
-// Detect body orientation: "side" or "front"
-function getOrientation(landmarks: Landmark[]): "side" | "front" {
-  const ls = landmarks[LANDMARK.LEFT_SHOULDER];
-  const rs = landmarks[LANDMARK.RIGHT_SHOULDER];
-  const shoulderDist = Math.abs(ls.x - rs.x);
-  return shoulderDist < 0.15 ? "side" : "front";
-}
-
+// ─── State Machine ───
 let prevState: ExerciseState = "idle";
 let prevExercise: ExerciseType = "unknown";
 let stateFrames = 0;
-const MIN_FRAMES_FOR_REP = 3;
+let exerciseFrames = 0; // Frames staying on same exercise type
+const MIN_FRAMES_FOR_REP = 4;       // Must hold state for 4 frames before counting
+const MIN_EXERCISE_FRAMES = 6;     // Must detect same exercise for 6 frames before committing
+const CONFIDENCE_THRESHOLD = 0.55;  // Minimum confidence to accept detection
 
+// Form score history for averaging
+const formHistory: number[] = [];
+const MAX_FORM_HISTORY = 10;
+
+function pushFormScore(score: number): number {
+  formHistory.push(score);
+  if (formHistory.length > MAX_FORM_HISTORY) formHistory.shift();
+  return Math.round(formHistory.reduce((a, b) => a + b, 0) / formHistory.length);
+}
+
+// ─── Main Detection Function ───
 export function detectExercise(landmarks: Landmark[]): ExerciseResult {
-  if (!landmarks || landmarks.length < 33) {
-    return { exercise: "unknown", state: "idle", repCompleted: false, formScore: 0, feedback: "No body detected", confidence: 0 };
+  const emptyResult: ExerciseResult = {
+    exercise: "unknown", state: "idle", repCompleted: false, formScore: 0,
+    feedback: "No body detected", confidence: 0,
+    angles: { leftElbow: 0, rightElbow: 0, leftKnee: 0, rightKnee: 0, leftHip: 0, rightHip: 0 },
+  };
+
+  if (!landmarks || landmarks.length < 33) return emptyResult;
+
+  // Check key landmark visibility
+  const upperBodyVisible = isVisible(landmarks, [LM.LEFT_SHOULDER, LM.RIGHT_SHOULDER, LM.LEFT_ELBOW, LM.RIGHT_ELBOW]);
+  const lowerBodyVisible = isVisible(landmarks, [LM.LEFT_HIP, LM.RIGHT_HIP, LM.LEFT_KNEE, LM.RIGHT_KNEE]);
+
+  if (!upperBodyVisible && !lowerBodyVisible) {
+    return { ...emptyResult, feedback: "Move fully into frame 📷", confidence: 0.1 };
   }
 
-  const ls = landmarks[LANDMARK.LEFT_SHOULDER];
-  const rs = landmarks[LANDMARK.RIGHT_SHOULDER];
-  const le = landmarks[LANDMARK.LEFT_ELBOW];
-  const re = landmarks[LANDMARK.RIGHT_ELBOW];
-  const lw = landmarks[LANDMARK.LEFT_WRIST];
-  const rw = landmarks[LANDMARK.RIGHT_WRIST];
-  const lh = landmarks[LANDMARK.LEFT_HIP];
-  const rh = landmarks[LANDMARK.RIGHT_HIP];
-  const lk = landmarks[LANDMARK.LEFT_KNEE];
-  const rk = landmarks[LANDMARK.RIGHT_KNEE];
-  const la = landmarks[LANDMARK.LEFT_ANKLE];
-  const ra = landmarks[LANDMARK.RIGHT_ANKLE];
+  const ls = landmarks[LM.LEFT_SHOULDER], rs = landmarks[LM.RIGHT_SHOULDER];
+  const le = landmarks[LM.LEFT_ELBOW], re = landmarks[LM.RIGHT_ELBOW];
+  const lw = landmarks[LM.LEFT_WRIST], rw = landmarks[LM.RIGHT_WRIST];
+  const lh = landmarks[LM.LEFT_HIP], rh = landmarks[LM.RIGHT_HIP];
+  const lk = landmarks[LM.LEFT_KNEE], rk = landmarks[LM.RIGHT_KNEE];
+  const la = landmarks[LM.LEFT_ANKLE], ra = landmarks[LM.RIGHT_ANKLE];
 
   const midShoulder = avgPoint(ls, rs);
   const midHip = avgPoint(lh, rh);
   const midKnee = avgPoint(lk, rk);
   const midAnkle = avgPoint(la, ra);
 
-  // Calculate key angles
-  const leftElbowAngle = calcAngle(ls, le, lw);
-  const rightElbowAngle = calcAngle(rs, re, rw);
-  const avgElbowAngle = (leftElbowAngle + rightElbowAngle) / 2;
+  // Calculate and smooth all key angles
+  const rawLeftElbow = calcAngle(ls, le, lw);
+  const rawRightElbow = calcAngle(rs, re, rw);
+  const rawLeftKnee = calcAngle(lh, lk, la);
+  const rawRightKnee = calcAngle(rh, rk, ra);
+  const rawLeftHip = calcAngle(ls, lh, lk);
+  const rawRightHip = calcAngle(rs, rh, rk);
 
-  const leftKneeAngle = calcAngle(lh, lk, la);
-  const rightKneeAngle = calcAngle(rh, rk, ra);
-  const avgKneeAngle = (leftKneeAngle + rightKneeAngle) / 2;
+  const leftElbow = smoothAngle("lElbow", rawLeftElbow);
+  const rightElbow = smoothAngle("rElbow", rawRightElbow);
+  const leftKnee = smoothAngle("lKnee", rawLeftKnee);
+  const rightKnee = smoothAngle("rKnee", rawRightKnee);
+  const leftHip = smoothAngle("lHip", rawLeftHip);
+  const rightHip = smoothAngle("rHip", rawRightHip);
 
-  const leftHipAngle = calcAngle(ls, lh, lk);
-  const rightHipAngle = calcAngle(rs, rh, rk);
-  const avgHipAngle = (leftHipAngle + rightHipAngle) / 2;
+  const avgElbow = (leftElbow + rightElbow) / 2;
+  const avgKnee = (leftKnee + rightKnee) / 2;
+  const avgHip = (leftHip + rightHip) / 2;
 
-  // Body angle (how horizontal the torso is)
+  const angles = {
+    leftElbow: Math.round(leftElbow),
+    rightElbow: Math.round(rightElbow),
+    leftKnee: Math.round(leftKnee),
+    rightKnee: Math.round(rightKnee),
+    leftHip: Math.round(leftHip),
+    rightHip: Math.round(rightHip),
+  };
+
+  // Torso orientation
   const torsoAngle = Math.atan2(midHip.y - midShoulder.y, midHip.x - midShoulder.x) * (180 / Math.PI);
-  const isHorizontal = Math.abs(torsoAngle) > 50 && Math.abs(torsoAngle) < 130;
-  const isVertical = Math.abs(torsoAngle) < 40 || Math.abs(torsoAngle) > 140;
+  const isHorizontal = Math.abs(torsoAngle) > 45 && Math.abs(torsoAngle) < 135;
+  const isVertical = Math.abs(torsoAngle) <= 45 || Math.abs(torsoAngle) >= 135;
+
+  // Shoulder width for side/front detection
+  const shoulderDist = Math.abs(ls.x - rs.x);
+  const isSideView = shoulderDist < 0.12;
 
   let exercise: ExerciseType = "unknown";
   let state: ExerciseState = "idle";
@@ -113,162 +168,196 @@ export function detectExercise(landmarks: Landmark[]): ExerciseResult {
   let confidence = 0;
 
   // ===== PUSHUP DETECTION =====
-  // Horizontal body, arms bending
-  if (isHorizontal && midShoulder.y > 0.3) {
-    exercise = "pushup";
-    confidence = 0.8;
-
-    // Check body alignment for form
+  if (isHorizontal && midShoulder.y > 0.25) {
     const bodyLineDeviation = Math.abs(midShoulder.y - midHip.y) + Math.abs(midHip.y - midAnkle.y);
+    const bodyIsFlat = bodyLineDeviation < 0.2;
     
-    if (avgElbowAngle < 100) {
-      state = "down";
-      feedback = bodyLineDeviation < 0.15 ? "Great depth! 💪" : "Keep your body straight!";
-      formScore = bodyLineDeviation < 0.15 ? 95 : 65;
-    } else if (avgElbowAngle > 150) {
-      state = "up";
-      feedback = "Strong lockout! 🔥";
-      formScore = 90;
-    } else {
-      state = "hold";
-      feedback = "Lower your chest more";
-      formScore = 75;
+    if (bodyIsFlat || isSideView) {
+      exercise = "pushup";
+      confidence = 0.85 + (bodyIsFlat ? 0.1 : 0);
+
+      if (avgElbow < 90) {
+        state = "down";
+        formScore = bodyLineDeviation < 0.12 ? 95 : bodyLineDeviation < 0.18 ? 80 : 60;
+        feedback = formScore >= 85 ? "Great depth! 💪" : "Keep your body in a straight line!";
+      } else if (avgElbow > 155) {
+        state = "up";
+        formScore = bodyLineDeviation < 0.15 ? 92 : 75;
+        feedback = "Strong lockout! 🔥";
+      } else {
+        state = "hold";
+        feedback = "Go lower for full rep";
+        formScore = 70;
+      }
     }
   }
 
   // ===== SQUAT DETECTION =====
-  // Vertical torso, knees bending
-  else if (isVertical && avgKneeAngle < 160) {
-    exercise = "squat";
-    confidence = 0.85;
+  if (exercise === "unknown" && isVertical && lowerBodyVisible) {
+    if (avgKnee < 155) {
+      exercise = "squat";
+      const kneesOverToes = Math.abs(midKnee.x - midAnkle.x);
+      const hipDepth = midHip.y - midKnee.y; // Positive when hips above knees
+      confidence = 0.88;
 
-    const kneesOverToes = Math.abs(midKnee.x - midAnkle.x);
-
-    if (avgKneeAngle < 100) {
-      state = "down";
-      feedback = kneesOverToes < 0.1 ? "Perfect squat depth! 🔥" : "Watch your knees!";
-      formScore = kneesOverToes < 0.1 ? 95 : 60;
-    } else if (avgKneeAngle > 160) {
-      state = "up";
-      feedback = "Stand tall! 💪";
-      formScore = 90;
-    } else {
-      state = "hold";
-      feedback = "Go deeper for full range";
-      formScore = 75;
+      if (avgKnee < 95) {
+        state = "down";
+        formScore = kneesOverToes < 0.12 ? 95 : kneesOverToes < 0.2 ? 78 : 55;
+        feedback = formScore >= 85 ? "Deep squat! Perfect depth! 🔥" : "Watch your knees past toes!";
+      } else if (avgKnee > 160) {
+        state = "up";
+        formScore = 90;
+        feedback = "Stand tall! 💪";
+      } else {
+        state = "hold";
+        formScore = 72;
+        feedback = "Go deeper for full range of motion";
+      }
     }
   }
 
   // ===== PLANK DETECTION =====
-  // Horizontal body, arms extended, holding still
-  else if (isHorizontal && avgElbowAngle > 140 && avgKneeAngle > 150) {
+  if (exercise === "unknown" && isHorizontal && avgElbow > 135 && avgKnee > 145) {
     exercise = "plank";
-    confidence = 0.75;
+    confidence = 0.78;
     state = "hold";
 
     const hipSag = midHip.y - ((midShoulder.y + midAnkle.y) / 2);
-    if (Math.abs(hipSag) < 0.05) {
-      formScore = 95;
-      feedback = "Perfect plank form! Hold it! 🔥";
-    } else if (hipSag > 0.05) {
-      formScore = 60;
-      feedback = "Hips sagging — tighten your core!";
+    if (Math.abs(hipSag) < 0.04) {
+      formScore = 96;
+      feedback = "Perfect plank! Core engaged! 🔥";
+    } else if (hipSag > 0.04) {
+      formScore = Math.max(40, 80 - hipSag * 400);
+      feedback = "Hips sagging — tighten your core! 💪";
     } else {
-      formScore = 70;
+      formScore = Math.max(50, 85 + hipSag * 200);
       feedback = "Hips too high — lower slightly";
     }
   }
 
   // ===== JUMPING JACK DETECTION =====
-  else if (isVertical && avgKneeAngle > 150) {
-    const armSpread = Math.abs(lw.y - ls.y) + Math.abs(rw.y - rs.y);
+  if (exercise === "unknown" && isVertical && avgKnee > 150 && upperBodyVisible) {
+    const wristsAboveShoulders = (lw.y < ls.y && rw.y < rs.y);
     const legSpread = Math.abs(la.x - ra.x);
 
-    if (armSpread < 0.2 && legSpread > 0.25) {
+    if (wristsAboveShoulders && legSpread > 0.22) {
       exercise = "jumping_jack";
       state = "up";
-      confidence = 0.7;
-      formScore = 85;
+      confidence = 0.75;
+      formScore = 88;
       feedback = "Arms up! Nice jump! ⭐";
-    } else if (legSpread < 0.15) {
+    } else if (!wristsAboveShoulders && legSpread < 0.15) {
       exercise = "jumping_jack";
       state = "down";
-      confidence = 0.6;
-      formScore = 80;
-      feedback = "Ready position";
+      confidence = 0.65;
+      formScore = 82;
+      feedback = "Ready position 🏃";
     }
   }
 
   // ===== LUNGE DETECTION =====
-  else if (isVertical && Math.abs(leftKneeAngle - rightKneeAngle) > 30) {
-    exercise = "lunge";
-    confidence = 0.7;
-    const frontKneeAngle = Math.min(leftKneeAngle, rightKneeAngle);
+  if (exercise === "unknown" && isVertical && lowerBodyVisible) {
+    const kneeDiff = Math.abs(leftKnee - rightKnee);
+    if (kneeDiff > 35) {
+      exercise = "lunge";
+      confidence = 0.75;
+      const frontKneeAngle = Math.min(leftKnee, rightKnee);
+      const backKneeAngle = Math.max(leftKnee, rightKnee);
 
-    if (frontKneeAngle < 100) {
-      state = "down";
-      formScore = 85;
-      feedback = "Deep lunge! Great form! 🦵";
-    } else {
-      state = "up";
-      formScore = 80;
-      feedback = "Step forward more";
+      if (frontKneeAngle < 105 && backKneeAngle > 140) {
+        state = "down";
+        formScore = frontKneeAngle > 80 && frontKneeAngle < 100 ? 92 : 75;
+        feedback = formScore >= 85 ? "Deep lunge! Great form! 🦵" : "Front knee at ~90° is ideal";
+      } else {
+        state = "up";
+        formScore = 80;
+        feedback = "Step forward and lower down";
+      }
     }
   }
 
   // ===== SIT-UP DETECTION =====
-  else if (isHorizontal && avgHipAngle < 120) {
+  if (exercise === "unknown" && isHorizontal && avgHip < 115) {
     exercise = "situp";
-    confidence = 0.65;
+    confidence = 0.68;
 
-    if (avgHipAngle < 70) {
+    if (avgHip < 65) {
       state = "up";
       formScore = 90;
       feedback = "Full crunch! 🔥";
     } else {
       state = "down";
-      formScore = 75;
-      feedback = "Engage your core";
+      formScore = 72;
+      feedback = "Engage your core — curl up!";
     }
   }
 
-  // Determine if rep completed (state transition from down->up or up->down depending on exercise)
-  let repCompleted = false;
-  if (exercise === prevExercise) {
-    if (state === prevState) {
-      stateFrames++;
-    } else {
-      if (stateFrames >= MIN_FRAMES_FOR_REP) {
-        if (exercise === "plank") {
-          // Plank doesn't count reps
-        } else if (
-          (prevState === "down" && state === "up") ||
-          (exercise === "jumping_jack" && prevState === "up" && state === "down")
-        ) {
-          repCompleted = true;
-        }
-      }
-      stateFrames = 0;
-      prevState = state;
-    }
-  } else {
-    prevExercise = exercise;
-    prevState = state;
-    stateFrames = 0;
-  }
-
-  if (exercise === "unknown") {
-    feedback = "Position yourself for an exercise";
+  // Apply confidence threshold — reject low-confidence detections
+  if (confidence < CONFIDENCE_THRESHOLD && exercise !== "unknown") {
+    exercise = "unknown";
+    state = "idle";
+    feedback = "Adjusting... hold your position";
     confidence = 0;
   }
 
-  return { exercise, state, repCompleted, formScore, feedback, confidence };
+  // Smooth form score
+  const smoothedFormScore = formScore > 0 ? pushFormScore(formScore) : 0;
+
+  // ─── Rep Counting State Machine ───
+  let repCompleted = false;
+
+  if (exercise !== "unknown") {
+    if (exercise === prevExercise) {
+      exerciseFrames++;
+      if (state === prevState) {
+        stateFrames++;
+      } else {
+        // State changed — check if we can count a rep
+        if (stateFrames >= MIN_FRAMES_FOR_REP && exerciseFrames >= MIN_EXERCISE_FRAMES) {
+          if (exercise === "plank") {
+            // Plank doesn't count reps
+          } else if (
+            (prevState === "down" && state === "up") ||
+            (exercise === "jumping_jack" && prevState === "up" && state === "down")
+          ) {
+            repCompleted = true;
+          }
+        }
+        stateFrames = 1;
+        prevState = state;
+      }
+    } else {
+      // Exercise changed — require minimum frames before committing
+      exerciseFrames = 1;
+      prevExercise = exercise;
+      prevState = state;
+      stateFrames = 1;
+    }
+  }
+
+  if (exercise === "unknown") {
+    feedback = feedback || "Position yourself for an exercise";
+    confidence = 0;
+  }
+
+  return {
+    exercise,
+    state,
+    repCompleted,
+    formScore: smoothedFormScore,
+    feedback,
+    confidence,
+    angles,
+  };
 }
 
 export function resetDetection() {
   prevState = "idle";
   prevExercise = "unknown";
   stateFrames = 0;
+  exerciseFrames = 0;
+  formHistory.length = 0;
+  Object.keys(smoothedAngles).forEach(k => delete smoothedAngles[k]);
 }
 
 export const EXERCISE_NAMES: Record<ExerciseType, string> = {

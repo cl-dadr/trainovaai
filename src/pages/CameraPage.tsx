@@ -246,22 +246,18 @@ const CameraPage = () => {
       const lk = landmarks[LM.LEFT_KNEE], rk = landmarks[LM.RIGHT_KNEE];
       const la = landmarks[LM.LEFT_ANKLE], ra = landmarks[LM.RIGHT_ANKLE];
 
-      const leftElbow = calcAngle(ls, le, lw);
-      const rightElbow = calcAngle(rs, re, rw);
-      const leftKnee = calcAngle(lh, lk, la);
-      const rightKnee = calcAngle(rh, rk, ra);
-      const leftHip = calcAngle(ls, lh, lk);
-      const rightHip = calcAngle(rs, rh, rk);
+      // Use smoothed angles from detection engine
+      const result = detectExercise(landmarks);
 
       const green = "hsl(160,100%,50%)", cyan = "hsl(180,100%,50%)", orange = "hsl(25,100%,55%)";
-      drawAngleLabel(ctx, le, leftElbow, "L.Elbow", w, h, cyan);
-      drawAngleLabel(ctx, re, rightElbow, "R.Elbow", w, h, cyan);
-      drawAngleLabel(ctx, lk, leftKnee, "L.Knee", w, h, green);
-      drawAngleLabel(ctx, rk, rightKnee, "R.Knee", w, h, green);
-      drawAngleLabel(ctx, lh, leftHip, "L.Hip", w, h, orange);
-      drawAngleLabel(ctx, rh, rightHip, "R.Hip", w, h, orange);
+      drawAngleLabel(ctx, le, result.angles.leftElbow, "L.Elbow", w, h, cyan);
+      drawAngleLabel(ctx, re, result.angles.rightElbow, "R.Elbow", w, h, cyan);
+      drawAngleLabel(ctx, lk, result.angles.leftKnee, "L.Knee", w, h, green);
+      drawAngleLabel(ctx, rk, result.angles.rightKnee, "R.Knee", w, h, green);
+      drawAngleLabel(ctx, lh, result.angles.leftHip, "L.Hip", w, h, orange);
+      drawAngleLabel(ctx, rh, result.angles.rightHip, "R.Hip", w, h, orange);
 
-      const result = detectExercise(landmarks);
+      // result already computed above
       setCurrentExercise(result.exercise);
       setFormScore(result.formScore);
       setFeedback(result.feedback);
@@ -324,7 +320,7 @@ const CameraPage = () => {
     const video = webcamRef.current?.video;
     if (!video) return;
     const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` });
-    pose.setOptions({ modelComplexity: 1, smoothLandmarks: true, enableSegmentation: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+    pose.setOptions({ modelComplexity: 2, smoothLandmarks: true, enableSegmentation: false, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
     pose.onResults(onResults);
     const camera = new cam.Camera(video, { onFrame: async () => { await pose.send({ image: video }); }, width: 640, height: 480 });
     camera.start();
