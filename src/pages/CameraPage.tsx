@@ -610,9 +610,9 @@ const CameraPage = () => {
     setIsDetecting(true);
     sessionStartRef.current = new Date();
     setSessionElapsed(0); setLiveCalories(0); setSessionXP(0); setCombo(0); setBestCombo(0);
-    setEarnedAchievements([]); setShowSessionReport(false);
+    setEarnedAchievements([]); setShowSessionReport(false); setBestRepForm(0);
     formScoresRef.current = []; comboRef.current = 0;
-    resetDetection();
+    resetDetection(); resetBestRepScore();
   }, []);
 
   // Initialize MediaPipe when detecting starts — runs after render so video element is mounted
