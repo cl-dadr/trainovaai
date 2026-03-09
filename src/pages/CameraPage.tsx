@@ -42,20 +42,20 @@ function drawAngleLabel(ctx: CanvasRenderingContext2D, landmark: Landmark, angle
 }
 
 function drawFormIndicator(ctx: CanvasRenderingContext2D, score: number, w: number) {
-  const barW = 100, barH = 6, x = w - barW - 10, y = 18;
+  const barW = 140, barH = 10, x = w - barW - 14, y = 28;
   ctx.save();
-  ctx.fillStyle = "rgba(0,0,0,0.5)";
-  ctx.roundRect(x - 4, y - 12, barW + 8, 24, 6);
+  ctx.fillStyle = "rgba(0,0,0,0.7)";
+  ctx.roundRect(x - 6, y - 18, barW + 12, 36, 8);
   ctx.fill();
-  ctx.font = "bold 9px monospace";
+  ctx.font = "bold 13px monospace";
   ctx.fillStyle = "#fff";
-  ctx.fillText(`FORM ${score}%`, x, y - 2);
-  ctx.fillStyle = "rgba(255,255,255,0.15)";
-  ctx.roundRect(x, y + 2, barW, barH, 3);
+  ctx.fillText(`FORM ${score}%`, x, y - 4);
+  ctx.fillStyle = "rgba(255,255,255,0.2)";
+  ctx.roundRect(x, y + 4, barW, barH, 5);
   ctx.fill();
   const color = score >= 85 ? "hsl(160,100%,50%)" : score >= 60 ? "hsl(25,100%,55%)" : "hsl(0,85%,60%)";
   ctx.fillStyle = color;
-  ctx.roundRect(x, y + 2, (score / 100) * barW, barH, 3);
+  ctx.roundRect(x, y + 4, (score / 100) * barW, barH, 5);
   ctx.fill();
   ctx.restore();
 }
