@@ -1073,6 +1073,36 @@ const CameraPage = () => {
             </div>
           </div>
 
+          {/* Difficulty / Strictness Selector (Firefly-style) */}
+          <div className="relative z-10 glass-card p-2.5 mb-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-[9px] text-muted-foreground flex items-center gap-1">
+                <Shield className="h-3 w-3" /> FORM STRICTNESS
+              </p>
+              <span className={`text-[8px] px-2 py-0.5 rounded-full font-bold ${
+                difficulty === "easy" ? "bg-primary/20 text-primary" : difficulty === "strict" ? "bg-destructive/20 text-destructive" : "bg-neon-cyan/20 text-neon-cyan"
+              }`}>{difficulty === "easy" ? "Relaxed" : difficulty === "strict" ? "Pro" : "Balanced"}</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {([
+                { level: "easy" as DifficultyLevel, label: "Easy", desc: "Counts most reps", icon: "🟢" },
+                { level: "medium" as DifficultyLevel, label: "Medium", desc: "Balanced checks", icon: "🟡" },
+                { level: "strict" as DifficultyLevel, label: "Strict", desc: "Perfect form only", icon: "🔴" },
+              ]).map(d => (
+                <button key={d.level} onClick={() => changeDifficulty(d.level)}
+                  className={`p-2 rounded-xl text-center transition-all ${
+                    difficulty === d.level
+                      ? "bg-primary/20 border border-primary/50 ring-1 ring-primary/30"
+                      : "bg-secondary/50 border border-transparent"
+                  }`}>
+                  <span className="text-base">{d.icon}</span>
+                  <p className={`text-[10px] font-bold ${difficulty === d.level ? "text-primary" : "text-foreground"}`}>{d.label}</p>
+                  <p className="text-[7px] text-muted-foreground">{d.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="relative z-10 aspect-[3/4] max-h-[55vh] rounded-2xl bg-secondary/30 border border-border/50 overflow-hidden mb-3 mx-auto">
             <Webcam ref={webcamRef} audio={false} mirrored className="absolute inset-0 w-full h-full object-cover"
               videoConstraints={{ facingMode: "user", width: 640, height: 480 }} />
