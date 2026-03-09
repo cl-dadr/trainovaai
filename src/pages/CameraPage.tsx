@@ -946,7 +946,7 @@ const CameraPage = () => {
             </button>
             <motion.button whileTap={{ scale: 0.97 }} onClick={startDetection}
               className="flex-1 rounded-2xl p-4 font-display font-bold text-lg tracking-wider bg-primary text-primary-foreground">
-              START AI TRAINER {activeGoal.emoji}
+              {lockedExercise ? `START ${EXERCISE_NAMES[lockedExercise]} 🔒` : `START AI TRAINER ${activeGoal.emoji}`}
             </motion.button>
           </div>
         </>
