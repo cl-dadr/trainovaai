@@ -22,6 +22,7 @@ import MentalWellnessPage from "./pages/MentalWellnessPage";
 import WorkoutPlannerPage from "./pages/WorkoutPlannerPage";
 import ProgressPage from "./pages/ProgressPage";
 import StreakPage from "./pages/StreakPage";
+import InstallPage from "./pages/InstallPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ const AppRoutes = () => {
         <Route path="/planner" element={<ProtectedRoute><WorkoutPlannerPage /></ProtectedRoute>} />
         <Route path="/progress" element={<ProtectedRoute><ProgressPage /></ProtectedRoute>} />
         <Route path="/streak" element={<ProtectedRoute><StreakPage /></ProtectedRoute>} />
+        <Route path="/install" element={<InstallPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {user && <NowPlayingBar />}
