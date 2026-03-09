@@ -579,7 +579,8 @@ export function detectExercise(landmarks: Landmark[], lockedExercise?: ExerciseT
         if (stateFrames >= MIN_FRAMES_FOR_REP && exerciseFrames >= MIN_EXERCISE_FRAMES) {
           if (exercise !== "plank") {
             const timeSinceLastRep = now - lastRepTime;
-            if (timeSinceLastRep >= REP_COOLDOWN_MS) {
+            const diffMult = getDifficultyMultiplier();
+            if (timeSinceLastRep >= diffMult.cooldown) {
               if (
                 (prevState === "down" && state === "up") ||
                 (exercise === "jumping_jack" && prevState === "up" && state === "down") ||
