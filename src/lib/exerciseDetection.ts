@@ -132,7 +132,7 @@ const REP_COOLDOWN_MS = 400;
 
 const MIN_FRAMES_FOR_REP = 3;
 const MIN_EXERCISE_FRAMES = 5;
-const CONFIDENCE_THRESHOLD = 0.5;
+const CONFIDENCE_THRESHOLD = 0.4;
 
 const formHistory: number[] = [];
 const MAX_FORM_HISTORY = 12;
