@@ -35,9 +35,10 @@ export interface ExerciseResult {
     leftHip: number;
     rightHip: number;
   };
-  rom: number; // range of motion percentage for current rep
-  keypointConfidence: number; // avg visibility of tracked keypoints
+  rom: number;
+  keypointConfidence: number;
   repQuality: "perfect" | "good" | "fair" | "poor" | "none";
+  bestRepScore: number; // track best rep this session
 }
 
 // MET values for calorie estimation
