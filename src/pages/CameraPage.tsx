@@ -1105,6 +1105,32 @@ const CameraPage = () => {
                 </button>
               ))}
             </div>
+
+            {/* Exercise-specific camera positioning guide */}
+            {lockedExercise && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-2 bg-primary/5 rounded-xl p-2.5 border border-primary/20">
+                <p className="text-[10px] font-bold text-primary mb-1">📷 Camera Setup for {EXERCISE_NAMES[lockedExercise]}</p>
+                <p className="text-[9px] text-muted-foreground leading-relaxed">
+                  {lockedExercise === "pushup" && "Place phone on the floor, 4-6 feet away. Side view works best — show your full body from head to feet horizontally."}
+                  {lockedExercise === "squat" && "Stand 5-8 feet from camera. Front or side view — make sure knees & hips are visible. Full body in frame."}
+                  {lockedExercise === "plank" && "Place phone on floor level, 4-6 feet away. Side view — show full body from head to toes horizontally."}
+                  {lockedExercise === "jumping_jack" && "Stand 6-8 feet from camera. Front view — make sure arms & legs are fully visible when spread."}
+                  {lockedExercise === "lunge" && "Stand 5-7 feet from camera. Side or front view — both legs must be visible from hip to ankle."}
+                  {lockedExercise === "situp" && "Place phone on floor level, 4-6 feet away. Side view — show full body lying down to sitting up."}
+                  {lockedExercise === "bicep_curl" && "Stand 4-6 feet from camera. Front view — keep elbows & wrists visible. Upper body focus."}
+                  {lockedExercise === "shoulder_press" && "Stand 4-6 feet from camera. Front view — arms overhead must be visible. Upper body focus."}
+                  {lockedExercise === "high_knees" && "Stand 5-7 feet from camera. Front view — full body visible, knees lifting to hip height."}
+                </p>
+                <div className="flex items-center gap-1 mt-1.5">
+                  <span className="text-[8px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-bold">
+                    {(lockedExercise === "pushup" || lockedExercise === "plank" || lockedExercise === "situp") ? "📐 SIDE VIEW" : "👤 FRONT VIEW"}
+                  </span>
+                  <span className="text-[8px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
+                    {(lockedExercise === "pushup" || lockedExercise === "plank" || lockedExercise === "situp") ? "Phone on floor" : "Phone at chest height"}
+                  </span>
+                </div>
+              </motion.div>
+            )}
           </div>
 
           {/* Difficulty / Strictness Selector (Firefly-style) */}
