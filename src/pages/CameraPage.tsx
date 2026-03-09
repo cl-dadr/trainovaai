@@ -967,14 +967,10 @@ const CameraPage = () => {
           <div className="relative z-10 aspect-[3/4] max-h-[55vh] rounded-2xl bg-secondary/30 border border-border/50 overflow-hidden mb-3 mx-auto">
             <Webcam ref={webcamRef} audio={false} mirrored className="absolute inset-0 w-full h-full object-cover"
               videoConstraints={{ facingMode: "user", width: 640, height: 480 }} />
-            <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover" style={{ transform: "scaleX(-1)", opacity: 0 }} />
             <div className="absolute inset-3 border-2 border-primary/20 rounded-xl pointer-events-none" />
-            <div className="absolute inset-0 flex items-center justify-center bg-background/30">
-              <div className="text-center">
-                <Camera className="mx-auto h-12 w-12 text-muted-foreground/30 mb-2" />
-                <p className="text-xs text-muted-foreground">Full body in frame</p>
-                <p className="text-[9px] text-muted-foreground/60">33 keypoints • Voice coaching • Gamification</p>
-              </div>
+            <div className="absolute bottom-3 left-3 right-3 bg-black/50 backdrop-blur-sm rounded-xl p-2 text-center">
+              <p className="text-xs text-white font-bold">Position your full body in frame</p>
+              <p className="text-[9px] text-white/60">9 exercises • AI detection • Voice coaching</p>
             </div>
           </div>
 
