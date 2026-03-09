@@ -4,6 +4,8 @@ import { ArrowLeft, Sparkles, Loader2, Dumbbell, Clock, Flame, Target, ChevronRi
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import ReactMarkdown from "react-markdown";
+import { usePremium } from "@/hooks/usePremium";
+import PremiumGate from "@/components/PremiumGate";
 
 const fitnessLevels = ["Beginner", "Intermediate", "Advanced"];
 const goals = ["Fat Loss", "Muscle Gain", "Endurance", "Flexibility", "General Fitness"];
@@ -38,8 +40,12 @@ const WorkoutPlannerPage = () => {
   const [frequency, setFrequency] = useState("5 days/week");
   const [showConfig, setShowConfig] = useState(false);
 
+  const { canUseFeature, getRemainingUses, trackUsage } = usePremium();
+
   const generatePlan = async () => {
+    if (!canUseFeature("planner")) return;
     setGenerating(true);
+    await trackUsage("planner");
     try {
       const { data, error } = await supabase.functions.invoke("ai-coach", {
         body: {
@@ -170,9 +176,16 @@ Make it progressive and include warm-up and cool-down. Use emojis and format nic
               </div>
             </div>
 
-            <button onClick={generatePlan} disabled={generating} className="w-full py-3 rounded-xl gradient-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2">
-              {generating ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating...</> : <><Sparkles className="h-4 w-4" /> Generate AI Plan</>}
-            </button>
+            {canUseFeature("planner") ? (
+              <>
+                <PremiumGate remainingUses={getRemainingUses("planner")} feature="generations" />
+                <button onClick={generatePlan} disabled={generating} className="w-full py-3 rounded-xl gradient-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2">
+                  {generating ? <><Loader2 className="h-4 w-4 animate-spin" /> Generating...</> : <><Sparkles className="h-4 w-4" /> Generate AI Plan</>}
+                </button>
+              </>
+            ) : (
+              <PremiumGate remainingUses={0} feature="generations" />
+            )}
           </motion.div>
         )}
 

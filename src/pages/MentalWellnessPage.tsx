@@ -2,6 +2,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Brain, Heart, Smile, Meh, Frown, Zap, Wind, Sun, Moon, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { usePremium } from "@/hooks/usePremium";
+import PremiumGate from "@/components/PremiumGate";
 
 const moods = [
   { emoji: "😁", label: "Great", value: 5, color: "neon-green" },
@@ -35,6 +37,7 @@ const weekLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 const MentalWellnessPage = () => {
   const navigate = useNavigate();
+  const { canUseFeature, getRemainingUses, trackUsage } = usePremium();
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
   const [selectedEnergy, setSelectedEnergy] = useState<number | null>(null);
   const [stressLevel, setStressLevel] = useState(5);
@@ -42,7 +45,9 @@ const MentalWellnessPage = () => {
   const [breathPhase, setBreathPhase] = useState<"idle" | "inhale" | "hold" | "exhale">("idle");
   const [breathCount, setBreathCount] = useState(0);
 
-  const startBreathing = () => {
+  const startBreathing = async () => {
+    if (!canUseFeature("wellness")) return;
+    await trackUsage("wellness");
     setShowBreathing(true);
     setBreathPhase("inhale");
     setBreathCount(0);
@@ -155,16 +160,23 @@ const MentalWellnessPage = () => {
         <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
           <Wind className="h-4 w-4 text-neon-cyan" /> Breathing Exercises
         </h3>
-        {breathingExercises.map((ex, i) => (
-          <button key={i} onClick={startBreathing} className="w-full glass-card p-4 mb-3 flex items-center gap-3 text-left">
-            <span className="text-2xl">{ex.emoji}</span>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-foreground">{ex.name}</p>
-              <p className="text-xs text-muted-foreground">{ex.desc}</p>
-            </div>
-            <span className="text-xs text-neon-cyan">{ex.duration}</span>
-          </button>
-        ))}
+        {canUseFeature("wellness") ? (
+          <>
+            <PremiumGate remainingUses={getRemainingUses("wellness")} feature="sessions" />
+            {breathingExercises.map((ex, i) => (
+              <button key={i} onClick={startBreathing} className="w-full glass-card p-4 mb-3 flex items-center gap-3 text-left">
+                <span className="text-2xl">{ex.emoji}</span>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">{ex.name}</p>
+                  <p className="text-xs text-muted-foreground">{ex.desc}</p>
+                </div>
+                <span className="text-xs text-neon-cyan">{ex.duration}</span>
+              </button>
+            ))}
+          </>
+        ) : (
+          <PremiumGate remainingUses={0} feature="sessions" />
+        )}
       </motion.div>
 
       {/* AI Recommendations */}
