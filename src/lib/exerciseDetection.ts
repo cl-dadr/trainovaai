@@ -162,6 +162,10 @@ const MAX_FORM_HISTORY = 12;
 // ROM tracking per rep
 let repMinAngle = Infinity;
 let repMaxAngle = -Infinity;
+let bestRepScore = 0; // Track best rep form score this session
+
+export function getBestRepScore(): number { return bestRepScore; }
+export function resetBestRepScore() { bestRepScore = 0; }
 
 function pushFormScore(score: number): number {
   formHistory.push(score);
