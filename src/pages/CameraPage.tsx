@@ -31,31 +31,31 @@ const LM = {
 function drawAngleLabel(ctx: CanvasRenderingContext2D, landmark: Landmark, angle: number, label: string, w: number, h: number, color: string) {
   const x = (1 - landmark.x) * w, y = landmark.y * h;
   ctx.save();
-  ctx.font = "bold 10px monospace";
+  ctx.font = "bold 13px monospace";
   ctx.fillStyle = color;
-  ctx.strokeStyle = "rgba(0,0,0,0.7)";
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = "rgba(0,0,0,0.85)";
+  ctx.lineWidth = 4;
   const text = `${label}:${angle}°`;
-  ctx.strokeText(text, x + 6, y - 4);
-  ctx.fillText(text, x + 6, y - 4);
+  ctx.strokeText(text, x + 8, y - 6);
+  ctx.fillText(text, x + 8, y - 6);
   ctx.restore();
 }
 
 function drawFormIndicator(ctx: CanvasRenderingContext2D, score: number, w: number) {
-  const barW = 100, barH = 6, x = w - barW - 10, y = 18;
+  const barW = 140, barH = 10, x = w - barW - 14, y = 28;
   ctx.save();
-  ctx.fillStyle = "rgba(0,0,0,0.5)";
-  ctx.roundRect(x - 4, y - 12, barW + 8, 24, 6);
+  ctx.fillStyle = "rgba(0,0,0,0.7)";
+  ctx.roundRect(x - 6, y - 18, barW + 12, 36, 8);
   ctx.fill();
-  ctx.font = "bold 9px monospace";
+  ctx.font = "bold 13px monospace";
   ctx.fillStyle = "#fff";
-  ctx.fillText(`FORM ${score}%`, x, y - 2);
-  ctx.fillStyle = "rgba(255,255,255,0.15)";
-  ctx.roundRect(x, y + 2, barW, barH, 3);
+  ctx.fillText(`FORM ${score}%`, x, y - 4);
+  ctx.fillStyle = "rgba(255,255,255,0.2)";
+  ctx.roundRect(x, y + 4, barW, barH, 5);
   ctx.fill();
   const color = score >= 85 ? "hsl(160,100%,50%)" : score >= 60 ? "hsl(25,100%,55%)" : "hsl(0,85%,60%)";
   ctx.fillStyle = color;
-  ctx.roundRect(x, y + 2, (score / 100) * barW, barH, 3);
+  ctx.roundRect(x, y + 4, (score / 100) * barW, barH, 5);
   ctx.fill();
   ctx.restore();
 }
@@ -92,6 +92,7 @@ interface SessionRecord {
 }
 
 interface TodoItem {
+  id?: string;
   exercise: ExerciseType;
   targetReps: number;
   status: "pending" | "done" | "skipped";
@@ -143,14 +144,16 @@ const CameraPage = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [{ data: profile }, { data: sessions }, { data: np }] = await Promise.all([
+      const [{ data: profile }, { data: sessions }, { data: np }, { data: todos }] = await Promise.all([
         supabase.from("profiles").select("body_goal").eq("user_id", user.id).maybeSingle(),
         supabase.from("workout_sessions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
         supabase.from("nutrition_profiles").select("weight_kg").eq("user_id", user.id).maybeSingle(),
+        supabase.from("workout_todos").select("*").eq("user_id", user.id).order("created_at", { ascending: true }),
       ]);
       if (profile?.body_goal) setBodyGoal(profile.body_goal as BodyGoalId);
       if (sessions) setPastSessions(sessions as SessionRecord[]);
       if (np?.weight_kg) setUserWeight(np.weight_kg);
+      if (todos) setTodoList(todos.map((t: any) => ({ id: t.id, exercise: t.exercise_type as ExerciseType, targetReps: t.target_reps, status: t.status, actualReps: t.actual_reps })));
     };
     load();
 
@@ -239,7 +242,15 @@ const CameraPage = () => {
       }
     }
 
-    // Update todo items based on exerciseHistory
+    // Update todo items based on exerciseHistory and persist to DB
+    for (const item of todoList) {
+      if (item.status === "pending" && exerciseHistory[item.exercise]) {
+        const actual = exerciseHistory[item.exercise] || 0;
+        if (actual >= item.targetReps && item.id) {
+          await supabase.from("workout_todos").update({ status: "done", actual_reps: actual } as any).eq("id", item.id);
+        }
+      }
+    }
     setTodoList(prev => prev.map(item => {
       if (item.status === "pending" && exerciseHistory[item.exercise]) {
         const actual = exerciseHistory[item.exercise] || 0;
@@ -294,26 +305,45 @@ const CameraPage = () => {
     else toast.success("Workout deleted 🗑️");
   };
 
-  // To-do handlers
-  const addTodoItem = () => {
-    setTodoList(prev => [...prev, { exercise: newTodoExercise, targetReps: newTodoReps, status: "pending" }]);
+  // To-do handlers — persisted to database
+  const addTodoItem = async () => {
+    if (!user) return;
+    const { data, error } = await supabase.from("workout_todos").insert({
+      user_id: user.id, exercise_type: newTodoExercise, target_reps: newTodoReps, status: "pending", actual_reps: 0,
+    } as any).select().single();
+    if (data) {
+      setTodoList(prev => [...prev, { id: (data as any).id, exercise: newTodoExercise, targetReps: newTodoReps, status: "pending" }]);
+    }
     setShowAddTodo(false);
     toast.success(`Added ${EXERCISE_NAMES[newTodoExercise]} x${newTodoReps}`);
   };
 
-  const skipTodoItem = (index: number) => {
-    setTodoList(prev => prev.map((item, i) => i === index ? { ...item, status: "skipped" as const } : item));
+  const skipTodoItem = async (index: number) => {
+    const item = todoList[index];
+    if (item?.id) await supabase.from("workout_todos").update({ status: "skipped" } as any).eq("id", item.id);
+    setTodoList(prev => prev.map((it, i) => i === index ? { ...it, status: "skipped" as const } : it));
   };
 
-  const markTodoDone = (index: number) => {
-    setTodoList(prev => prev.map((item, i) => i === index ? { ...item, status: "done" as const, actualReps: item.targetReps } : item));
+  const markTodoDone = async (index: number) => {
+    const item = todoList[index];
+    if (item?.id) await supabase.from("workout_todos").update({ status: "done", actual_reps: item.targetReps } as any).eq("id", item.id);
+    setTodoList(prev => prev.map((it, i) => i === index ? { ...it, status: "done" as const, actualReps: it.targetReps } : it));
   };
 
-  const removeTodoItem = (index: number) => {
+  const removeTodoItem = async (index: number) => {
+    const item = todoList[index];
+    if (item?.id) await supabase.from("workout_todos").delete().eq("id", item.id);
     setTodoList(prev => prev.filter((_, i) => i !== index));
   };
 
-  const resetTodoList = () => {
+  const resetTodoList = async () => {
+    if (!user) return;
+    const ids = todoList.filter(t => t.id).map(t => t.id!);
+    if (ids.length > 0) {
+      for (const id of ids) {
+        await supabase.from("workout_todos").update({ status: "pending", actual_reps: 0 } as any).eq("id", id);
+      }
+    }
     setTodoList(prev => prev.map(item => ({ ...item, status: "pending" as const, actualReps: undefined })));
   };
 
@@ -468,56 +498,72 @@ const CameraPage = () => {
             videoConstraints={{ facingMode: "user", width: 640, height: 480 }} />
           <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
 
-          {/* Top HUD */}
-          <div className="absolute top-2 left-2 right-2 flex justify-between z-10 safe-area-top">
-            <div className="glass-card px-2 py-1 flex items-center gap-1">
-              <Crosshair className="h-3 w-3 text-primary animate-pulse" />
-              <span className="text-[10px] font-bold text-primary">{EXERCISE_NAMES[currentExercise]}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="glass-card px-2 py-1">
-                <span className="text-[10px] font-bold text-neon-orange">🔥{liveCalories.toFixed(1)}</span>
+          {/* Top HUD — large & clearly visible */}
+          <div className="absolute top-0 left-0 right-0 z-10 p-3 safe-area-top">
+            <div className="flex justify-between items-start">
+              <div className="bg-black/70 backdrop-blur-md rounded-xl px-4 py-2 flex items-center gap-2 border border-primary/40">
+                <Crosshair className="h-5 w-5 text-primary animate-pulse" />
+                <span className="text-base font-bold text-primary tracking-wide">{EXERCISE_NAMES[currentExercise]}</span>
               </div>
-              <button onClick={resetWorkout} className="glass-card p-1.5"><RotateCcw className="h-3 w-3 text-neon-cyan" /></button>
-              <button onClick={stopDetection} className="glass-card p-1.5"><XCircle className="h-3 w-3 text-destructive" /></button>
+              <div className="flex items-center gap-1.5">
+                <div className="bg-black/70 backdrop-blur-md rounded-xl px-3 py-2 border border-neon-orange/40">
+                  <span className="text-sm font-bold text-neon-orange">🔥 {liveCalories.toFixed(1)} kcal</span>
+                </div>
+                <button onClick={resetWorkout} className="bg-black/70 backdrop-blur-md rounded-xl p-2.5 border border-neon-cyan/40"><RotateCcw className="h-4 w-4 text-neon-cyan" /></button>
+                <button onClick={stopDetection} className="bg-black/70 backdrop-blur-md rounded-xl p-2.5 border border-destructive/40"><XCircle className="h-4 w-4 text-destructive" /></button>
+              </div>
             </div>
           </div>
 
-          {/* Bottom Stats */}
-          <div className="absolute bottom-0 left-0 right-0 z-10 p-2 safe-area-bottom">
-            <div className="flex gap-1.5 mb-2">
+          {/* Bottom Stats — large, high-contrast */}
+          <div className="absolute bottom-0 left-0 right-0 z-10 p-3 safe-area-bottom bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-12">
+            <div className="grid grid-cols-4 gap-2 mb-3">
               {[
                 { val: totalReps, label: "REPS", color: "text-primary" },
                 { val: formScore > 0 ? `${formScore}%` : "—", label: "FORM", color: formScore >= 85 ? "text-primary" : formScore >= 60 ? "text-neon-orange" : "text-destructive" },
                 { val: liveCalories.toFixed(1), label: "KCAL", color: "text-neon-orange" },
                 { val: formatTime(sessionElapsed), label: "TIME", color: "text-neon-cyan" },
               ].map((s, i) => (
-                <div key={i} className="glass-card flex-1 py-2 text-center">
-                  <p className={`text-xl font-display font-bold ${s.color}`}>{s.val}</p>
-                  <p className="text-[8px] text-muted-foreground">{s.label}</p>
+                <div key={i} className="bg-black/60 backdrop-blur-md rounded-xl py-3 text-center border border-white/10">
+                  <p className={`text-2xl font-display font-black ${s.color} drop-shadow-lg`}>{s.val}</p>
+                  <p className="text-[10px] font-bold text-white/70 tracking-widest">{s.label}</p>
                 </div>
               ))}
             </div>
 
-            {corrections.length > 0 && (
-              <div className="glass-card p-2 mb-2">
-                <div className="flex items-center gap-1 mb-1">
-                  <Sparkles className="h-3 w-3 text-primary" />
-                  <span className="text-[9px] font-bold text-white">AI COACH</span>
-                </div>
-                <div className="space-y-1">
-                  {corrections.slice(0, 2).map((c, i) => (
-                    <div key={i} className="flex items-center gap-1.5">
-                      {correctionIcon(c.severity)}
-                      <span className="text-[9px] text-white/80"><b>{c.joint}:</b> {c.fix}</span>
+            {/* Exercise breakdown during session */}
+            {Object.keys(exerciseHistory).length > 1 && (
+              <div className="bg-black/60 backdrop-blur-md rounded-xl p-2.5 mb-2 border border-white/10">
+                <div className="flex items-center gap-3 overflow-x-auto">
+                  {Object.entries(exerciseHistory).map(([ex, count]) => (
+                    <div key={ex} className="flex items-center gap-1 shrink-0">
+                      <span className="text-xs">{ALL_EXERCISES.find(e => e.type === ex)?.emoji || "🏋️"}</span>
+                      <span className="text-xs font-bold text-white">{count}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            <div className={`glass-card p-2 border-l-2 ${formScore >= 85 ? "border-primary/60" : formScore >= 60 ? "border-neon-orange/60" : "border-destructive/60"}`}>
-              <p className="text-[10px] text-white/90">{feedback}</p>
+            {corrections.length > 0 && (
+              <div className="bg-black/60 backdrop-blur-md rounded-xl p-3 mb-2 border border-primary/30">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-bold text-white tracking-wide">AI COACH</span>
+                </div>
+                <div className="space-y-1.5">
+                  {corrections.slice(0, 3).map((c, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      {correctionIcon(c.severity)}
+                      <span className="text-xs text-white/90"><b className="text-white">{c.joint}:</b> {c.fix}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className={`bg-black/60 backdrop-blur-md rounded-xl p-3 border-l-4 ${formScore >= 85 ? "border-primary" : formScore >= 60 ? "border-neon-orange" : "border-destructive"}`}>
+              <p className="text-sm font-bold text-white drop-shadow">{feedback}</p>
             </div>
           </div>
         </div>
