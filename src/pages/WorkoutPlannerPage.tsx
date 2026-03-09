@@ -40,8 +40,12 @@ const WorkoutPlannerPage = () => {
   const [frequency, setFrequency] = useState("5 days/week");
   const [showConfig, setShowConfig] = useState(false);
 
+  const { canUseFeature, getRemainingUses, trackUsage } = usePremium();
+
   const generatePlan = async () => {
+    if (!canUseFeature("planner")) return;
     setGenerating(true);
+    await trackUsage("planner");
     try {
       const { data, error } = await supabase.functions.invoke("ai-coach", {
         body: {
