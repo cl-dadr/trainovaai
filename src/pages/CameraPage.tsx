@@ -729,6 +729,7 @@ const CameraPage = () => {
                 <Crosshair className="h-5 w-5 text-primary animate-pulse" />
                 <div>
                   <span className="text-base font-bold text-primary tracking-wide">{EXERCISE_NAMES[currentExercise]}</span>
+                  {lockedExercise && <span className="ml-1 text-[8px] font-bold text-neon-cyan">🔒</span>}
                   {combo >= 3 && (
                     <span className="ml-2 text-xs font-bold text-neon-orange animate-pulse">{combo}x 🔥</span>
                   )}
