@@ -66,6 +66,7 @@ const HabitTrackerPage = () => {
     suggestions, suggestionsLoading, fetchSuggestions,
     completedCount, completionRate,
   } = useHabits();
+  const { canUseFeature, getRemainingUses, trackUsage } = usePremium();
 
   const [showCreate, setShowCreate] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
