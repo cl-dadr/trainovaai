@@ -366,6 +366,7 @@ const CameraPage = () => {
     toast.success("Workout saved! 💪");
     setSaving(false);
     setShowSessionReport(true);
+    autoSaveHabitFromWorkout();
   };
 
   const handleEditSession = async (id: string) => {
