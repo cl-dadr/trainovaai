@@ -92,6 +92,7 @@ interface SessionRecord {
 }
 
 interface TodoItem {
+  id?: string;
   exercise: ExerciseType;
   targetReps: number;
   status: "pending" | "done" | "skipped";
