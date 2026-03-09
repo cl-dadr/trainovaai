@@ -14,7 +14,7 @@ import {
   Medal, Crown, Eye,
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, AreaChart, Area, LineChart, Line } from "recharts";
-import { detectExercise, resetDetection, EXERCISE_NAMES, calcCaloriesPerSecond, type ExerciseType, type Landmark, type FormCorrection } from "@/lib/exerciseDetection";
+import { detectExercise, resetDetection, EXERCISE_NAMES, calcCaloriesPerSecond, type ExerciseType, type Landmark, type FormCorrection, setDifficulty, getDifficulty, type DifficultyLevel, getBestRepScore, resetBestRepScore } from "@/lib/exerciseDetection";
 import { speakRepComplete, speakFormCorrection, speakMilestone, speakSessionEnd, speakCombo, setVoiceEnabled, isVoiceEnabled } from "@/lib/voiceCoaching";
 import { showWorkoutFeedback, showRepMilestoneNotification } from "@/lib/genZNotifications";
 import { supabase } from "@/integrations/supabase/client";
@@ -189,6 +189,8 @@ const CameraPage = () => {
   const [lockedExercise, setLockedExercise] = useState<ExerciseType | null>(null);
   const [keypointConf, setKeypointConf] = useState(0);
   const [rom, setRom] = useState(0);
+  const [difficulty, setDifficultyState] = useState<DifficultyLevel>(getDifficulty());
+  const [bestRepForm, setBestRepForm] = useState(0);
 
   const plankIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -364,6 +366,7 @@ const CameraPage = () => {
     toast.success("Workout saved! 💪");
     setSaving(false);
     setShowSessionReport(true);
+    autoSaveHabitFromWorkout();
   };
 
   const handleEditSession = async (id: string) => {
@@ -421,6 +424,60 @@ const CameraPage = () => {
     return Math.round((todoList.filter(t => t.status === "done").length / todoList.length) * 100);
   }, [todoList]);
 
+  const changeDifficulty = (level: DifficultyLevel) => {
+    setDifficultyState(level);
+    setDifficulty(level);
+    const labels = { easy: "Easy — relaxed form checks", medium: "Medium — balanced", strict: "Strict — only perfect reps count" };
+    toast.success(`Difficulty: ${labels[level]}`);
+  };
+
+  const autoSaveHabitFromWorkout = async () => {
+    if (!user || Object.keys(exerciseHistory).length === 0) return;
+    try {
+      // Check if a "Daily Workout" habit exists, create if not
+      const { data: existing } = await supabase
+        .from("habits")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("name", "Daily Workout")
+        .eq("active", true)
+        .maybeSingle();
+
+      let habitId = existing?.id;
+      if (!habitId) {
+        const { data: created } = await supabase.from("habits").insert({
+          user_id: user.id, name: "Daily Workout", icon: "dumbbell",
+          color: "neon-green", target: 1, unit: "session", frequency: "daily",
+          time_of_day: "anytime", difficulty: "medium", ai_suggested: false,
+        }).select("id").single();
+        habitId = created?.id;
+      }
+
+      if (habitId) {
+        const today = new Date().toISOString().split("T")[0];
+        const { data: existingCompletion } = await supabase
+          .from("habit_completions")
+          .select("id")
+          .eq("habit_id", habitId)
+          .eq("user_id", user.id)
+          .eq("date", today)
+          .maybeSingle();
+
+        if (!existingCompletion) {
+          await supabase.from("habit_completions").insert({
+            habit_id: habitId, user_id: user.id, date: today, value: 1, completed: true,
+          });
+        } else {
+          await supabase.from("habit_completions")
+            .update({ completed: true, value: 1 })
+            .eq("id", existingCompletion.id);
+        }
+      }
+    } catch (e) {
+      console.error("Auto-save habit error:", e);
+    }
+  };
+
   const toggleVoice = () => {
     const next = !voiceOn;
     setVoiceOn(next);
@@ -474,6 +531,7 @@ const CameraPage = () => {
       setCorrections(result.corrections);
       setKeypointConf(result.keypointConfidence);
       setRom(result.rom);
+      setBestRepForm(result.bestRepScore);
       if (result.formScore > 0) formScoresRef.current.push(result.formScore);
 
       // Voice corrections (throttled, only on change)
@@ -552,9 +610,9 @@ const CameraPage = () => {
     setIsDetecting(true);
     sessionStartRef.current = new Date();
     setSessionElapsed(0); setLiveCalories(0); setSessionXP(0); setCombo(0); setBestCombo(0);
-    setEarnedAchievements([]); setShowSessionReport(false);
+    setEarnedAchievements([]); setShowSessionReport(false); setBestRepForm(0);
     formScoresRef.current = []; comboRef.current = 0;
-    resetDetection();
+    resetDetection(); resetBestRepScore();
   }, []);
 
   // Initialize MediaPipe when detecting starts — runs after render so video element is mounted
@@ -612,6 +670,7 @@ const CameraPage = () => {
     setCorrections([]); setCurrentExercise("unknown"); setFeedback("Position yourself in frame");
     setExerciseHistory({}); formScoresRef.current = []; resetDetection(); repFeedbackCounter.current = 0;
     setSessionXP(0); setCombo(0); setBestCombo(0); setEarnedAchievements([]); comboRef.current = 0;
+    setBestRepForm(0); resetBestRepScore();
   };
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
@@ -668,7 +727,7 @@ const CameraPage = () => {
               { val: totalReps, label: "Total Reps", icon: <Target className="h-4 w-4" />, color: "text-primary" },
               { val: `${avgForm}%`, label: "Avg Form", icon: <Award className="h-4 w-4" />, color: "text-neon-cyan" },
               { val: liveCalories.toFixed(1), label: "Calories", icon: <Flame className="h-4 w-4" />, color: "text-neon-orange" },
-              { val: formatTime(sessionElapsed), label: "Duration", icon: <Clock className="h-4 w-4" />, color: "text-foreground" },
+              { val: `${bestRepForm}%`, label: "⭐ Best Rep", icon: <Star className="h-4 w-4" />, color: "text-neon-orange" },
             ].map((s, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.1 }}
                 className="glass-card p-3 text-center">
@@ -825,18 +884,69 @@ const CameraPage = () => {
             </div>
           </div>
 
+          {/* Firefly-style Big Circular Rep Counter */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
+            <motion.div
+              key={totalReps}
+              initial={{ scale: 1.3, opacity: 0.9 }}
+              animate={{ scale: 1, opacity: 0.85 }}
+              transition={{ duration: 0.3, type: "spring" }}
+              className="relative flex items-center justify-center"
+            >
+              <svg width="140" height="140" viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="62" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.15)" strokeWidth="3" />
+                <circle
+                  cx="70" cy="70" r="62"
+                  fill="none"
+                  stroke={formScore >= 85 ? "hsl(160,100%,50%)" : formScore >= 60 ? "hsl(25,100%,55%)" : "hsl(0,85%,60%)"}
+                  strokeWidth="4"
+                  strokeDasharray={`${(formScore / 100) * 390} 390`}
+                  strokeLinecap="round"
+                  transform="rotate(-90 70 70)"
+                  opacity={0.8}
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-5xl font-display font-black text-white drop-shadow-lg">{totalReps}</span>
+                <span className="text-[10px] font-bold text-white/70 tracking-widest mt-0.5">{EXERCISE_NAMES[currentExercise]}</span>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Best Rep Badge */}
+          {bestRepForm > 0 && (
+            <div className="absolute top-20 right-3 z-10">
+              <div className="bg-black/70 backdrop-blur-md rounded-lg px-2.5 py-1.5 border border-neon-orange/40">
+                <p className="text-[8px] text-neon-orange font-bold">⭐ BEST REP</p>
+                <p className="text-sm font-black text-neon-orange text-center">{bestRepForm}%</p>
+              </div>
+            </div>
+          )}
+
+          {/* Difficulty Badge */}
+          <div className="absolute top-20 left-3 z-10">
+            <div className={`bg-black/70 backdrop-blur-md rounded-lg px-2.5 py-1.5 border ${
+              difficulty === "easy" ? "border-primary/40" : difficulty === "strict" ? "border-destructive/40" : "border-neon-cyan/40"
+            }`}>
+              <p className="text-[8px] text-white/60 font-bold">STRICTNESS</p>
+              <p className={`text-[10px] font-black text-center ${
+                difficulty === "easy" ? "text-primary" : difficulty === "strict" ? "text-destructive" : "text-neon-cyan"
+              }`}>{difficulty.toUpperCase()}</p>
+            </div>
+          </div>
+
           {/* Bottom Stats */}
           <div className="absolute bottom-0 left-0 right-0 z-10 p-3 safe-area-bottom bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-12">
             <div className="grid grid-cols-4 gap-2 mb-3">
               {[
-                { val: totalReps, label: "REPS", color: "text-primary" },
-                { val: formScore > 0 ? `${formScore}%` : "—", label: "FORM", color: formScore >= 85 ? "text-primary" : formScore >= 60 ? "text-neon-orange" : "text-destructive" },
+                { val: `${formScore > 0 ? formScore : 0}%`, label: "FORM", color: formScore >= 85 ? "text-primary" : formScore >= 60 ? "text-neon-orange" : "text-destructive" },
                 { val: liveCalories.toFixed(1), label: "KCAL", color: "text-neon-orange" },
                 { val: formatTime(sessionElapsed), label: "TIME", color: "text-neon-cyan" },
+                { val: `${combo}x`, label: "COMBO", color: combo >= 5 ? "text-neon-orange" : "text-white/70" },
               ].map((s, i) => (
-                <div key={i} className="bg-black/60 backdrop-blur-md rounded-xl py-3 text-center border border-white/10">
-                  <p className={`text-2xl font-display font-black ${s.color} drop-shadow-lg`}>{s.val}</p>
-                  <p className="text-[10px] font-bold text-white/70 tracking-widest">{s.label}</p>
+                <div key={i} className="bg-black/60 backdrop-blur-md rounded-xl py-2 text-center border border-white/10">
+                  <p className={`text-lg font-display font-black ${s.color} drop-shadow-lg`}>{s.val}</p>
+                  <p className="text-[9px] font-bold text-white/70 tracking-widest">{s.label}</p>
                 </div>
               ))}
             </div>
@@ -959,6 +1069,36 @@ const CameraPage = () => {
                         : goalExercises.includes(ex.type) ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"
                   }`}>
                   {ex.emoji} {ex.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Difficulty / Strictness Selector (Firefly-style) */}
+          <div className="relative z-10 glass-card p-2.5 mb-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-[9px] text-muted-foreground flex items-center gap-1">
+                <Shield className="h-3 w-3" /> FORM STRICTNESS
+              </p>
+              <span className={`text-[8px] px-2 py-0.5 rounded-full font-bold ${
+                difficulty === "easy" ? "bg-primary/20 text-primary" : difficulty === "strict" ? "bg-destructive/20 text-destructive" : "bg-neon-cyan/20 text-neon-cyan"
+              }`}>{difficulty === "easy" ? "Relaxed" : difficulty === "strict" ? "Pro" : "Balanced"}</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {([
+                { level: "easy" as DifficultyLevel, label: "Easy", desc: "Counts most reps", icon: "🟢" },
+                { level: "medium" as DifficultyLevel, label: "Medium", desc: "Balanced checks", icon: "🟡" },
+                { level: "strict" as DifficultyLevel, label: "Strict", desc: "Perfect form only", icon: "🔴" },
+              ]).map(d => (
+                <button key={d.level} onClick={() => changeDifficulty(d.level)}
+                  className={`p-2 rounded-xl text-center transition-all ${
+                    difficulty === d.level
+                      ? "bg-primary/20 border border-primary/50 ring-1 ring-primary/30"
+                      : "bg-secondary/50 border border-transparent"
+                  }`}>
+                  <span className="text-base">{d.icon}</span>
+                  <p className={`text-[10px] font-bold ${difficulty === d.level ? "text-primary" : "text-foreground"}`}>{d.label}</p>
+                  <p className="text-[7px] text-muted-foreground">{d.desc}</p>
                 </button>
               ))}
             </div>

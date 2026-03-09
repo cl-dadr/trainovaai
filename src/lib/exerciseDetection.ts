@@ -35,9 +35,10 @@ export interface ExerciseResult {
     leftHip: number;
     rightHip: number;
   };
-  rom: number; // range of motion percentage for current rep
-  keypointConfidence: number; // avg visibility of tracked keypoints
+  rom: number;
+  keypointConfidence: number;
   repQuality: "perfect" | "good" | "fair" | "poor" | "none";
+  bestRepScore: number; // track best rep this session
 }
 
 // MET values for calorie estimation
@@ -134,12 +135,37 @@ const MIN_FRAMES_FOR_REP = 3;
 const MIN_EXERCISE_FRAMES = 5;
 const CONFIDENCE_THRESHOLD = 0.4;
 
+// Difficulty / strictness level (Firefly-style mobility accommodation)
+export type DifficultyLevel = "easy" | "medium" | "strict";
+let currentDifficulty: DifficultyLevel = "medium";
+
+export function setDifficulty(level: DifficultyLevel) {
+  currentDifficulty = level;
+}
+
+export function getDifficulty(): DifficultyLevel {
+  return currentDifficulty;
+}
+
+// Difficulty multipliers for form thresholds
+function getDifficultyMultiplier(): { depthRelax: number; formBonus: number; cooldown: number } {
+  switch (currentDifficulty) {
+    case "easy": return { depthRelax: 1.15, formBonus: 10, cooldown: 300 };
+    case "strict": return { depthRelax: 0.9, formBonus: -5, cooldown: 500 };
+    default: return { depthRelax: 1.0, formBonus: 0, cooldown: 400 };
+  }
+}
+
 const formHistory: number[] = [];
 const MAX_FORM_HISTORY = 12;
 
 // ROM tracking per rep
 let repMinAngle = Infinity;
 let repMaxAngle = -Infinity;
+let bestRepScore = 0; // Track best rep form score this session
+
+export function getBestRepScore(): number { return bestRepScore; }
+export function resetBestRepScore() { bestRepScore = 0; }
 
 function pushFormScore(score: number): number {
   formHistory.push(score);
@@ -249,11 +275,11 @@ function getShoulderPressCorrections(avgElbow: number, wristAlignment: number): 
 
 // ─── Main Detection Function ───
 export function detectExercise(landmarks: Landmark[], lockedExercise?: ExerciseType | null): ExerciseResult {
-  const emptyResult: ExerciseResult = {
+   const emptyResult: ExerciseResult = {
     exercise: "unknown", state: "idle", repCompleted: false, formScore: 0,
     feedback: "No body detected", confidence: 0, corrections: [],
     angles: { leftElbow: 0, rightElbow: 0, leftKnee: 0, rightKnee: 0, leftHip: 0, rightHip: 0 },
-    rom: 0, keypointConfidence: 0, repQuality: "none",
+    rom: 0, keypointConfidence: 0, repQuality: "none", bestRepScore,
   };
 
   if (!landmarks || landmarks.length < 33) return emptyResult;
@@ -553,7 +579,8 @@ export function detectExercise(landmarks: Landmark[], lockedExercise?: ExerciseT
         if (stateFrames >= MIN_FRAMES_FOR_REP && exerciseFrames >= MIN_EXERCISE_FRAMES) {
           if (exercise !== "plank") {
             const timeSinceLastRep = now - lastRepTime;
-            if (timeSinceLastRep >= REP_COOLDOWN_MS) {
+            const diffMult = getDifficultyMultiplier();
+            if (timeSinceLastRep >= diffMult.cooldown) {
               if (
                 (prevState === "down" && state === "up") ||
                 (exercise === "jumping_jack" && prevState === "up" && state === "down") ||
@@ -587,9 +614,14 @@ export function detectExercise(landmarks: Landmark[], lockedExercise?: ExerciseT
 
   const repQuality = getRepQuality(smoothedFormScore);
 
+  // Update best rep score
+  if (repCompleted && smoothedFormScore > bestRepScore) {
+    bestRepScore = smoothedFormScore;
+  }
+
   return {
     exercise, state, repCompleted, formScore: smoothedFormScore, feedback, confidence, corrections, angles,
-    rom, keypointConfidence, repQuality,
+    rom, keypointConfidence, repQuality, bestRepScore,
   };
 }
 
@@ -601,6 +633,7 @@ export function resetDetection() {
   lastRepTime = 0;
   repMinAngle = Infinity;
   repMaxAngle = -Infinity;
+  bestRepScore = 0;
   formHistory.length = 0;
   Object.keys(smoothedAngles).forEach(k => delete smoothedAngles[k]);
 }
