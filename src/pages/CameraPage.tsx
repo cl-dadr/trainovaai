@@ -619,37 +619,70 @@ const CameraPage = () => {
   useEffect(() => {
     if (!isDetecting) return;
     let cancelled = false;
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
 
     const initPose = () => {
+      if (cancelled) return;
       const video = webcamRef.current?.video;
-      if (!video || cancelled) return;
+      if (!video) {
+        // Retry until webcam mounts
+        if (retryCount < 10) { retryCount++; setTimeout(initPose, 500); }
+        return;
+      }
 
       // Wait until video is ready
       if (!video.readyState || video.readyState < 2) {
         video.addEventListener("loadeddata", () => { if (!cancelled) initPose(); }, { once: true });
+        // Fallback timeout in case loadeddata never fires
+        setTimeout(() => { if (!cancelled && (!video.readyState || video.readyState < 2)) initPose(); }, 2000);
         return;
       }
 
-      const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` });
-      pose.setOptions({ modelComplexity: 2, smoothLandmarks: true, enableSegmentation: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
-      pose.onResults(onResults);
-      poseRef.current = pose;
+      try {
+        // Use pinned version 0.5.1675469404 for stable WASM loading
+        const pose = new Pose({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}`,
+        });
+        pose.setOptions({
+          modelComplexity: 1, // Use lite model for faster loading & better compatibility
+          smoothLandmarks: true,
+          enableSegmentation: false,
+          minDetectionConfidence: 0.4,
+          minTrackingConfidence: 0.4,
+        });
+        pose.onResults(onResults);
+        poseRef.current = pose;
 
-      const camera = new cam.Camera(video, {
-        onFrame: async () => {
-          if (poseRef.current) {
-            try { await poseRef.current.send({ image: video }); } catch {}
-          }
-        },
-        width: 640,
-        height: 480,
-      });
-      camera.start();
-      cameraRef.current = camera;
+        const camera = new cam.Camera(video, {
+          onFrame: async () => {
+            if (poseRef.current) {
+              try { await poseRef.current.send({ image: video }); } catch (e) {
+                // If send fails, the pose model may have crashed — try reinit once
+                console.warn("Pose send error", e);
+              }
+            }
+          },
+          width: 640,
+          height: 480,
+        });
+        camera.start();
+        cameraRef.current = camera;
+        toast.success("AI Body Detection active! 🎯");
+      } catch (err) {
+        console.error("MediaPipe init error:", err);
+        retryCount++;
+        if (retryCount <= MAX_RETRIES) {
+          toast.error(`Detection loading... retry ${retryCount}/${MAX_RETRIES}`);
+          setTimeout(initPose, 2000);
+        } else {
+          toast.error("Camera detection failed. Please reload the page.");
+        }
+      }
     };
 
     // Small delay to ensure Webcam component has mounted and video is streaming
-    const timeout = setTimeout(initPose, 300);
+    const timeout = setTimeout(initPose, 500);
 
     return () => {
       cancelled = true;
@@ -1072,6 +1105,32 @@ const CameraPage = () => {
                 </button>
               ))}
             </div>
+
+            {/* Exercise-specific camera positioning guide */}
+            {lockedExercise && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-2 bg-primary/5 rounded-xl p-2.5 border border-primary/20">
+                <p className="text-[10px] font-bold text-primary mb-1">📷 Camera Setup for {EXERCISE_NAMES[lockedExercise]}</p>
+                <p className="text-[9px] text-muted-foreground leading-relaxed">
+                  {lockedExercise === "pushup" && "Place phone on the floor, 4-6 feet away. Side view works best — show your full body from head to feet horizontally."}
+                  {lockedExercise === "squat" && "Stand 5-8 feet from camera. Front or side view — make sure knees & hips are visible. Full body in frame."}
+                  {lockedExercise === "plank" && "Place phone on floor level, 4-6 feet away. Side view — show full body from head to toes horizontally."}
+                  {lockedExercise === "jumping_jack" && "Stand 6-8 feet from camera. Front view — make sure arms & legs are fully visible when spread."}
+                  {lockedExercise === "lunge" && "Stand 5-7 feet from camera. Side or front view — both legs must be visible from hip to ankle."}
+                  {lockedExercise === "situp" && "Place phone on floor level, 4-6 feet away. Side view — show full body lying down to sitting up."}
+                  {lockedExercise === "bicep_curl" && "Stand 4-6 feet from camera. Front view — keep elbows & wrists visible. Upper body focus."}
+                  {lockedExercise === "shoulder_press" && "Stand 4-6 feet from camera. Front view — arms overhead must be visible. Upper body focus."}
+                  {lockedExercise === "high_knees" && "Stand 5-7 feet from camera. Front view — full body visible, knees lifting to hip height."}
+                </p>
+                <div className="flex items-center gap-1 mt-1.5">
+                  <span className="text-[8px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-bold">
+                    {(lockedExercise === "pushup" || lockedExercise === "plank" || lockedExercise === "situp") ? "📐 SIDE VIEW" : "👤 FRONT VIEW"}
+                  </span>
+                  <span className="text-[8px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">
+                    {(lockedExercise === "pushup" || lockedExercise === "plank" || lockedExercise === "situp") ? "Phone on floor" : "Phone at chest height"}
+                  </span>
+                </div>
+              </motion.div>
+            )}
           </div>
 
           {/* Difficulty / Strictness Selector (Firefly-style) */}
@@ -1108,9 +1167,39 @@ const CameraPage = () => {
             <Webcam ref={webcamRef} audio={false} mirrored className="absolute inset-0 w-full h-full object-cover"
               videoConstraints={{ facingMode: "user", width: 640, height: 480 }} />
             <div className="absolute inset-3 border-2 border-primary/20 rounded-xl pointer-events-none" />
-            <div className="absolute bottom-3 left-3 right-3 bg-black/50 backdrop-blur-sm rounded-xl p-2 text-center">
-              <p className="text-xs text-white font-bold">Position your full body in frame</p>
-              <p className="text-[9px] text-white/60">9 exercises • AI detection • Voice coaching</p>
+            {/* Body outline guide */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30">
+              {(!lockedExercise || lockedExercise === "squat" || lockedExercise === "jumping_jack" || lockedExercise === "lunge" || lockedExercise === "bicep_curl" || lockedExercise === "shoulder_press" || lockedExercise === "high_knees") && (
+                <svg width="120" height="240" viewBox="0 0 120 240" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round">
+                  <circle cx="60" cy="25" r="15" />
+                  <line x1="60" y1="40" x2="60" y2="120" />
+                  <line x1="60" y1="60" x2="30" y2="100" />
+                  <line x1="60" y1="60" x2="90" y2="100" />
+                  <line x1="60" y1="120" x2="35" y2="200" />
+                  <line x1="60" y1="120" x2="85" y2="200" />
+                </svg>
+              )}
+              {(lockedExercise === "pushup" || lockedExercise === "plank" || lockedExercise === "situp") && (
+                <svg width="240" height="80" viewBox="0 0 240 80" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round">
+                  <circle cx="30" cy="30" r="12" />
+                  <line x1="42" y1="30" x2="170" y2="35" />
+                  <line x1="50" y1="30" x2="30" y2="55" />
+                  <line x1="170" y1="35" x2="210" y2="55" />
+                </svg>
+              )}
+            </div>
+            <div className="absolute bottom-3 left-3 right-3 bg-black/60 backdrop-blur-sm rounded-xl p-2.5 text-center">
+              <p className="text-xs text-white font-bold">
+                {lockedExercise ? `Position for ${EXERCISE_NAMES[lockedExercise]}` : "Position your full body in frame"}
+              </p>
+              <p className="text-[9px] text-white/60">
+                {lockedExercise
+                  ? (lockedExercise === "pushup" || lockedExercise === "plank" || lockedExercise === "situp")
+                    ? "📐 Side view • Phone at floor level"
+                    : "👤 Front view • Full body visible"
+                  : "9 exercises • AI detection • Voice coaching"
+                }
+              </p>
             </div>
           </div>
 
