@@ -257,7 +257,7 @@ const CameraPage = () => {
       drawAngleLabel(ctx, lh, result.angles.leftHip, "L.Hip", w, h, orange);
       drawAngleLabel(ctx, rh, result.angles.rightHip, "R.Hip", w, h, orange);
 
-      const result = detectExercise(landmarks);
+      // result already computed above
       setCurrentExercise(result.exercise);
       setFormScore(result.formScore);
       setFeedback(result.feedback);
