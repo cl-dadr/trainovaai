@@ -520,7 +520,9 @@ const CameraPage = () => {
       }
     }
     ctx.restore();
-  }, [checkMilestone, checkAchie, lockedExercisevements, isPlank, lockedExercise
+  }, [checkMilestone, checkAchievements, isPlank, lockedExercise]);
+
+  // Timers
   useEffect(() => {
     if (isPlank && isDetecting) { plankIntervalRef.current = setInterval(() => setPlankTime(p => p + 1), 1000); }
     else { if (plankIntervalRef.current) { clearInterval(plankIntervalRef.current); plankIntervalRef.current = null; } }
