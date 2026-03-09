@@ -8,9 +8,10 @@ import { POSE_CONNECTIONS } from "@mediapipe/pose";
 import {
   Camera, Crosshair, Activity, XCircle, Zap, Trophy, RotateCcw, Save,
   Target, Flame, TrendingUp, Dumbbell, ChevronDown, ChevronUp, Clock,
-  Award, BarChart3, Sparkles,
+  Award, BarChart3, Sparkles, AlertTriangle, CheckCircle, ShieldAlert,
 } from "lucide-react";
-import { detectExercise, resetDetection, EXERCISE_NAMES, type ExerciseType, type Landmark } from "@/lib/exerciseDetection";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, LineChart, Line, Area, AreaChart } from "recharts";
+import { detectExercise, resetDetection, EXERCISE_NAMES, calcCaloriesPerSecond, EXERCISE_MET, type ExerciseType, type Landmark, type FormCorrection } from "@/lib/exerciseDetection";
 import { showWorkoutFeedback, showRepMilestoneNotification } from "@/lib/genZNotifications";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -72,7 +73,6 @@ function drawFormIndicator(ctx: CanvasRenderingContext2D, score: number, w: numb
   ctx.restore();
 }
 
-// Draw per-exercise counters on the canvas
 function drawExerciseCounters(ctx: CanvasRenderingContext2D, history: Record<string, number>, h: number) {
   const entries = Object.entries(history);
   if (entries.length === 0) return;
@@ -92,7 +92,19 @@ function drawExerciseCounters(ctx: CanvasRenderingContext2D, history: Record<str
   ctx.restore();
 }
 
-// Body goal definitions
+// Draw calorie counter on canvas
+function drawCalorieCounter(ctx: CanvasRenderingContext2D, calories: number, w: number) {
+  ctx.save();
+  const x = w - 130, y = 60;
+  ctx.fillStyle = "rgba(0,0,0,0.6)";
+  ctx.roundRect(x - 5, y - 12, 120, 24, 8);
+  ctx.fill();
+  ctx.font = "bold 11px monospace";
+  ctx.fillStyle = "hsl(25,100%,55%)";
+  ctx.fillText(`🔥 ${calories.toFixed(1)} kcal`, x, y + 4);
+  ctx.restore();
+}
+
 const BODY_GOALS = [
   { id: "lean", label: "Lean & Toned", emoji: "🏃", desc: "Low body fat, defined muscles", exercises: ["pushup", "plank", "jumping_jack", "situp"] },
   { id: "muscular", label: "Muscular", emoji: "💪", desc: "Maximum muscle mass & strength", exercises: ["pushup", "squat", "lunge"] },
@@ -126,6 +138,7 @@ const CameraPage = () => {
   const [formScore, setFormScore] = useState(0);
   const [currentExercise, setCurrentExercise] = useState<ExerciseType>("unknown");
   const [feedback, setFeedback] = useState("Position yourself in frame");
+  const [corrections, setCorrections] = useState<FormCorrection[]>([]);
   const [plankTime, setPlankTime] = useState(0);
   const [isPlank, setIsPlank] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -135,23 +148,30 @@ const CameraPage = () => {
   const [pastSessions, setPastSessions] = useState<SessionRecord[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [sessionElapsed, setSessionElapsed] = useState(0);
+  const [liveCalories, setLiveCalories] = useState(0);
+  const [userWeight, setUserWeight] = useState(70);
+  const [showProgress, setShowProgress] = useState(true);
 
   const plankIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const calorieIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const repFeedbackCounter = useRef(0);
   const sessionStartRef = useRef<Date | null>(null);
   const formScoresRef = useRef<number[]>([]);
+  const currentExerciseRef = useRef<ExerciseType>("unknown");
 
-  // Load body goal and past sessions
+  // Load body goal, weight, and past sessions
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [{ data: profile }, { data: sessions }] = await Promise.all([
+      const [{ data: profile }, { data: sessions }, { data: nutritionProfile }] = await Promise.all([
         supabase.from("profiles").select("body_goal").eq("user_id", user.id).maybeSingle(),
-        supabase.from("workout_sessions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
+        supabase.from("workout_sessions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100),
+        supabase.from("nutrition_profiles").select("weight_kg").eq("user_id", user.id).maybeSingle(),
       ]);
       if (profile?.body_goal) setBodyGoal(profile.body_goal as BodyGoalId);
       if (sessions) setPastSessions(sessions as SessionRecord[]);
+      if (nutritionProfile?.weight_kg) setUserWeight(nutritionProfile.weight_kg);
     };
     load();
   }, [user]);
@@ -172,6 +192,7 @@ const CameraPage = () => {
     if (milestones.includes(total)) showRepMilestoneNotification(total);
   }, []);
 
+  // Auto-save session + update daily_activity + update streaks
   const saveSession = async (exerciseType?: string, repCount?: number) => {
     if (!user) return;
     const exType = exerciseType || (currentExercise === "unknown" ? "mixed" : currentExercise);
@@ -183,13 +204,15 @@ const CameraPage = () => {
       ? Math.round(formScoresRef.current.reduce((a, b) => a + b, 0) / formScoresRef.current.length)
       : formScore;
 
+    const totalCalsBurned = Math.round(liveCalories * 10) / 10 || repsToSave * 0.5;
+
     const sessionData = {
       user_id: user.id,
       exercise_type: exType,
       reps: repsToSave,
       form_score: avgForm,
       duration_seconds: duration,
-      calories_burned: repsToSave * 0.5,
+      calories_burned: totalCalsBurned,
     };
 
     const { error } = await supabase.from("workout_sessions").insert(sessionData);
@@ -199,7 +222,7 @@ const CameraPage = () => {
       toast.success("Session auto-saved! 💪🔒");
       setPastSessions(prev => [{ ...sessionData, created_at: new Date().toISOString() }, ...prev]);
 
-      // Also save per-exercise breakdown
+      // Save per-exercise breakdown
       for (const [ex, count] of Object.entries(exerciseHistory)) {
         if (ex !== exType && count > 0) {
           await supabase.from("workout_sessions").insert({
@@ -208,9 +231,68 @@ const CameraPage = () => {
             reps: count,
             form_score: avgForm,
             duration_seconds: Math.round(duration * (count / repsToSave)),
-            calories_burned: count * 0.5,
+            calories_burned: Math.round(count * calcCaloriesPerSecond(ex as ExerciseType, userWeight) * 60 * 10) / 10,
           });
         }
+      }
+
+      // Auto-save to daily_activity
+      const today = new Date().toISOString().split("T")[0];
+      const { data: existing } = await supabase
+        .from("daily_activity")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("date", today)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase.from("daily_activity").update({
+          calories: (existing.calories || 0) + totalCalsBurned,
+          active_minutes: (existing.active_minutes || 0) + Math.ceil(duration / 60),
+        }).eq("id", existing.id);
+      } else {
+        await supabase.from("daily_activity").insert({
+          user_id: user.id,
+          date: today,
+          calories: totalCalsBurned,
+          active_minutes: Math.ceil(duration / 60),
+          steps: 0,
+        });
+      }
+
+      // Update streak
+      const { data: streak } = await supabase
+        .from("user_streaks")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (streak) {
+        const lastDate = streak.last_workout_date;
+        const todayStr = today;
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+        let newStreak = streak.current_streak;
+        if (lastDate === yesterday) newStreak += 1;
+        else if (lastDate !== todayStr) newStreak = 1;
+
+        await supabase.from("user_streaks").update({
+          current_streak: newStreak,
+          longest_streak: Math.max(streak.longest_streak, newStreak),
+          total_reps: streak.total_reps + repsToSave,
+          total_workouts: streak.total_workouts + 1,
+          total_xp: streak.total_xp + repsToSave * 10 + Math.round(avgForm / 10),
+          last_workout_date: todayStr,
+        }).eq("id", streak.id);
+      } else {
+        await supabase.from("user_streaks").insert({
+          user_id: user.id,
+          current_streak: 1,
+          longest_streak: 1,
+          total_reps: repsToSave,
+          total_workouts: 1,
+          total_xp: repsToSave * 10,
+          last_workout_date: today,
+        });
       }
     }
     setSaving(false);
@@ -241,12 +323,9 @@ const CameraPage = () => {
 
       const ls = landmarks[LM.LEFT_SHOULDER], rs = landmarks[LM.RIGHT_SHOULDER];
       const le = landmarks[LM.LEFT_ELBOW], re = landmarks[LM.RIGHT_ELBOW];
-      const lw = landmarks[LM.LEFT_WRIST], rw = landmarks[LM.RIGHT_WRIST];
       const lh = landmarks[LM.LEFT_HIP], rh = landmarks[LM.RIGHT_HIP];
       const lk = landmarks[LM.LEFT_KNEE], rk = landmarks[LM.RIGHT_KNEE];
-      const la = landmarks[LM.LEFT_ANKLE], ra = landmarks[LM.RIGHT_ANKLE];
 
-      // Use smoothed angles from detection engine
       const result = detectExercise(landmarks);
 
       const green = "hsl(160,100%,50%)", cyan = "hsl(180,100%,50%)", orange = "hsl(25,100%,55%)";
@@ -257,14 +336,15 @@ const CameraPage = () => {
       drawAngleLabel(ctx, lh, result.angles.leftHip, "L.Hip", w, h, orange);
       drawAngleLabel(ctx, rh, result.angles.rightHip, "R.Hip", w, h, orange);
 
-      // result already computed above
       setCurrentExercise(result.exercise);
+      currentExerciseRef.current = result.exercise;
       setFormScore(result.formScore);
       setFeedback(result.feedback);
+      setCorrections(result.corrections);
 
       drawFormIndicator(ctx, result.formScore, w);
+      drawCalorieCounter(ctx, liveCalories, w);
 
-      // Draw live per-exercise counters on canvas
       setExerciseHistory(prev => {
         drawExerciseCounters(ctx, prev, h);
         return prev;
@@ -294,7 +374,7 @@ const CameraPage = () => {
       }
     }
     ctx.restore();
-  }, [checkMilestone, isPlank]);
+  }, [checkMilestone, isPlank, liveCalories]);
 
   // Plank timer
   useEffect(() => {
@@ -316,6 +396,19 @@ const CameraPage = () => {
     return () => { if (timerIntervalRef.current) clearInterval(timerIntervalRef.current); };
   }, [isDetecting]);
 
+  // Live calorie counter
+  useEffect(() => {
+    if (isDetecting) {
+      calorieIntervalRef.current = setInterval(() => {
+        const cps = calcCaloriesPerSecond(currentExerciseRef.current, userWeight);
+        setLiveCalories(prev => prev + cps);
+      }, 1000);
+    } else {
+      if (calorieIntervalRef.current) { clearInterval(calorieIntervalRef.current); calorieIntervalRef.current = null; }
+    }
+    return () => { if (calorieIntervalRef.current) clearInterval(calorieIntervalRef.current); };
+  }, [isDetecting, userWeight]);
+
   const startDetection = useCallback(() => {
     const video = webcamRef.current?.video;
     if (!video) return;
@@ -329,6 +422,7 @@ const CameraPage = () => {
     setCameraReady(true);
     sessionStartRef.current = new Date();
     setSessionElapsed(0);
+    setLiveCalories(0);
     formScoresRef.current = [];
     resetDetection();
   }, [onResults]);
@@ -343,7 +437,7 @@ const CameraPage = () => {
 
   const resetWorkout = () => {
     setReps(0); setFormScore(0); setPlankTime(0); setTotalReps(0);
-    setSessionElapsed(0);
+    setSessionElapsed(0); setLiveCalories(0); setCorrections([]);
     setCurrentExercise("unknown"); setFeedback("Position yourself in frame");
     setExerciseHistory({});
     formScoresRef.current = [];
@@ -369,7 +463,41 @@ const CameraPage = () => {
     return stats;
   }, [pastSessions]);
 
+  // Progress chart data — last 7 days
+  const progressChartData = useMemo(() => {
+    const days: Record<string, { date: string; reps: number; calories: number; sessions: number; avgForm: number; formCount: number }> = {};
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 86400000);
+      const key = d.toISOString().split("T")[0];
+      const label = d.toLocaleDateString("en", { weekday: "short" });
+      days[key] = { date: label, reps: 0, calories: 0, sessions: 0, avgForm: 0, formCount: 0 };
+    }
+    pastSessions.forEach(s => {
+      const key = s.created_at.split("T")[0];
+      if (days[key]) {
+        days[key].reps += s.reps;
+        days[key].calories += s.calories_burned || 0;
+        days[key].sessions += 1;
+        days[key].avgForm += s.form_score || 0;
+        days[key].formCount += 1;
+      }
+    });
+    return Object.values(days).map(d => ({
+      ...d,
+      avgForm: d.formCount > 0 ? Math.round(d.avgForm / d.formCount) : 0,
+      calories: Math.round(d.calories),
+    }));
+  }, [pastSessions]);
+
   const goalExercises = activeGoal.exercises as readonly string[];
+
+  const correctionIcon = (severity: FormCorrection["severity"]) => {
+    switch (severity) {
+      case "good": return <CheckCircle className="h-3 w-3 text-primary shrink-0" />;
+      case "warning": return <AlertTriangle className="h-3 w-3 text-neon-orange shrink-0" />;
+      case "critical": return <ShieldAlert className="h-3 w-3 text-destructive shrink-0" />;
+    }
+  };
 
   return (
     <div className="relative min-h-screen pb-24 px-4 pt-6">
@@ -378,10 +506,10 @@ const CameraPage = () => {
       {/* Header */}
       <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="relative z-10 flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-display font-bold text-foreground">AI WORKOUT</h1>
+          <h1 className="text-2xl font-display font-bold text-foreground">AI HOME TRAINER</h1>
           {isDetecting && (
             <p className="text-[10px] text-neon-cyan font-mono">
-              <Clock className="h-3 w-3 inline mr-1" />{formatTime(sessionElapsed)}
+              <Clock className="h-3 w-3 inline mr-1" />{formatTime(sessionElapsed)} • 🔥 {liveCalories.toFixed(1)} kcal
             </p>
           )}
         </div>
@@ -440,6 +568,74 @@ const CameraPage = () => {
         </motion.div>
       )}
 
+      {/* 7-Day Progress Charts (when not detecting) */}
+      {!isDetecting && showProgress && pastSessions.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.02 }}
+          className="relative z-10 glass-card p-4 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <p className="text-xs font-bold text-foreground">7-Day Progress</p>
+            </div>
+            <button onClick={() => setShowProgress(false)} className="text-[10px] text-muted-foreground">Hide</button>
+          </div>
+
+          {/* Reps Chart */}
+          <div className="mb-3">
+            <p className="text-[10px] text-muted-foreground mb-1">REPS PER DAY</p>
+            <div className="h-24">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={progressChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                  <XAxis dataKey="date" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                  <YAxis hide />
+                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }} />
+                  <Bar dataKey="reps" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Calories Chart */}
+          <div className="mb-3">
+            <p className="text-[10px] text-muted-foreground mb-1">CALORIES BURNED</p>
+            <div className="h-24">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={progressChartData}>
+                  <defs>
+                    <linearGradient id="calGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(25,100%,55%)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(25,100%,55%)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                  <XAxis dataKey="date" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                  <YAxis hide />
+                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }} />
+                  <Area type="monotone" dataKey="calories" stroke="hsl(25,100%,55%)" fill="url(#calGrad)" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Form Score Trend */}
+          <div>
+            <p className="text-[10px] text-muted-foreground mb-1">AVG FORM SCORE</p>
+            <div className="h-24">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={progressChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                  <XAxis dataKey="date" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                  <YAxis hide domain={[0, 100]} />
+                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11 }} />
+                  <Line type="monotone" dataKey="avgForm" stroke="hsl(160,100%,50%)" strokeWidth={2} dot={{ fill: "hsl(160,100%,50%)", r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Recommended Exercises for Goal */}
       {!isDetecting && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
@@ -462,6 +658,7 @@ const CameraPage = () => {
                     <div className="space-y-0.5">
                       <p className="text-[10px] text-muted-foreground">{stat.totalReps} total reps</p>
                       <p className="text-[10px] text-muted-foreground">Best form: {stat.bestForm}%</p>
+                      <p className="text-[10px] text-neon-orange">🔥 {Math.round(stat.totalCals)} cal</p>
                       <div className="h-1 rounded-full bg-secondary overflow-hidden mt-1">
                         <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(stat.bestForm, 100)}%` }} />
                       </div>
@@ -497,10 +694,10 @@ const CameraPage = () => {
           {isDetecting && (
             <div className="flex items-center gap-2">
               <div className="glass-card px-3 py-1.5">
-                <span className="text-[10px] font-bold text-neon-cyan">📐 ANGLES</span>
+                <span className="text-[10px] font-bold text-neon-orange">🔥 {liveCalories.toFixed(1)} kcal</span>
               </div>
               <div className="glass-card px-3 py-1.5">
-                <span className="text-[10px] font-bold text-neon-orange">{activeGoal.emoji} {activeGoal.label.toUpperCase()}</span>
+                <span className="text-[10px] font-bold text-neon-cyan">{activeGoal.emoji} {activeGoal.label.toUpperCase()}</span>
               </div>
             </div>
           )}
@@ -511,7 +708,7 @@ const CameraPage = () => {
             <div className="text-center">
               <Camera className="mx-auto h-16 w-16 text-muted-foreground/30 mb-4" />
               <p className="text-sm text-muted-foreground">Position yourself in frame</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">Full body visible • Real-time AI tracking</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Full body visible • AI form correction • Live calories</p>
             </div>
           </div>
         )}
@@ -529,17 +726,42 @@ const CameraPage = () => {
             <p className="text-[9px] text-muted-foreground">FORM</p>
           </div>
           <div className="glass-card flex-1 p-2.5 text-center">
+            <p className="text-2xl font-display font-bold text-neon-orange">{liveCalories.toFixed(1)}</p>
+            <p className="text-[9px] text-muted-foreground">KCAL</p>
+          </div>
+          <div className="glass-card flex-1 p-2.5 text-center">
             <p className="text-2xl font-display font-bold text-neon-cyan">{formatTime(sessionElapsed)}</p>
             <p className="text-[9px] text-muted-foreground">TIME</p>
           </div>
-          {currentExercise === "plank" && (
-            <div className="glass-card flex-1 p-2.5 text-center">
-              <p className="text-2xl font-display font-bold text-neon-orange">{formatTime(plankTime)}</p>
-              <p className="text-[9px] text-muted-foreground">HOLD</p>
-            </div>
-          )}
         </div>
       </motion.div>
+
+      {/* AI Form Corrections Panel */}
+      {isDetecting && corrections.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          className="relative z-10 glass-card p-4 mb-4 border-l-2 border-primary/40">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <p className="text-xs font-bold text-foreground">AI Form Coach</p>
+          </div>
+          <div className="space-y-2">
+            {corrections.map((c, i) => (
+              <motion.div key={`${c.joint}-${i}`} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className={`flex items-start gap-2 p-2 rounded-lg ${
+                  c.severity === "good" ? "bg-primary/10" :
+                  c.severity === "warning" ? "bg-neon-orange/10" : "bg-destructive/10"
+                }`}>
+                {correctionIcon(c.severity)}
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-foreground">{c.joint}: {c.issue}</p>
+                  <p className="text-[10px] text-muted-foreground">{c.fix}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Feedback */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
@@ -551,7 +773,7 @@ const CameraPage = () => {
           <p className="text-sm text-foreground/80">{feedback}</p>
           {isDetecting && currentExercise !== "unknown" && (
             <p className="text-[10px] text-muted-foreground mt-0.5">
-              {EXERCISE_NAMES[currentExercise]} • {totalReps} reps • {formatTime(sessionElapsed)}
+              {EXERCISE_NAMES[currentExercise]} • {totalReps} reps • 🔥 {liveCalories.toFixed(1)} kcal • {formatTime(sessionElapsed)}
             </p>
           )}
         </div>
@@ -584,7 +806,7 @@ const CameraPage = () => {
       {/* Supported Exercises */}
       {isDetecting && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 glass-card p-4 mb-4">
-          <p className="text-xs text-muted-foreground mb-2"><Zap className="h-3 w-3 text-primary inline mr-1" />AI tracks with joint angle analysis:</p>
+          <p className="text-xs text-muted-foreground mb-2"><Zap className="h-3 w-3 text-primary inline mr-1" />AI tracks with joint angle analysis + form correction:</p>
           <div className="flex flex-wrap gap-2">
             {(["squat", "lunge", "pushup", "plank", "jumping_jack", "situp"] as ExerciseType[]).map((ex) => {
               const isGoal = goalExercises.includes(ex);
@@ -607,7 +829,7 @@ const CameraPage = () => {
         className={`relative z-10 w-full rounded-2xl p-4 font-display font-bold text-lg tracking-wider ${
           isDetecting ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"
         }`}>
-        {isDetecting ? "STOP & AUTO-SAVE" : `START AI DETECTION ${activeGoal.emoji}`}
+        {isDetecting ? "STOP & AUTO-SAVE" : `START AI TRAINER ${activeGoal.emoji}`}
       </motion.button>
 
       {/* Session Summary */}
@@ -633,12 +855,12 @@ const CameraPage = () => {
               <p className="text-[9px] text-muted-foreground">Form</p>
             </div>
             <div className="text-center bg-secondary/50 rounded-xl p-2">
-              <p className="text-xl font-bold text-neon-orange">{formatTime(sessionElapsed)}</p>
-              <p className="text-[9px] text-muted-foreground">Time</p>
+              <p className="text-xl font-bold text-neon-orange">{liveCalories.toFixed(1)}</p>
+              <p className="text-[9px] text-muted-foreground">Kcal</p>
             </div>
             <div className="text-center bg-secondary/50 rounded-xl p-2">
-              <p className="text-xl font-bold text-foreground">{Math.round(totalReps * 0.5)}</p>
-              <p className="text-[9px] text-muted-foreground">Cal</p>
+              <p className="text-xl font-bold text-foreground">{formatTime(sessionElapsed)}</p>
+              <p className="text-[9px] text-muted-foreground">Time</p>
             </div>
           </div>
           {Object.keys(exerciseHistory).length > 0 && (
@@ -651,7 +873,7 @@ const CameraPage = () => {
               ))}
             </div>
           )}
-          <p className="text-[10px] text-primary mt-3 text-center">✅ Auto-saved to your account</p>
+          <p className="text-[10px] text-primary mt-3 text-center">✅ Auto-saved to your account + daily activity + streaks</p>
         </motion.div>
       )}
 
@@ -673,7 +895,6 @@ const CameraPage = () => {
             {showHistory && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden space-y-3">
-                {/* Per-exercise stats */}
                 {Object.entries(exerciseStats).length > 0 && (
                   <div className="glass-card p-4">
                     <p className="text-xs font-bold text-foreground mb-3 flex items-center gap-2">
@@ -713,7 +934,6 @@ const CameraPage = () => {
                   </div>
                 )}
 
-                {/* Recent sessions */}
                 <div className="glass-card p-4">
                   <p className="text-xs font-bold text-foreground mb-3 flex items-center gap-2">
                     <Clock className="h-3 w-3 text-neon-cyan" /> Recent Sessions
@@ -731,6 +951,10 @@ const CameraPage = () => {
                           <div className="text-right">
                             <p className="text-sm font-bold text-primary">{s.reps}</p>
                             <p className="text-[9px] text-muted-foreground">reps</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-neon-orange">{Math.round(s.calories_burned || 0)}</p>
+                            <p className="text-[9px] text-muted-foreground">kcal</p>
                           </div>
                           <div className="text-right">
                             <p className={`text-sm font-bold ${(s.form_score || 0) >= 85 ? "text-primary" : "text-neon-orange"}`}>{s.form_score || 0}%</p>
