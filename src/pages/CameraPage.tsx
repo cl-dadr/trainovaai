@@ -726,7 +726,7 @@ const CameraPage = () => {
               { val: totalReps, label: "Total Reps", icon: <Target className="h-4 w-4" />, color: "text-primary" },
               { val: `${avgForm}%`, label: "Avg Form", icon: <Award className="h-4 w-4" />, color: "text-neon-cyan" },
               { val: liveCalories.toFixed(1), label: "Calories", icon: <Flame className="h-4 w-4" />, color: "text-neon-orange" },
-              { val: formatTime(sessionElapsed), label: "Duration", icon: <Clock className="h-4 w-4" />, color: "text-foreground" },
+              { val: `${bestRepForm}%`, label: "⭐ Best Rep", icon: <Star className="h-4 w-4" />, color: "text-neon-orange" },
             ].map((s, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 + i * 0.1 }}
                 className="glass-card p-3 text-center">
