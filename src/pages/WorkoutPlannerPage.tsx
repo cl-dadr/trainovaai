@@ -4,6 +4,8 @@ import { ArrowLeft, Sparkles, Loader2, Dumbbell, Clock, Flame, Target, ChevronRi
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import ReactMarkdown from "react-markdown";
+import { usePremium } from "@/hooks/usePremium";
+import PremiumGate from "@/components/PremiumGate";
 
 const fitnessLevels = ["Beginner", "Intermediate", "Advanced"];
 const goals = ["Fat Loss", "Muscle Gain", "Endurance", "Flexibility", "General Fitness"];
