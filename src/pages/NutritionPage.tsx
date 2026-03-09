@@ -6,6 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
+import { usePremium } from "@/hooks/usePremium";
+import PremiumGate from "@/components/PremiumGate";
 
 interface NutritionProfile {
   id: string;
