@@ -184,6 +184,7 @@ const CameraPage = () => {
   const [showSessionReport, setShowSessionReport] = useState(false);
   const [voiceOn, setVoiceOn] = useState(true);
   const [repFlash, setRepFlash] = useState<string | null>(null);
+  const [lockedExercise, setLockedExercise] = useState<ExerciseType | null>(null);
   const [keypointConf, setKeypointConf] = useState(0);
   const [rom, setRom] = useState(0);
 

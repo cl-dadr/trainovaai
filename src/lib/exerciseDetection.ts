@@ -248,7 +248,7 @@ function getShoulderPressCorrections(avgElbow: number, wristAlignment: number): 
 }
 
 // ─── Main Detection Function ───
-export function detectExercise(landmarks: Landmark[]): ExerciseResult {
+export function detectExercise(landmarks: Landmark[], lockedExercise?: ExerciseType | null): ExerciseResult {
   const emptyResult: ExerciseResult = {
     exercise: "unknown", state: "idle", repCompleted: false, formScore: 0,
     feedback: "No body detected", confidence: 0, corrections: [],
