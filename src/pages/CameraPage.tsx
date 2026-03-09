@@ -14,7 +14,7 @@ import {
   Medal, Crown, Eye,
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, AreaChart, Area, LineChart, Line } from "recharts";
-import { detectExercise, resetDetection, EXERCISE_NAMES, calcCaloriesPerSecond, type ExerciseType, type Landmark, type FormCorrection } from "@/lib/exerciseDetection";
+import { detectExercise, resetDetection, EXERCISE_NAMES, calcCaloriesPerSecond, type ExerciseType, type Landmark, type FormCorrection, setDifficulty, getDifficulty, type DifficultyLevel, getBestRepScore, resetBestRepScore } from "@/lib/exerciseDetection";
 import { speakRepComplete, speakFormCorrection, speakMilestone, speakSessionEnd, speakCombo, setVoiceEnabled, isVoiceEnabled } from "@/lib/voiceCoaching";
 import { showWorkoutFeedback, showRepMilestoneNotification } from "@/lib/genZNotifications";
 import { supabase } from "@/integrations/supabase/client";
