@@ -613,9 +613,14 @@ export function detectExercise(landmarks: Landmark[], lockedExercise?: ExerciseT
 
   const repQuality = getRepQuality(smoothedFormScore);
 
+  // Update best rep score
+  if (repCompleted && smoothedFormScore > bestRepScore) {
+    bestRepScore = smoothedFormScore;
+  }
+
   return {
     exercise, state, repCompleted, formScore: smoothedFormScore, feedback, confidence, corrections, angles,
-    rom, keypointConfidence, repQuality,
+    rom, keypointConfidence, repQuality, bestRepScore,
   };
 }
 
