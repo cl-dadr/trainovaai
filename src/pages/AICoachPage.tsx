@@ -126,6 +126,7 @@ const AICoachPage = () => {
           { role: "user", content: contextMsg },
           ...allMessages.map((m) => ({ role: m.role, content: m.content })),
         ],
+        stream: true,
       }),
     });
 
