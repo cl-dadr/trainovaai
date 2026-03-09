@@ -2,6 +2,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Brain, Heart, Smile, Meh, Frown, Zap, Wind, Sun, Moon, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { usePremium } from "@/hooks/usePremium";
+import PremiumGate from "@/components/PremiumGate";
 
 const moods = [
   { emoji: "😁", label: "Great", value: 5, color: "neon-green" },

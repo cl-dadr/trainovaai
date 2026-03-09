@@ -219,9 +219,13 @@ const NutritionPage = () => {
     toast.success("Meal removed");
   };
 
+  const { canUseFeature, getRemainingUses, trackUsage } = usePremium();
+
   const generateCyclicMealPlan = async () => {
     if (!profile) return;
+    if (!canUseFeature("nutrition")) return;
     setGenerating(true);
+    await trackUsage("nutrition");
     try {
       const dayOfWeek = new Date().toLocaleDateString("en", { weekday: "long" });
       const { data, error } = await supabase.functions.invoke("ai-coach", {
