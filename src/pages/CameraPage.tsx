@@ -183,6 +183,7 @@ const CameraPage = () => {
   const [bestCombo, setBestCombo] = useState(0);
   const [earnedAchievements, setEarnedAchievements] = useState<string[]>([]);
   const [showSessionReport, setShowSessionReport] = useState(false);
+  const [showShareCard, setShowShareCard] = useState(false);
   const [voiceOn, setVoiceOn] = useState(true);
   const [repFlash, setRepFlash] = useState<string | null>(null);
   const [lockedExercise, setLockedExercise] = useState<ExerciseType | null>(null);
