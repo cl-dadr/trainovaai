@@ -10,6 +10,8 @@ import {
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useHabits, type AISuggestion } from "@/hooks/useHabits";
+import { usePremium } from "@/hooks/usePremium";
+import PremiumGate from "@/components/PremiumGate";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
