@@ -777,13 +777,17 @@ const CameraPage = () => {
               ))}
             </div>
 
-            {Object.keys(exerciseHistory).length > 1 && (
+            {Object.keys(exerciseHistory).length > 0 && (
               <div className="bg-black/60 backdrop-blur-md rounded-xl p-2.5 mb-2 border border-white/10">
+                <p className="text-[8px] text-white/50 font-bold tracking-widest mb-1">LIVE COUNT</p>
                 <div className="flex items-center gap-3 overflow-x-auto">
-                  {Object.entries(exerciseHistory).map(([ex, count]) => (
-                    <div key={ex} className="flex items-center gap-1 shrink-0">
-                      <span className="text-xs">{ALL_EXERCISES.find(e => e.type === ex)?.emoji || "🏋️"}</span>
-                      <span className="text-xs font-bold text-white">{count}</span>
+                  {Object.entries(exerciseHistory).map(([ex, count]) => {
+                    const meta = ALL_EXERCISES.find(e => e.type === ex);
+                    return (
+                    <div key={ex} className="flex items-center gap-1.5 shrink-0 bg-white/10 rounded-lg px-2 py-1">
+                      <span className="text-xs">{meta?.emoji || "🏋️"}</span>
+                      <span className="text-[10px] text-white/70">{meta?.name || ex}</span>
+                      <span className="text-sm font-black text-primary">{count}</span>
                     </div>
                   ))}
                 </div>
