@@ -1167,9 +1167,39 @@ const CameraPage = () => {
             <Webcam ref={webcamRef} audio={false} mirrored className="absolute inset-0 w-full h-full object-cover"
               videoConstraints={{ facingMode: "user", width: 640, height: 480 }} />
             <div className="absolute inset-3 border-2 border-primary/20 rounded-xl pointer-events-none" />
-            <div className="absolute bottom-3 left-3 right-3 bg-black/50 backdrop-blur-sm rounded-xl p-2 text-center">
-              <p className="text-xs text-white font-bold">Position your full body in frame</p>
-              <p className="text-[9px] text-white/60">9 exercises • AI detection • Voice coaching</p>
+            {/* Body outline guide */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30">
+              {(!lockedExercise || lockedExercise === "squat" || lockedExercise === "jumping_jack" || lockedExercise === "lunge" || lockedExercise === "bicep_curl" || lockedExercise === "shoulder_press" || lockedExercise === "high_knees") && (
+                <svg width="120" height="240" viewBox="0 0 120 240" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round">
+                  <circle cx="60" cy="25" r="15" />
+                  <line x1="60" y1="40" x2="60" y2="120" />
+                  <line x1="60" y1="60" x2="30" y2="100" />
+                  <line x1="60" y1="60" x2="90" y2="100" />
+                  <line x1="60" y1="120" x2="35" y2="200" />
+                  <line x1="60" y1="120" x2="85" y2="200" />
+                </svg>
+              )}
+              {(lockedExercise === "pushup" || lockedExercise === "plank" || lockedExercise === "situp") && (
+                <svg width="240" height="80" viewBox="0 0 240 80" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round">
+                  <circle cx="30" cy="30" r="12" />
+                  <line x1="42" y1="30" x2="170" y2="35" />
+                  <line x1="50" y1="30" x2="30" y2="55" />
+                  <line x1="170" y1="35" x2="210" y2="55" />
+                </svg>
+              )}
+            </div>
+            <div className="absolute bottom-3 left-3 right-3 bg-black/60 backdrop-blur-sm rounded-xl p-2.5 text-center">
+              <p className="text-xs text-white font-bold">
+                {lockedExercise ? `Position for ${EXERCISE_NAMES[lockedExercise]}` : "Position your full body in frame"}
+              </p>
+              <p className="text-[9px] text-white/60">
+                {lockedExercise
+                  ? (lockedExercise === "pushup" || lockedExercise === "plank" || lockedExercise === "situp")
+                    ? "📐 Side view • Phone at floor level"
+                    : "👤 Front view • Full body visible"
+                  : "9 exercises • AI detection • Voice coaching"
+                }
+              </p>
             </div>
           </div>
 
