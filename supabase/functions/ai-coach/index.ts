@@ -34,7 +34,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    const { messages, stream: useStream = false, coach } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -50,7 +50,7 @@ serve(async (req) => {
           { role: "system", content: COACH_SYSTEM_PROMPT },
           ...messages,
         ],
-        stream: true,
+        stream: !!useStream,
       }),
     });
 
@@ -75,8 +75,17 @@ serve(async (req) => {
       });
     }
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+    if (useStream) {
+      return new Response(response.body, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      });
+    }
+
+    // Non-streaming: return the full response as JSON
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || "";
+    return new Response(JSON.stringify(content), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("ai-coach error:", e);
