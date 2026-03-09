@@ -297,26 +297,45 @@ const CameraPage = () => {
     else toast.success("Workout deleted 🗑️");
   };
 
-  // To-do handlers
-  const addTodoItem = () => {
-    setTodoList(prev => [...prev, { exercise: newTodoExercise, targetReps: newTodoReps, status: "pending" }]);
+  // To-do handlers — persisted to database
+  const addTodoItem = async () => {
+    if (!user) return;
+    const { data, error } = await supabase.from("workout_todos").insert({
+      user_id: user.id, exercise_type: newTodoExercise, target_reps: newTodoReps, status: "pending", actual_reps: 0,
+    } as any).select().single();
+    if (data) {
+      setTodoList(prev => [...prev, { id: (data as any).id, exercise: newTodoExercise, targetReps: newTodoReps, status: "pending" }]);
+    }
     setShowAddTodo(false);
     toast.success(`Added ${EXERCISE_NAMES[newTodoExercise]} x${newTodoReps}`);
   };
 
-  const skipTodoItem = (index: number) => {
-    setTodoList(prev => prev.map((item, i) => i === index ? { ...item, status: "skipped" as const } : item));
+  const skipTodoItem = async (index: number) => {
+    const item = todoList[index];
+    if (item?.id) await supabase.from("workout_todos").update({ status: "skipped" } as any).eq("id", item.id);
+    setTodoList(prev => prev.map((it, i) => i === index ? { ...it, status: "skipped" as const } : it));
   };
 
-  const markTodoDone = (index: number) => {
-    setTodoList(prev => prev.map((item, i) => i === index ? { ...item, status: "done" as const, actualReps: item.targetReps } : item));
+  const markTodoDone = async (index: number) => {
+    const item = todoList[index];
+    if (item?.id) await supabase.from("workout_todos").update({ status: "done", actual_reps: item.targetReps } as any).eq("id", item.id);
+    setTodoList(prev => prev.map((it, i) => i === index ? { ...it, status: "done" as const, actualReps: it.targetReps } : it));
   };
 
-  const removeTodoItem = (index: number) => {
+  const removeTodoItem = async (index: number) => {
+    const item = todoList[index];
+    if (item?.id) await supabase.from("workout_todos").delete().eq("id", item.id);
     setTodoList(prev => prev.filter((_, i) => i !== index));
   };
 
-  const resetTodoList = () => {
+  const resetTodoList = async () => {
+    if (!user) return;
+    const ids = todoList.filter(t => t.id).map(t => t.id!);
+    if (ids.length > 0) {
+      for (const id of ids) {
+        await supabase.from("workout_todos").update({ status: "pending", actual_reps: 0 } as any).eq("id", id);
+      }
+    }
     setTodoList(prev => prev.map(item => ({ ...item, status: "pending" as const, actualReps: undefined })));
   };
 
