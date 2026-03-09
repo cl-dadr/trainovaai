@@ -601,6 +601,7 @@ const CameraPage = () => {
 
   const stopDetection = () => {
     if (cameraRef.current) { cameraRef.current.stop(); cameraRef.current = null; }
+    if (poseRef.current) { poseRef.current.close(); poseRef.current = null; }
     setIsDetecting(false);
     resetDetection();
     if (totalReps > 0 && user) saveSession();
