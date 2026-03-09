@@ -184,6 +184,7 @@ const CameraPage = () => {
   const [showSessionReport, setShowSessionReport] = useState(false);
   const [voiceOn, setVoiceOn] = useState(true);
   const [repFlash, setRepFlash] = useState<string | null>(null);
+  const [lockedExercise, setLockedExercise] = useState<ExerciseType | null>(null);
   const [keypointConf, setKeypointConf] = useState(0);
   const [rom, setRom] = useState(0);
 
@@ -449,7 +450,7 @@ const CameraPage = () => {
       const lh = landmarks[LM.LEFT_HIP], rh = landmarks[LM.RIGHT_HIP];
       const lk = landmarks[LM.LEFT_KNEE], rk = landmarks[LM.RIGHT_KNEE];
 
-      const result = detectExercise(landmarks);
+      const result = detectExercise(landmarks, lockedExercise);
 
       // Draw angle labels
       const green = "hsl(160,100%,50%)", cyan = "hsl(180,100%,50%)", orange = "hsl(25,100%,55%)";
@@ -519,7 +520,7 @@ const CameraPage = () => {
       }
     }
     ctx.restore();
-  }, [checkMilestone, checkAchievements, isPlank]);
+  }, [checkMilestone, checkAchievements, isPlank, lockedExercise]);
 
   // Timers
   useEffect(() => {
@@ -728,6 +729,7 @@ const CameraPage = () => {
                 <Crosshair className="h-5 w-5 text-primary animate-pulse" />
                 <div>
                   <span className="text-base font-bold text-primary tracking-wide">{EXERCISE_NAMES[currentExercise]}</span>
+                  {lockedExercise && <span className="ml-1 text-[8px] font-bold text-neon-cyan">🔒</span>}
                   {combo >= 3 && (
                     <span className="ml-2 text-xs font-bold text-neon-orange animate-pulse">{combo}x 🔥</span>
                   )}
@@ -874,16 +876,28 @@ const CameraPage = () => {
             )}
           </AnimatePresence>
 
-          {/* Supported exercises strip */}
+          {/* Exercise selector — tap to lock, tap again to auto-detect */}
           <div className="relative z-10 glass-card p-2.5 mb-3">
-            <p className="text-[9px] text-muted-foreground mb-1.5 flex items-center gap-1"><Shield className="h-3 w-3" /> AI DETECTS {ALL_EXERCISES.length} EXERCISES</p>
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-[9px] text-muted-foreground flex items-center gap-1"><Shield className="h-3 w-3" /> {lockedExercise ? "LOCKED EXERCISE" : "AUTO-DETECT"} • TAP TO {lockedExercise ? "UNLOCK" : "LOCK"}</p>
+              {lockedExercise && (
+                <button onClick={() => setLockedExercise(null)} className="text-[8px] px-2 py-0.5 rounded-full bg-destructive/20 text-destructive font-bold">
+                  AUTO ✕
+                </button>
+              )}
+            </div>
             <div className="flex gap-1.5 overflow-x-auto pb-1">
               {ALL_EXERCISES.map(ex => (
-                <span key={ex.type} className={`shrink-0 text-[9px] px-2 py-1 rounded-full font-bold ${
-                  goalExercises.includes(ex.type) ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"
-                }`}>
+                <button key={ex.type} onClick={() => setLockedExercise(prev => prev === ex.type ? null : ex.type)}
+                  className={`shrink-0 text-[9px] px-2 py-1 rounded-full font-bold transition-all ${
+                    lockedExercise === ex.type
+                      ? "bg-primary text-primary-foreground ring-2 ring-primary/50 scale-105"
+                      : lockedExercise
+                        ? "bg-secondary/50 text-muted-foreground/50"
+                        : goalExercises.includes(ex.type) ? "bg-primary/20 text-primary" : "bg-secondary text-muted-foreground"
+                  }`}>
                   {ex.emoji} {ex.name}
-                </span>
+                </button>
               ))}
             </div>
           </div>
@@ -932,7 +946,7 @@ const CameraPage = () => {
             </button>
             <motion.button whileTap={{ scale: 0.97 }} onClick={startDetection}
               className="flex-1 rounded-2xl p-4 font-display font-bold text-lg tracking-wider bg-primary text-primary-foreground">
-              START AI TRAINER {activeGoal.emoji}
+              {lockedExercise ? `START ${EXERCISE_NAMES[lockedExercise]} 🔒` : `START AI TRAINER ${activeGoal.emoji}`}
             </motion.button>
           </div>
         </>

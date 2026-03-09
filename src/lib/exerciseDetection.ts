@@ -248,7 +248,7 @@ function getShoulderPressCorrections(avgElbow: number, wristAlignment: number): 
 }
 
 // ─── Main Detection Function ───
-export function detectExercise(landmarks: Landmark[]): ExerciseResult {
+export function detectExercise(landmarks: Landmark[], lockedExercise?: ExerciseType | null): ExerciseResult {
   const emptyResult: ExerciseResult = {
     exercise: "unknown", state: "idle", repCompleted: false, formScore: 0,
     feedback: "No body detected", confidence: 0, corrections: [],
@@ -525,6 +525,15 @@ export function detectExercise(landmarks: Landmark[]): ExerciseResult {
     exercise = "unknown";
     state = "idle";
     feedback = "Adjusting... hold your position";
+    confidence = 0;
+    corrections = [];
+  }
+
+  // Apply locked exercise filter — ignore detections that don't match
+  if (lockedExercise && lockedExercise !== "unknown" && exercise !== "unknown" && exercise !== lockedExercise) {
+    exercise = "unknown";
+    state = "idle";
+    feedback = `Locked to ${EXERCISE_NAMES[lockedExercise]} — get in position`;
     confidence = 0;
     corrections = [];
   }
