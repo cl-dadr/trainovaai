@@ -619,37 +619,70 @@ const CameraPage = () => {
   useEffect(() => {
     if (!isDetecting) return;
     let cancelled = false;
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
 
     const initPose = () => {
+      if (cancelled) return;
       const video = webcamRef.current?.video;
-      if (!video || cancelled) return;
+      if (!video) {
+        // Retry until webcam mounts
+        if (retryCount < 10) { retryCount++; setTimeout(initPose, 500); }
+        return;
+      }
 
       // Wait until video is ready
       if (!video.readyState || video.readyState < 2) {
         video.addEventListener("loadeddata", () => { if (!cancelled) initPose(); }, { once: true });
+        // Fallback timeout in case loadeddata never fires
+        setTimeout(() => { if (!cancelled && (!video.readyState || video.readyState < 2)) initPose(); }, 2000);
         return;
       }
 
-      const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` });
-      pose.setOptions({ modelComplexity: 2, smoothLandmarks: true, enableSegmentation: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
-      pose.onResults(onResults);
-      poseRef.current = pose;
+      try {
+        // Use pinned version 0.5.1675469404 for stable WASM loading
+        const pose = new Pose({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}`,
+        });
+        pose.setOptions({
+          modelComplexity: 1, // Use lite model for faster loading & better compatibility
+          smoothLandmarks: true,
+          enableSegmentation: false,
+          minDetectionConfidence: 0.4,
+          minTrackingConfidence: 0.4,
+        });
+        pose.onResults(onResults);
+        poseRef.current = pose;
 
-      const camera = new cam.Camera(video, {
-        onFrame: async () => {
-          if (poseRef.current) {
-            try { await poseRef.current.send({ image: video }); } catch {}
-          }
-        },
-        width: 640,
-        height: 480,
-      });
-      camera.start();
-      cameraRef.current = camera;
+        const camera = new cam.Camera(video, {
+          onFrame: async () => {
+            if (poseRef.current) {
+              try { await poseRef.current.send({ image: video }); } catch (e) {
+                // If send fails, the pose model may have crashed — try reinit once
+                console.warn("Pose send error", e);
+              }
+            }
+          },
+          width: 640,
+          height: 480,
+        });
+        camera.start();
+        cameraRef.current = camera;
+        toast.success("AI Body Detection active! 🎯");
+      } catch (err) {
+        console.error("MediaPipe init error:", err);
+        retryCount++;
+        if (retryCount <= MAX_RETRIES) {
+          toast.error(`Detection loading... retry ${retryCount}/${MAX_RETRIES}`);
+          setTimeout(initPose, 2000);
+        } else {
+          toast.error("Camera detection failed. Please reload the page.");
+        }
+      }
     };
 
     // Small delay to ensure Webcam component has mounted and video is streaming
-    const timeout = setTimeout(initPose, 300);
+    const timeout = setTimeout(initPose, 500);
 
     return () => {
       cancelled = true;
