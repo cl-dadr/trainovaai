@@ -9,9 +9,10 @@ import {
   Camera, Crosshair, Activity, XCircle, Zap, Trophy, RotateCcw, Save,
   Target, Flame, TrendingUp, ChevronDown, ChevronUp, Clock,
   Award, BarChart3, Sparkles, AlertTriangle, CheckCircle, ShieldAlert,
-  Pencil, Trash2, X, Check,
+  Pencil, Trash2, X, Check, Dumbbell, ListChecks, Plus, SkipForward,
+  CircleCheck, CircleX, Play,
 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, AreaChart, Area, LineChart, Line } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, AreaChart, Area, LineChart, Line, RadialBarChart, RadialBar } from "recharts";
 import { detectExercise, resetDetection, EXERCISE_NAMES, calcCaloriesPerSecond, type ExerciseType, type Landmark, type FormCorrection } from "@/lib/exerciseDetection";
 import { showWorkoutFeedback, showRepMilestoneNotification } from "@/lib/genZNotifications";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,6 +70,16 @@ const BODY_GOALS = [
 ] as const;
 type BodyGoalId = typeof BODY_GOALS[number]["id"];
 
+// All supported exercises with metadata
+const ALL_EXERCISES: { type: ExerciseType; name: string; emoji: string; muscle: string; difficulty: string }[] = [
+  { type: "pushup", name: "Push-Up", emoji: "💪", muscle: "Chest, Triceps, Core", difficulty: "Medium" },
+  { type: "squat", name: "Squat", emoji: "🦵", muscle: "Quads, Glutes, Hamstrings", difficulty: "Medium" },
+  { type: "plank", name: "Plank", emoji: "🧘", muscle: "Core, Shoulders", difficulty: "Easy" },
+  { type: "jumping_jack", name: "Jumping Jack", emoji: "⭐", muscle: "Full Body, Cardio", difficulty: "Easy" },
+  { type: "lunge", name: "Lunge", emoji: "🏃", muscle: "Quads, Glutes, Balance", difficulty: "Medium" },
+  { type: "situp", name: "Sit-Up", emoji: "🔥", muscle: "Abs, Hip Flexors", difficulty: "Easy" },
+];
+
 interface SessionRecord {
   id?: string;
   exercise_type: string;
@@ -78,6 +89,13 @@ interface SessionRecord {
   created_at: string;
   calories_burned: number | null;
   user_id?: string;
+}
+
+interface TodoItem {
+  exercise: ExerciseType;
+  targetReps: number;
+  status: "pending" | "done" | "skipped";
+  actualReps?: number;
 }
 
 const CameraPage = () => {
@@ -102,10 +120,16 @@ const CameraPage = () => {
   const [sessionElapsed, setSessionElapsed] = useState(0);
   const [liveCalories, setLiveCalories] = useState(0);
   const [userWeight, setUserWeight] = useState(70);
-  const [activeTab, setActiveTab] = useState<"camera" | "progress" | "history">("camera");
+  const [activeTab, setActiveTab] = useState<"camera" | "exercises" | "progress" | "todo" | "history">("camera");
   const [editingSession, setEditingSession] = useState<string | null>(null);
   const [editReps, setEditReps] = useState(0);
   const [editFormScore, setEditFormScore] = useState(0);
+
+  // To-do list state
+  const [todoList, setTodoList] = useState<TodoItem[]>([]);
+  const [showAddTodo, setShowAddTodo] = useState(false);
+  const [newTodoExercise, setNewTodoExercise] = useState<ExerciseType>("pushup");
+  const [newTodoReps, setNewTodoReps] = useState(10);
 
   const plankIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -121,7 +145,7 @@ const CameraPage = () => {
     const load = async () => {
       const [{ data: profile }, { data: sessions }, { data: np }] = await Promise.all([
         supabase.from("profiles").select("body_goal").eq("user_id", user.id).maybeSingle(),
-        supabase.from("workout_sessions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100),
+        supabase.from("workout_sessions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
         supabase.from("nutrition_profiles").select("weight_kg").eq("user_id", user.id).maybeSingle(),
       ]);
       if (profile?.body_goal) setBodyGoal(profile.body_goal as BodyGoalId);
@@ -130,7 +154,6 @@ const CameraPage = () => {
     };
     load();
 
-    // Realtime subscription
     const channel = supabase
       .channel("workout-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "workout_sessions", filter: `user_id=eq.${user.id}` }, (payload) => {
@@ -153,6 +176,33 @@ const CameraPage = () => {
 
   const activeGoal = useMemo(() => BODY_GOALS.find(g => g.id === bodyGoal) || BODY_GOALS[2], [bodyGoal]);
 
+  // ─── Per-exercise aggregate stats ───
+  const exerciseStats = useMemo(() => {
+    const stats: Record<string, { totalReps: number; totalCals: number; totalSessions: number; avgForm: number; formSum: number; bestForm: number; totalDuration: number; last7Days: number[] }> = {};
+    ALL_EXERCISES.forEach(ex => {
+      stats[ex.type] = { totalReps: 0, totalCals: 0, totalSessions: 0, avgForm: 0, formSum: 0, bestForm: 0, totalDuration: 0, last7Days: Array(7).fill(0) };
+    });
+    pastSessions.forEach(s => {
+      const key = s.exercise_type;
+      if (!stats[key]) return;
+      stats[key].totalReps += s.reps;
+      stats[key].totalCals += s.calories_burned || 0;
+      stats[key].totalSessions += 1;
+      stats[key].formSum += s.form_score || 0;
+      stats[key].bestForm = Math.max(stats[key].bestForm, s.form_score || 0);
+      stats[key].totalDuration += s.duration_seconds || 0;
+      // Last 7 days breakdown
+      const daysAgo = Math.floor((Date.now() - new Date(s.created_at).getTime()) / 86400000);
+      if (daysAgo >= 0 && daysAgo < 7) {
+        stats[key].last7Days[6 - daysAgo] += s.reps;
+      }
+    });
+    Object.values(stats).forEach(st => {
+      st.avgForm = st.totalSessions > 0 ? Math.round(st.formSum / st.totalSessions) : 0;
+    });
+    return stats;
+  }, [pastSessions]);
+
   const updateBodyGoal = async (goal: BodyGoalId) => {
     setBodyGoal(goal); setShowGoalPicker(false);
     if (user) {
@@ -174,13 +224,11 @@ const CameraPage = () => {
       ? Math.round(formScoresRef.current.reduce((a, b) => a + b, 0) / formScoresRef.current.length) : formScore;
     const totalCals = Math.round(liveCalories * 10) / 10 || totalReps * 0.5;
 
-    // Save main session
     await supabase.from("workout_sessions").insert({
       user_id: user.id, exercise_type: exType, reps: totalReps,
       form_score: avgForm, duration_seconds: duration, calories_burned: totalCals,
     });
 
-    // Save per-exercise breakdown
     for (const [ex, count] of Object.entries(exerciseHistory)) {
       if (ex !== exType && count > 0) {
         await supabase.from("workout_sessions").insert({
@@ -191,7 +239,15 @@ const CameraPage = () => {
       }
     }
 
-    // Update daily_activity
+    // Update todo items based on exerciseHistory
+    setTodoList(prev => prev.map(item => {
+      if (item.status === "pending" && exerciseHistory[item.exercise]) {
+        const actual = exerciseHistory[item.exercise] || 0;
+        if (actual >= item.targetReps) return { ...item, status: "done" as const, actualReps: actual };
+      }
+      return item;
+    }));
+
     const today = new Date().toISOString().split("T")[0];
     const { data: existing } = await supabase.from("daily_activity").select("*").eq("user_id", user.id).eq("date", today).maybeSingle();
     if (existing) {
@@ -203,7 +259,6 @@ const CameraPage = () => {
       await supabase.from("daily_activity").insert({ user_id: user.id, date: today, calories: totalCals, active_minutes: Math.ceil(duration / 60), steps: 0 });
     }
 
-    // Update streak
     const { data: streak } = await supabase.from("user_streaks").select("*").eq("user_id", user.id).maybeSingle();
     const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
     if (streak) {
@@ -226,7 +281,6 @@ const CameraPage = () => {
     setSaving(false);
   };
 
-  // Edit & Delete handlers
   const handleEditSession = async (id: string) => {
     const { error } = await supabase.from("workout_sessions").update({ reps: editReps, form_score: editFormScore }).eq("id", id);
     if (error) toast.error("Update failed");
@@ -239,6 +293,34 @@ const CameraPage = () => {
     if (error) toast.error("Delete failed");
     else toast.success("Workout deleted 🗑️");
   };
+
+  // To-do handlers
+  const addTodoItem = () => {
+    setTodoList(prev => [...prev, { exercise: newTodoExercise, targetReps: newTodoReps, status: "pending" }]);
+    setShowAddTodo(false);
+    toast.success(`Added ${EXERCISE_NAMES[newTodoExercise]} x${newTodoReps}`);
+  };
+
+  const skipTodoItem = (index: number) => {
+    setTodoList(prev => prev.map((item, i) => i === index ? { ...item, status: "skipped" as const } : item));
+  };
+
+  const markTodoDone = (index: number) => {
+    setTodoList(prev => prev.map((item, i) => i === index ? { ...item, status: "done" as const, actualReps: item.targetReps } : item));
+  };
+
+  const removeTodoItem = (index: number) => {
+    setTodoList(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const resetTodoList = () => {
+    setTodoList(prev => prev.map(item => ({ ...item, status: "pending" as const, actualReps: undefined })));
+  };
+
+  const todoProgress = useMemo(() => {
+    if (todoList.length === 0) return 0;
+    return Math.round((todoList.filter(t => t.status === "done").length / todoList.length) * 100);
+  }, [todoList]);
 
   const onResults = useCallback((results: any) => {
     const canvas = canvasRef.current;
@@ -369,11 +451,18 @@ const CameraPage = () => {
     return <ShieldAlert className="h-3 w-3 text-destructive shrink-0" />;
   };
 
+  const TABS = [
+    { key: "camera" as const, icon: "🎥" },
+    { key: "exercises" as const, icon: "🏋️" },
+    { key: "todo" as const, icon: "📝" },
+    { key: "progress" as const, icon: "📊" },
+    { key: "history" as const, icon: "📋" },
+  ];
+
   // ─── DETECTING VIEW: fullscreen camera ───
   if (isDetecting) {
     return (
       <div className="fixed inset-0 z-50 bg-black flex flex-col">
-        {/* Camera fills screen */}
         <div className="relative flex-1">
           <Webcam ref={webcamRef} audio={false} mirrored className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0 }}
             videoConstraints={{ facingMode: "user", width: 640, height: 480 }} />
@@ -397,27 +486,19 @@ const CameraPage = () => {
           {/* Bottom Stats */}
           <div className="absolute bottom-0 left-0 right-0 z-10 p-2 safe-area-bottom">
             <div className="flex gap-1.5 mb-2">
-              <div className="glass-card flex-1 py-2 text-center">
-                <p className="text-xl font-display font-bold text-primary">{totalReps}</p>
-                <p className="text-[8px] text-muted-foreground">REPS</p>
-              </div>
-              <div className="glass-card flex-1 py-2 text-center">
-                <p className={`text-xl font-display font-bold ${formScore >= 85 ? "text-primary" : formScore >= 60 ? "text-neon-orange" : "text-destructive"}`}>
-                  {formScore > 0 ? `${formScore}%` : "—"}
-                </p>
-                <p className="text-[8px] text-muted-foreground">FORM</p>
-              </div>
-              <div className="glass-card flex-1 py-2 text-center">
-                <p className="text-xl font-display font-bold text-neon-orange">{liveCalories.toFixed(1)}</p>
-                <p className="text-[8px] text-muted-foreground">KCAL</p>
-              </div>
-              <div className="glass-card flex-1 py-2 text-center">
-                <p className="text-xl font-display font-bold text-neon-cyan">{formatTime(sessionElapsed)}</p>
-                <p className="text-[8px] text-muted-foreground">TIME</p>
-              </div>
+              {[
+                { val: totalReps, label: "REPS", color: "text-primary" },
+                { val: formScore > 0 ? `${formScore}%` : "—", label: "FORM", color: formScore >= 85 ? "text-primary" : formScore >= 60 ? "text-neon-orange" : "text-destructive" },
+                { val: liveCalories.toFixed(1), label: "KCAL", color: "text-neon-orange" },
+                { val: formatTime(sessionElapsed), label: "TIME", color: "text-neon-cyan" },
+              ].map((s, i) => (
+                <div key={i} className="glass-card flex-1 py-2 text-center">
+                  <p className={`text-xl font-display font-bold ${s.color}`}>{s.val}</p>
+                  <p className="text-[8px] text-muted-foreground">{s.label}</p>
+                </div>
+              ))}
             </div>
 
-            {/* AI Corrections */}
             {corrections.length > 0 && (
               <div className="glass-card p-2 mb-2">
                 <div className="flex items-center gap-1 mb-1">
@@ -435,7 +516,6 @@ const CameraPage = () => {
               </div>
             )}
 
-            {/* Feedback bar */}
             <div className={`glass-card p-2 border-l-2 ${formScore >= 85 ? "border-primary/60" : formScore >= 60 ? "border-neon-orange/60" : "border-destructive/60"}`}>
               <p className="text-[10px] text-white/90">{feedback}</p>
             </div>
@@ -445,7 +525,7 @@ const CameraPage = () => {
     );
   }
 
-  // ─── NON-DETECTING VIEW: tabs ───
+  // ─── NON-DETECTING VIEW ───
   return (
     <div className="relative min-h-screen pb-24 px-3 pt-4">
       <div className="ambient-glow" />
@@ -453,13 +533,13 @@ const CameraPage = () => {
       {/* Header */}
       <div className="relative z-10 flex items-center justify-between mb-3">
         <h1 className="text-xl font-display font-bold text-foreground">AI TRAINER</h1>
-        <div className="flex items-center gap-1">
-          {(["camera", "progress", "history"] as const).map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`text-[10px] px-3 py-1.5 rounded-full font-bold transition-all ${
-                activeTab === tab ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+        <div className="flex items-center gap-0.5">
+          {TABS.map(tab => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+              className={`text-[10px] px-2.5 py-1.5 rounded-full font-bold transition-all ${
+                activeTab === tab.key ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
               }`}>
-              {tab === "camera" ? "🎥" : tab === "progress" ? "📊" : "📋"}
+              {tab.icon}
             </button>
           ))}
         </div>
@@ -468,7 +548,6 @@ const CameraPage = () => {
       {/* ─── CAMERA TAB ─── */}
       {activeTab === "camera" && (
         <>
-          {/* Goal selector compact */}
           <button onClick={() => setShowGoalPicker(!showGoalPicker)}
             className="relative z-10 w-full glass-card p-3 flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -498,7 +577,6 @@ const CameraPage = () => {
             )}
           </AnimatePresence>
 
-          {/* Camera — centered, fixed aspect ratio */}
           <div className="relative z-10 aspect-[3/4] max-h-[55vh] rounded-2xl bg-secondary/30 border border-border/50 overflow-hidden mb-3 mx-auto">
             <Webcam ref={webcamRef} audio={false} mirrored className="absolute inset-0 w-full h-full object-cover"
               videoConstraints={{ facingMode: "user", width: 640, height: 480 }} />
@@ -513,36 +591,248 @@ const CameraPage = () => {
             </div>
           </div>
 
-          {/* Session summary (if stopped with reps) */}
           {totalReps > 0 && (
             <div className="relative z-10 glass-card p-3 mb-3">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5"><Trophy className="h-3 w-3 text-neon-orange" /><span className="text-xs font-bold text-foreground">Last Session</span></div>
               </div>
               <div className="grid grid-cols-4 gap-1.5">
-                <div className="text-center bg-secondary/50 rounded-lg p-1.5">
-                  <p className="text-lg font-bold text-primary">{totalReps}</p><p className="text-[8px] text-muted-foreground">Reps</p>
-                </div>
-                <div className="text-center bg-secondary/50 rounded-lg p-1.5">
-                  <p className="text-lg font-bold text-neon-cyan">{formScore}%</p><p className="text-[8px] text-muted-foreground">Form</p>
-                </div>
-                <div className="text-center bg-secondary/50 rounded-lg p-1.5">
-                  <p className="text-lg font-bold text-neon-orange">{liveCalories.toFixed(1)}</p><p className="text-[8px] text-muted-foreground">Kcal</p>
-                </div>
-                <div className="text-center bg-secondary/50 rounded-lg p-1.5">
-                  <p className="text-lg font-bold text-foreground">{formatTime(sessionElapsed)}</p><p className="text-[8px] text-muted-foreground">Time</p>
-                </div>
+                {[
+                  { val: totalReps, label: "Reps", color: "text-primary" },
+                  { val: `${formScore}%`, label: "Form", color: "text-neon-cyan" },
+                  { val: liveCalories.toFixed(1), label: "Kcal", color: "text-neon-orange" },
+                  { val: formatTime(sessionElapsed), label: "Time", color: "text-foreground" },
+                ].map((s, i) => (
+                  <div key={i} className="text-center bg-secondary/50 rounded-lg p-1.5">
+                    <p className={`text-lg font-bold ${s.color}`}>{s.val}</p>
+                    <p className="text-[8px] text-muted-foreground">{s.label}</p>
+                  </div>
+                ))}
               </div>
               <p className="text-[9px] text-primary mt-2 text-center">✅ Auto-saved + synced in real-time</p>
             </div>
           )}
 
-          {/* Start Button */}
           <motion.button whileTap={{ scale: 0.97 }} onClick={startDetection}
             className="relative z-10 w-full rounded-2xl p-4 font-display font-bold text-lg tracking-wider bg-primary text-primary-foreground">
             START AI TRAINER {activeGoal.emoji}
           </motion.button>
         </>
+      )}
+
+      {/* ─── EXERCISES TAB: per-exercise stats ─── */}
+      {activeTab === "exercises" && (
+        <div className="relative z-10 space-y-3">
+          <p className="text-[10px] text-muted-foreground">All AI-tracked exercises • Your lifetime stats</p>
+          {ALL_EXERCISES.map(ex => {
+            const st = exerciseStats[ex.type];
+            const isRecommended = goalExercises.includes(ex.type);
+            const sparkData = st.last7Days.map((v, i) => ({ day: i, reps: v }));
+            return (
+              <motion.div key={ex.type} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                className={`glass-card p-3 border ${isRecommended ? "border-primary/30" : "border-border/30"}`}>
+                {/* Header */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{ex.emoji}</span>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-bold text-foreground">{ex.name}</p>
+                        {isRecommended && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-bold">REC</span>}
+                      </div>
+                      <p className="text-[9px] text-muted-foreground">{ex.muscle}</p>
+                    </div>
+                  </div>
+                  <span className="text-[9px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{ex.difficulty}</span>
+                </div>
+
+                {/* Stats grid */}
+                <div className="grid grid-cols-4 gap-1.5 mb-2">
+                  <div className="bg-secondary/50 rounded-lg p-1.5 text-center">
+                    <p className="text-sm font-bold text-primary">{st.totalReps}</p>
+                    <p className="text-[7px] text-muted-foreground">TOTAL REPS</p>
+                  </div>
+                  <div className="bg-secondary/50 rounded-lg p-1.5 text-center">
+                    <p className="text-sm font-bold text-neon-cyan">{st.avgForm}%</p>
+                    <p className="text-[7px] text-muted-foreground">AVG FORM</p>
+                  </div>
+                  <div className="bg-secondary/50 rounded-lg p-1.5 text-center">
+                    <p className="text-sm font-bold text-neon-orange">{Math.round(st.totalCals)}</p>
+                    <p className="text-[7px] text-muted-foreground">KCAL</p>
+                  </div>
+                  <div className="bg-secondary/50 rounded-lg p-1.5 text-center">
+                    <p className="text-sm font-bold text-foreground">{st.totalSessions}</p>
+                    <p className="text-[7px] text-muted-foreground">SESSIONS</p>
+                  </div>
+                </div>
+
+                {/* 7-day sparkline */}
+                <div className="h-12">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={sparkData}>
+                      <Bar dataKey="reps" fill={isRecommended ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))"} radius={[2, 2, 0, 0]} opacity={0.7} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <p className="text-[8px] text-muted-foreground text-center mt-0.5">Last 7 days</p>
+
+                {/* Best form & total time */}
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30">
+                  <span className="text-[9px] text-muted-foreground">Best Form: <b className="text-primary">{st.bestForm}%</b></span>
+                  <span className="text-[9px] text-muted-foreground">Total Time: <b className="text-foreground">{formatTime(st.totalDuration)}</b></span>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ─── TO-DO TAB ─── */}
+      {activeTab === "todo" && (
+        <div className="relative z-10 space-y-3">
+          {/* Progress header */}
+          <div className="glass-card p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <ListChecks className="h-4 w-4 text-primary" />
+                <span className="text-xs font-bold text-foreground">Workout Plan</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-primary">{todoProgress}%</span>
+                {todoList.length > 0 && (
+                  <button onClick={resetTodoList} className="text-[9px] text-muted-foreground underline">Reset</button>
+                )}
+              </div>
+            </div>
+            {todoList.length > 0 && (
+              <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+                <motion.div className="h-full bg-primary rounded-full" animate={{ width: `${todoProgress}%` }} transition={{ duration: 0.5 }} />
+              </div>
+            )}
+          </div>
+
+          {/* Todo items */}
+          {todoList.length === 0 && !showAddTodo && (
+            <div className="glass-card p-6 text-center">
+              <ListChecks className="mx-auto h-10 w-10 text-muted-foreground/30 mb-2" />
+              <p className="text-sm text-muted-foreground mb-1">No exercises planned</p>
+              <p className="text-[10px] text-muted-foreground/60 mb-3">Add exercises to create your workout plan</p>
+              <button onClick={() => setShowAddTodo(true)}
+                className="bg-primary text-primary-foreground px-4 py-2 rounded-xl text-xs font-bold">
+                <Plus className="h-3 w-3 inline mr-1" /> Add Exercise
+              </button>
+            </div>
+          )}
+
+          {todoList.map((item, index) => {
+            const exMeta = ALL_EXERCISES.find(e => e.type === item.exercise);
+            return (
+              <motion.div key={index} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                className={`glass-card p-3 border-l-3 ${
+                  item.status === "done" ? "border-l-primary/60 opacity-80" :
+                  item.status === "skipped" ? "border-l-neon-orange/60 opacity-60" : "border-l-border/50"
+                }`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{exMeta?.emoji || "🏋️"}</span>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <p className={`text-xs font-bold ${item.status === "done" ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                          {EXERCISE_NAMES[item.exercise]}
+                        </p>
+                        {item.status === "done" && <CircleCheck className="h-3 w-3 text-primary" />}
+                        {item.status === "skipped" && <SkipForward className="h-3 w-3 text-neon-orange" />}
+                      </div>
+                      <p className="text-[9px] text-muted-foreground">
+                        Target: {item.targetReps} reps
+                        {item.actualReps !== undefined && ` • Done: ${item.actualReps}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {item.status === "pending" && (
+                      <>
+                        <button onClick={() => markTodoDone(index)} className="p-1.5 rounded-lg bg-primary/20">
+                          <Check className="h-3 w-3 text-primary" />
+                        </button>
+                        <button onClick={() => skipTodoItem(index)} className="p-1.5 rounded-lg bg-neon-orange/20">
+                          <SkipForward className="h-3 w-3 text-neon-orange" />
+                        </button>
+                      </>
+                    )}
+                    <button onClick={() => removeTodoItem(index)} className="p-1.5 rounded-lg bg-secondary">
+                      <X className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+
+          {/* Add exercise form */}
+          <AnimatePresence>
+            {showAddTodo && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                className="glass-card p-3 overflow-hidden">
+                <p className="text-xs font-bold text-foreground mb-2">Add Exercise</p>
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  {ALL_EXERCISES.map(ex => (
+                    <button key={ex.type} onClick={() => setNewTodoExercise(ex.type)}
+                      className={`p-2 rounded-lg text-left flex items-center gap-1.5 text-[10px] font-bold transition-all ${
+                        newTodoExercise === ex.type ? "bg-primary/20 border border-primary/50 text-primary" : "bg-secondary text-muted-foreground"
+                      }`}>
+                      <span>{ex.emoji}</span> {ex.name}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <label className="text-[9px] text-muted-foreground">Reps:</label>
+                  <input type="number" value={newTodoReps} onChange={e => setNewTodoReps(Number(e.target.value))} min={1}
+                    className="flex-1 bg-secondary rounded-lg px-2 py-1.5 text-xs text-foreground border border-border/50" />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={addTodoItem} className="flex-1 bg-primary text-primary-foreground rounded-lg py-2 text-xs font-bold">
+                    <Plus className="h-3 w-3 inline mr-1" /> Add
+                  </button>
+                  <button onClick={() => setShowAddTodo(false)} className="flex-1 bg-secondary text-foreground rounded-lg py-2 text-xs font-bold">Cancel</button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {todoList.length > 0 && !showAddTodo && (
+            <div className="flex gap-2">
+              <button onClick={() => setShowAddTodo(true)}
+                className="flex-1 glass-card p-2.5 text-center text-[10px] font-bold text-primary">
+                <Plus className="h-3 w-3 inline mr-0.5" /> Add More
+              </button>
+              <button onClick={() => { setActiveTab("camera"); }}
+                className="flex-1 bg-primary text-primary-foreground rounded-xl p-2.5 text-center text-[10px] font-bold">
+                <Play className="h-3 w-3 inline mr-0.5" /> Start Workout
+              </button>
+            </div>
+          )}
+
+          {/* Summary */}
+          {todoList.length > 0 && (
+            <div className="glass-card p-3">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <p className="text-sm font-bold text-primary">{todoList.filter(t => t.status === "done").length}</p>
+                  <p className="text-[8px] text-muted-foreground">DONE</p>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-neon-orange">{todoList.filter(t => t.status === "skipped").length}</p>
+                  <p className="text-[8px] text-muted-foreground">SKIPPED</p>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-muted-foreground">{todoList.filter(t => t.status === "pending").length}</p>
+                  <p className="text-[8px] text-muted-foreground">PENDING</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* ─── PROGRESS TAB ─── */}
@@ -556,6 +846,21 @@ const CameraPage = () => {
             </div>
           ) : (
             <>
+              {/* Summary KPIs */}
+              <div className="grid grid-cols-4 gap-1.5">
+                {[
+                  { val: pastSessions.reduce((a, s) => a + s.reps, 0), label: "REPS", color: "text-primary" },
+                  { val: Math.round(pastSessions.reduce((a, s) => a + (s.calories_burned || 0), 0)), label: "KCAL", color: "text-neon-orange" },
+                  { val: `${pastSessions.length > 0 ? Math.round(pastSessions.reduce((a, s) => a + (s.form_score || 0), 0) / pastSessions.length) : 0}%`, label: "AVG FORM", color: "text-neon-cyan" },
+                  { val: pastSessions.length, label: "SESSIONS", color: "text-foreground" },
+                ].map((s, i) => (
+                  <div key={i} className="glass-card p-2 text-center">
+                    <p className={`text-sm font-bold ${s.color}`}>{s.val}</p>
+                    <p className="text-[7px] text-muted-foreground">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+
               <div className="glass-card p-4">
                 <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1"><TrendingUp className="h-3 w-3" /> REPS / DAY</p>
                 <div className="h-28">
@@ -624,7 +929,6 @@ const CameraPage = () => {
           {pastSessions.map((s) => (
             <div key={s.id || s.created_at} className="glass-card p-3">
               {editingSession === s.id ? (
-                // Edit mode
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-foreground">{EXERCISE_NAMES[s.exercise_type as ExerciseType] || s.exercise_type}</p>
                   <div className="grid grid-cols-2 gap-2">
@@ -649,7 +953,6 @@ const CameraPage = () => {
                   </div>
                 </div>
               ) : (
-                // View mode
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-bold text-foreground">{EXERCISE_NAMES[s.exercise_type as ExerciseType] || s.exercise_type}</p>
