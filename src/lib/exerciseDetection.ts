@@ -632,6 +632,7 @@ export function resetDetection() {
   lastRepTime = 0;
   repMinAngle = Infinity;
   repMaxAngle = -Infinity;
+  bestRepScore = 0;
   formHistory.length = 0;
   Object.keys(smoothedAngles).forEach(k => delete smoothedAngles[k]);
 }
