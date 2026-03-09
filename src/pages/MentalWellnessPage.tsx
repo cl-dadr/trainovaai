@@ -45,7 +45,9 @@ const MentalWellnessPage = () => {
   const [breathPhase, setBreathPhase] = useState<"idle" | "inhale" | "hold" | "exhale">("idle");
   const [breathCount, setBreathCount] = useState(0);
 
-  const startBreathing = () => {
+  const startBreathing = async () => {
+    if (!canUseFeature("wellness")) return;
+    await trackUsage("wellness");
     setShowBreathing(true);
     setBreathPhase("inhale");
     setBreathCount(0);
