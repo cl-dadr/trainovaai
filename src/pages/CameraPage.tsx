@@ -189,6 +189,8 @@ const CameraPage = () => {
   const [lockedExercise, setLockedExercise] = useState<ExerciseType | null>(null);
   const [keypointConf, setKeypointConf] = useState(0);
   const [rom, setRom] = useState(0);
+  const [difficulty, setDifficultyState] = useState<DifficultyLevel>(getDifficulty());
+  const [bestRepForm, setBestRepForm] = useState(0);
 
   const plankIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
