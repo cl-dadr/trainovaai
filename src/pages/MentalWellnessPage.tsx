@@ -37,6 +37,7 @@ const weekLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 const MentalWellnessPage = () => {
   const navigate = useNavigate();
+  const { canUseFeature, getRemainingUses, trackUsage } = usePremium();
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
   const [selectedEnergy, setSelectedEnergy] = useState<number | null>(null);
   const [stressLevel, setStressLevel] = useState(5);
