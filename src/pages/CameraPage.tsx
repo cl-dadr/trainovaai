@@ -20,6 +20,7 @@ import { showWorkoutFeedback, showRepMilestoneNotification } from "@/lib/genZNot
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import WorkoutShareCard from "@/components/WorkoutShareCard";
 
 const LM = {
   LEFT_SHOULDER: 11, RIGHT_SHOULDER: 12,
