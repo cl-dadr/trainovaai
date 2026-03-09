@@ -532,7 +532,6 @@ const CameraPage = () => {
       setKeypointConf(result.keypointConfidence);
       setRom(result.rom);
       setBestRepForm(result.bestRepScore);
-      setRom(result.rom);
       if (result.formScore > 0) formScoresRef.current.push(result.formScore);
 
       // Voice corrections (throttled, only on change)
