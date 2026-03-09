@@ -696,10 +696,32 @@ const CameraPage = () => {
             </div>
           )}
 
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => { setShowSessionReport(false); resetWorkout(); }}
-            className="w-full rounded-2xl p-4 font-display font-bold text-lg bg-primary text-primary-foreground">
-            DONE ✓
-          </motion.button>
+          <div className="flex gap-2">
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowShareCard(true)}
+              className="flex-1 rounded-2xl p-4 font-display font-bold text-lg bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30">
+              📸 Share
+            </motion.button>
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => { setShowSessionReport(false); resetWorkout(); }}
+              className="flex-1 rounded-2xl p-4 font-display font-bold text-lg bg-primary text-primary-foreground">
+              DONE ✓
+            </motion.button>
+          </div>
+
+          {showShareCard && (
+            <WorkoutShareCard
+              totalReps={totalReps}
+              avgForm={avgForm}
+              calories={liveCalories}
+              duration={formatTime(sessionElapsed)}
+              xpEarned={sessionXP}
+              bestCombo={bestCombo}
+              exercises={Object.entries(exerciseHistory).map(([ex, count]) => {
+                const meta = ALL_EXERCISES.find(e => e.type === ex);
+                return { name: meta?.name || ex, emoji: meta?.emoji || "💪", reps: count };
+              })}
+              onClose={() => setShowShareCard(false)}
+            />
+          )}
         </motion.div>
       </div>
     );
