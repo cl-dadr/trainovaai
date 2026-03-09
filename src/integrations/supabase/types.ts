@@ -145,6 +145,27 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_usage: {
+        Row: {
+          feature: string
+          id: string
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          feature: string
+          id?: string
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          feature?: string
+          id?: string
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           created_at: string
@@ -463,6 +484,36 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      premium_subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          plan: string
+          started_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan?: string
+          started_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan?: string
+          started_at?: string
+          status?: string
           user_id?: string
         }
         Relationships: []
