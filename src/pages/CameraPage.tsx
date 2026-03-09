@@ -546,22 +546,58 @@ const CameraPage = () => {
     return () => { if (calorieIntervalRef.current) clearInterval(calorieIntervalRef.current); };
   }, [isDetecting, userWeight]);
 
+  const poseRef = useRef<Pose | null>(null);
+
   const startDetection = useCallback(() => {
-    const video = webcamRef.current?.video;
-    if (!video) return;
-    const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` });
-    pose.setOptions({ modelComplexity: 2, smoothLandmarks: true, enableSegmentation: false, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
-    pose.onResults(onResults);
-    const camera = new cam.Camera(video, { onFrame: async () => { await pose.send({ image: video }); }, width: 640, height: 480 });
-    camera.start();
-    cameraRef.current = camera;
     setIsDetecting(true);
     sessionStartRef.current = new Date();
     setSessionElapsed(0); setLiveCalories(0); setSessionXP(0); setCombo(0); setBestCombo(0);
     setEarnedAchievements([]); setShowSessionReport(false);
     formScoresRef.current = []; comboRef.current = 0;
     resetDetection();
-  }, [onResults]);
+  }, []);
+
+  // Initialize MediaPipe when detecting starts — runs after render so video element is mounted
+  useEffect(() => {
+    if (!isDetecting) return;
+    let cancelled = false;
+
+    const initPose = () => {
+      const video = webcamRef.current?.video;
+      if (!video || cancelled) return;
+
+      // Wait until video is ready
+      if (!video.readyState || video.readyState < 2) {
+        video.addEventListener("loadeddata", () => { if (!cancelled) initPose(); }, { once: true });
+        return;
+      }
+
+      const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}` });
+      pose.setOptions({ modelComplexity: 2, smoothLandmarks: true, enableSegmentation: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+      pose.onResults(onResults);
+      poseRef.current = pose;
+
+      const camera = new cam.Camera(video, {
+        onFrame: async () => {
+          if (poseRef.current) {
+            try { await poseRef.current.send({ image: video }); } catch {}
+          }
+        },
+        width: 640,
+        height: 480,
+      });
+      camera.start();
+      cameraRef.current = camera;
+    };
+
+    // Small delay to ensure Webcam component has mounted and video is streaming
+    const timeout = setTimeout(initPose, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
+  }, [isDetecting, onResults]);
 
   const stopDetection = () => {
     if (cameraRef.current) { cameraRef.current.stop(); cameraRef.current = null; }
