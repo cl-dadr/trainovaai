@@ -450,7 +450,7 @@ const CameraPage = () => {
       const lh = landmarks[LM.LEFT_HIP], rh = landmarks[LM.RIGHT_HIP];
       const lk = landmarks[LM.LEFT_KNEE], rk = landmarks[LM.RIGHT_KNEE];
 
-      const result = detectExercise(landmarks, lockedExercise);
+      const result = detectExercise(landmarks, lockedExercise, lockedExercise);
 
       // Draw angle labels
       const green = "hsl(160,100%,50%)", cyan = "hsl(180,100%,50%)", orange = "hsl(25,100%,55%)";
@@ -520,7 +520,7 @@ const CameraPage = () => {
       }
     }
     ctx.restore();
-  }, [checkMilestone, checkAchievements, isPlank]);
+  }, [checkMilestone, checkAchie, lockedExercisevements, isPlank]);
 
   // Timers
   useEffect(() => {
