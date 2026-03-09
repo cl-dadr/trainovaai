@@ -529,6 +529,15 @@ export function detectExercise(landmarks: Landmark[], lockedExercise?: ExerciseT
     corrections = [];
   }
 
+  // Apply locked exercise filter — ignore detections that don't match
+  if (lockedExercise && lockedExercise !== "unknown" && exercise !== "unknown" && exercise !== lockedExercise) {
+    exercise = "unknown";
+    state = "idle";
+    feedback = `Locked to ${EXERCISE_NAMES[lockedExercise]} — get in position`;
+    confidence = 0;
+    corrections = [];
+  }
+
   const smoothedFormScore = formScore > 0 ? pushFormScore(formScore) : 0;
 
   // ─── Hysteresis Rep Counting State Machine ───
