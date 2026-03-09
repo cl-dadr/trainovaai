@@ -134,6 +134,27 @@ const MIN_FRAMES_FOR_REP = 3;
 const MIN_EXERCISE_FRAMES = 5;
 const CONFIDENCE_THRESHOLD = 0.4;
 
+// Difficulty / strictness level (Firefly-style mobility accommodation)
+export type DifficultyLevel = "easy" | "medium" | "strict";
+let currentDifficulty: DifficultyLevel = "medium";
+
+export function setDifficulty(level: DifficultyLevel) {
+  currentDifficulty = level;
+}
+
+export function getDifficulty(): DifficultyLevel {
+  return currentDifficulty;
+}
+
+// Difficulty multipliers for form thresholds
+function getDifficultyMultiplier(): { depthRelax: number; formBonus: number; cooldown: number } {
+  switch (currentDifficulty) {
+    case "easy": return { depthRelax: 1.15, formBonus: 10, cooldown: 300 };
+    case "strict": return { depthRelax: 0.9, formBonus: -5, cooldown: 500 };
+    default: return { depthRelax: 1.0, formBonus: 0, cooldown: 400 };
+  }
+}
+
 const formHistory: number[] = [];
 const MAX_FORM_HISTORY = 12;
 
