@@ -242,7 +242,15 @@ const CameraPage = () => {
       }
     }
 
-    // Update todo items based on exerciseHistory
+    // Update todo items based on exerciseHistory and persist to DB
+    for (const item of todoList) {
+      if (item.status === "pending" && exerciseHistory[item.exercise]) {
+        const actual = exerciseHistory[item.exercise] || 0;
+        if (actual >= item.targetReps && item.id) {
+          await supabase.from("workout_todos").update({ status: "done", actual_reps: actual } as any).eq("id", item.id);
+        }
+      }
+    }
     setTodoList(prev => prev.map(item => {
       if (item.status === "pending" && exerciseHistory[item.exercise]) {
         const actual = exerciseHistory[item.exercise] || 0;
