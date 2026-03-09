@@ -423,6 +423,60 @@ const CameraPage = () => {
     return Math.round((todoList.filter(t => t.status === "done").length / todoList.length) * 100);
   }, [todoList]);
 
+  const changeDifficulty = (level: DifficultyLevel) => {
+    setDifficultyState(level);
+    setDifficulty(level);
+    const labels = { easy: "Easy — relaxed form checks", medium: "Medium — balanced", strict: "Strict — only perfect reps count" };
+    toast.success(`Difficulty: ${labels[level]}`);
+  };
+
+  const autoSaveHabitFromWorkout = async () => {
+    if (!user || Object.keys(exerciseHistory).length === 0) return;
+    try {
+      // Check if a "Daily Workout" habit exists, create if not
+      const { data: existing } = await supabase
+        .from("habits")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("name", "Daily Workout")
+        .eq("active", true)
+        .maybeSingle();
+
+      let habitId = existing?.id;
+      if (!habitId) {
+        const { data: created } = await supabase.from("habits").insert({
+          user_id: user.id, name: "Daily Workout", icon: "dumbbell",
+          color: "neon-green", target: 1, unit: "session", frequency: "daily",
+          time_of_day: "anytime", difficulty: "medium", ai_suggested: false,
+        }).select("id").single();
+        habitId = created?.id;
+      }
+
+      if (habitId) {
+        const today = new Date().toISOString().split("T")[0];
+        const { data: existingCompletion } = await supabase
+          .from("habit_completions")
+          .select("id")
+          .eq("habit_id", habitId)
+          .eq("user_id", user.id)
+          .eq("date", today)
+          .maybeSingle();
+
+        if (!existingCompletion) {
+          await supabase.from("habit_completions").insert({
+            habit_id: habitId, user_id: user.id, date: today, value: 1, completed: true,
+          });
+        } else {
+          await supabase.from("habit_completions")
+            .update({ completed: true, value: 1 })
+            .eq("id", existingCompletion.id);
+        }
+      }
+    } catch (e) {
+      console.error("Auto-save habit error:", e);
+    }
+  };
+
   const toggleVoice = () => {
     const next = !voiceOn;
     setVoiceOn(next);
