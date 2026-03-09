@@ -599,6 +599,39 @@ export type Database = {
         }
         Relationships: []
       }
+      workout_todos: {
+        Row: {
+          actual_reps: number | null
+          created_at: string
+          exercise_type: string
+          id: string
+          status: string
+          target_reps: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actual_reps?: number | null
+          created_at?: string
+          exercise_type: string
+          id?: string
+          status?: string
+          target_reps?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actual_reps?: number | null
+          created_at?: string
+          exercise_type?: string
+          id?: string
+          status?: string
+          target_reps?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
