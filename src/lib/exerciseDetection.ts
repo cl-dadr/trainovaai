@@ -301,8 +301,9 @@ export function detectExercise(landmarks: Landmark[]): ExerciseResult {
   };
 
   const torsoAngle = Math.atan2(midHip.y - midShoulder.y, midHip.x - midShoulder.x) * (180 / Math.PI);
-  const isHorizontal = Math.abs(torsoAngle) > 45 && Math.abs(torsoAngle) < 135;
-  const isVertical = Math.abs(torsoAngle) <= 45 || Math.abs(torsoAngle) >= 135;
+  // In screen coords, standing person has torso ~90° (y goes down), lying ~0°/180°
+  const isVertical = Math.abs(torsoAngle) > 45 && Math.abs(torsoAngle) < 135;
+  const isHorizontal = !isVertical;
   const shoulderDist = Math.abs(ls.x - rs.x);
   const isSideView = shoulderDist < 0.12;
 
