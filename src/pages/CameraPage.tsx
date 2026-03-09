@@ -450,9 +450,7 @@ const CameraPage = () => {
       const lh = landmarks[LM.LEFT_HIP], rh = landmarks[LM.RIGHT_HIP];
       const lk = landmarks[LM.LEFT_KNEE], rk = landmarks[LM.RIGHT_KNEE];
 
-      const result = detectExercise(landmarks, lockedExercise);
-
-      // Draw angle labels
+      const result = detectExercise(landmarks, lockedExercisew angle labels
       const green = "hsl(160,100%,50%)", cyan = "hsl(180,100%,50%)", orange = "hsl(25,100%,55%)";
       drawAngleLabel(ctx, le, result.angles.leftElbow, "LE", w, h, cyan);
       drawAngleLabel(ctx, re, result.angles.rightElbow, "RE", w, h, cyan);
@@ -520,9 +518,7 @@ const CameraPage = () => {
       }
     }
     ctx.restore();
-  }, [checkMilestone, checkAchie, lockedExercisevements, isPlank]);
-
-  // Timers
+  }, [checkMilestone, checkAchie, lockedExercisevements, isPlank, lockedExercise
   useEffect(() => {
     if (isPlank && isDetecting) { plankIntervalRef.current = setInterval(() => setPlankTime(p => p + 1), 1000); }
     else { if (plankIntervalRef.current) { clearInterval(plankIntervalRef.current); plankIntervalRef.current = null; } }
