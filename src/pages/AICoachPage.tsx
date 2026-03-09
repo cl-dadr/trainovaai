@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot, Send, Sparkles, Dumbbell, Apple, Droplets, Flame,
-  Play, ChevronRight, Target, Zap, Timer, ArrowLeft, X,
+  Play, ChevronLeft, ChevronRight, Target, Zap, Timer, X, Heart, Trophy, Brain,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,107 +10,81 @@ import { useUserStats } from "@/hooks/useUserStats";
 import ExerciseModel from "@/components/ExerciseModel";
 
 type ExerciseType = "squat" | "pushup" | "lunge" | "plank" | "jumping_jack" | "situp";
-
 type Message = { id: number; role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-coach`;
 
 const exercises: {
-  id: ExerciseType;
-  name: string;
-  emoji: string;
-  muscles: string;
-  difficulty: string;
-  color: string;
-  tips: string[];
-  angles: string[];
+  id: ExerciseType; name: string; emoji: string; vibe: string;
+  muscles: string; difficulty: string; color: string;
+  tips: string[]; angles: string[];
 }[] = [
   {
-    id: "squat", name: "Squat", emoji: "🦵", muscles: "Quads · Glutes · Core",
-    difficulty: "Beginner", color: "#39ff14",
-    tips: ["Keep knees behind toes", "Back straight, chest up", "Hip hinge first", "Feet shoulder-width"],
+    id: "squat", name: "Squat", emoji: "🦵", vibe: "thicc gains incoming 🍑",
+    muscles: "Quads · Glutes · Core", difficulty: "Beginner", color: "#39ff14",
+    tips: ["Knees behind toes fr fr", "Back straight, chest up bestie", "Hip hinge first always", "Feet shoulder-width apart"],
     angles: ["Hip: 90°–120°", "Knee: 85°–95°", "Ankle: 70°–80°"],
   },
   {
-    id: "pushup", name: "Push-up", emoji: "💪", muscles: "Chest · Triceps · Core",
-    difficulty: "Beginner", color: "#ff6b35",
-    tips: ["Elbows at 45°", "Core tight throughout", "Full range of motion", "Hands shoulder-width"],
+    id: "pushup", name: "Push-up", emoji: "💪", vibe: "chest day is best day 🔥",
+    muscles: "Chest · Triceps · Core", difficulty: "Beginner", color: "#ff6b35",
+    tips: ["Elbows at 45° no cap", "Core tight the whole time", "Full range or no gains", "Hands shoulder-width"],
     angles: ["Elbow: 90° at bottom", "Body line: 180°", "Wrist: neutral"],
   },
   {
-    id: "lunge", name: "Lunge", emoji: "🏃", muscles: "Quads · Hamstrings · Glutes",
-    difficulty: "Intermediate", color: "#a855f7",
-    tips: ["Front knee over ankle", "Back knee near floor", "Torso upright", "Step far enough"],
+    id: "lunge", name: "Lunge", emoji: "🏃", vibe: "leg day never skipped 💅",
+    muscles: "Quads · Hamstrings · Glutes", difficulty: "Intermediate", color: "#a855f7",
+    tips: ["Front knee over ankle pls", "Back knee near floor", "Torso upright king/queen", "Step far enough"],
     angles: ["Front knee: 90°", "Back knee: 90°", "Hip: 90°–110°"],
   },
   {
-    id: "plank", name: "Plank", emoji: "🧱", muscles: "Core · Shoulders · Back",
-    difficulty: "Beginner", color: "#06b6d4",
-    tips: ["Straight line head to heels", "Don't sag hips", "Engage core", "Breathe steadily"],
+    id: "plank", name: "Plank", emoji: "🧱", vibe: "core so strong it's bussin 🫡",
+    muscles: "Core · Shoulders · Back", difficulty: "Beginner", color: "#06b6d4",
+    tips: ["Straight line head to heels", "Don't let hips sag bestie", "Engage that core fr", "Breathe steadily"],
     angles: ["Body line: 180°", "Shoulder: 90°", "Hold time based"],
   },
   {
-    id: "jumping_jack", name: "Jumping Jack", emoji: "⭐", muscles: "Full Body · Cardio",
-    difficulty: "Beginner", color: "#f59e0b",
-    tips: ["Land softly on balls of feet", "Full arm extension", "Keep rhythm steady", "Core engaged"],
+    id: "jumping_jack", name: "Jumping Jack", emoji: "⭐", vibe: "cardio king energy ⚡",
+    muscles: "Full Body · Cardio", difficulty: "Beginner", color: "#f59e0b",
+    tips: ["Land softly no stomping", "Full arm extension slay", "Keep rhythm steady", "Core engaged always"],
     angles: ["Arms: 0°–180°", "Legs: together–apart", "Smooth transitions"],
   },
   {
-    id: "situp", name: "Sit-up", emoji: "🔄", muscles: "Abs · Hip Flexors",
-    difficulty: "Beginner", color: "#ef4444",
-    tips: ["Don't pull neck", "Controlled movement", "Exhale on the way up", "Feet anchored"],
+    id: "situp", name: "Sit-up", emoji: "🔄", vibe: "abs check loading... 🫠",
+    muscles: "Abs · Hip Flexors", difficulty: "Beginner", color: "#ef4444",
+    tips: ["Don't pull your neck bro", "Controlled movement only", "Exhale on the way up", "Feet anchored down"],
     angles: ["Hip flexion: 40°–90°", "Spine curl: gradual", "Neck neutral"],
   },
 ];
 
 const quickCommands = [
-  { icon: Dumbbell, label: "Form tips", message: "Give me detailed form correction tips for squats, pushups and lunges" },
-  { icon: Flame, label: "Workout plan", message: "Create a 30-day calisthenics plan for lean muscle" },
-  { icon: Apple, label: "Diet plan", message: "Give me a high protein Indian diet for muscle building" },
-  { icon: Droplets, label: "Recovery", message: "Best recovery techniques after intense calisthenics" },
+  { icon: "🔥", label: "Glow up plan", message: "Give me a 30-day full body glow up workout plan for a lean physique" },
+  { icon: "🍗", label: "Protein meals", message: "Give me easy high protein meals I can meal prep this week" },
+  { icon: "💪", label: "Form check", message: "How do I know if my squat and pushup form is correct? Give me cues" },
+  { icon: "😴", label: "Recovery tips", message: "Best recovery routine after leg day? I'm so sore rn" },
+  { icon: "🧠", label: "Motivation", message: "I'm losing motivation to work out. Give me a real talk pep talk" },
 ];
-
 
 const AICoachPage = () => {
   const { user } = useAuth();
   const { totalReps, avgFormScore, longestStreak } = useUserStats();
-  const [activeTab, setActiveTab] = useState<"exercises" | "chat">("exercises");
-  const [selectedExercise, setSelectedExercise] = useState<ExerciseType | null>(null);
-  const [previewTimer, setPreviewTimer] = useState(15);
-  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Chat state
+  const [selectedExIdx, setSelectedExIdx] = useState(0);
+  const [showDetail, setShowDetail] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1, role: "assistant",
-      content: "Hey! I'm **JAX** 🔥 — your personal AI fitness coach.\n\nI cover **everything**: workouts, form correction, nutrition, diet plans, and recovery. Ask me anything and let's crush your goals! 💪",
+      content: "yo what's good! 👋 I'm **JAX** — your AI fitness bestie 🔥\n\nI got you on **workouts, form tips, diet plans, recovery** — literally everything. no cap.\n\nPick an exercise above to see the 3D guide, or just ask me anything below! let's get these gains 💪",
     },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const selectedEx = exercises[selectedExIdx];
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
-
-  // 15-sec preview timer
-  useEffect(() => {
-    if (isPreviewPlaying && previewTimer > 0) {
-      timerRef.current = setTimeout(() => setPreviewTimer((t) => t - 1), 1000);
-    } else if (previewTimer === 0) {
-      setIsPreviewPlaying(false);
-      setPreviewTimer(15);
-    }
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [isPreviewPlaying, previewTimer]);
-
-  const startPreview = (ex: ExerciseType) => {
-    setSelectedExercise(ex);
-    setPreviewTimer(15);
-    setIsPreviewPlaying(true);
-  };
 
   const streamChat = useCallback(async (allMessages: Message[]) => {
     const contextMsg = `User stats: ${totalReps} total reps, ${avgFormScore}% avg form, ${longestStreak} day best streak.`;
@@ -129,17 +103,14 @@ const AICoachPage = () => {
         stream: true,
       }),
     });
-
     if (!resp.ok || !resp.body) {
       const errData = await resp.json().catch(() => ({}));
       throw new Error(errData.error || "Failed to connect");
     }
-
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
     let textBuffer = "";
     let assistantSoFar = "";
-
     const upsert = (chunk: string) => {
       assistantSoFar += chunk;
       setMessages((prev) => {
@@ -149,7 +120,6 @@ const AICoachPage = () => {
         return [...prev, { id: -1, role: "assistant", content: assistantSoFar }];
       });
     };
-
     let done2 = false;
     while (!done2) {
       const { done, value } = await reader.read();
@@ -179,259 +149,278 @@ const AICoachPage = () => {
     setInput("");
     setIsLoading(true);
     try { await streamChat(newMsgs); } catch {
-      setMessages((p) => [...p, { id: Date.now() + 1, role: "assistant", content: "⚠️ Connection error. Try again!" }]);
+      setMessages((p) => [...p, { id: Date.now() + 1, role: "assistant", content: "⚠️ oops, connection error. try again bestie!" }]);
     }
     setIsLoading(false);
   };
-
-  const selEx = exercises.find((e) => e.id === selectedExercise);
 
   return (
     <div className="relative flex flex-col h-screen pb-20">
       <div className="ambient-glow" />
 
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 px-4 pt-6 pb-3">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="h-10 w-10 rounded-xl gradient-purple flex items-center justify-center">
-            <Bot className="h-5 w-5 text-foreground" />
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 px-4 pt-5 pb-2">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2.5">
+            <div className="h-10 w-10 rounded-2xl gradient-purple flex items-center justify-center shadow-lg shadow-neon-purple/20">
+              <span className="text-lg">🤖</span>
+            </div>
+            <div>
+              <h1 className="text-lg font-display font-bold text-foreground tracking-wide">JAX AI</h1>
+              <p className="text-[10px] text-neon-green flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-neon-green inline-block animate-pulse" />
+                your fitness bestie · always online
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-display font-bold text-foreground">AI FITNESS COACH</h1>
-            <p className="text-xs text-neon-green flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-neon-green inline-block animate-pulse" />
-              3D Exercise Previews + AI Chat
-            </p>
+          <div className="flex items-center gap-1.5">
+            <div className="glass-card px-2 py-1 rounded-lg flex items-center gap-1">
+              <Trophy className="h-3 w-3 text-neon-orange" />
+              <span className="text-[10px] font-bold text-foreground">{longestStreak}🔥</span>
+            </div>
           </div>
-        </div>
-        {/* Tabs */}
-        <div className="flex gap-2">
-          {(["exercises", "chat"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeTab === tab ? "gradient-primary text-primary-foreground" : "glass-card text-muted-foreground"
-              }`}
-            >
-              {tab === "exercises" ? "🏋️ 3D Exercises" : "💬 AI Chat"}
-            </button>
-          ))}
         </div>
       </motion.div>
 
-      {/* Content */}
-      {activeTab === "exercises" ? (
-        <div className="relative z-10 flex-1 overflow-y-auto px-4 pb-4">
-          {/* Exercise Detail Modal */}
-          <AnimatePresence>
-            {selectedExercise && selEx && (
-              <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl flex flex-col"
-              >
-                <div className="flex items-center justify-between px-4 pt-6 pb-2">
-                  <button onClick={() => { setSelectedExercise(null); setIsPreviewPlaying(false); }} className="glass-card p-2 rounded-xl">
-                    <ArrowLeft className="h-5 w-5 text-foreground" />
-                  </button>
-                  <h2 className="font-display font-bold text-foreground">{selEx.emoji} {selEx.name}</h2>
-                  <button onClick={() => { setSelectedExercise(null); setIsPreviewPlaying(false); }} className="glass-card p-2 rounded-xl">
-                    <X className="h-5 w-5 text-foreground" />
-                  </button>
-                </div>
-
-                {/* 3D Preview */}
-                <div className="px-4">
-                  <div className="relative glass-card rounded-2xl overflow-hidden" style={{ border: `1px solid ${selEx.color}30` }}>
-                    <Suspense fallback={<div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">Loading 3D model...</div>}>
-                      <ExerciseModel exercise={selEx.id} accentColor={selEx.color} height="280px" />
-                    </Suspense>
-                    {/* Timer overlay */}
-                    <div className="absolute top-3 right-3 glass-card px-3 py-1.5 rounded-full flex items-center gap-1.5">
-                      <Timer className="h-3 w-3" style={{ color: selEx.color }} />
-                      <span className="text-xs font-bold text-foreground">{isPreviewPlaying ? `${previewTimer}s` : "15s"}</span>
-                    </div>
-                    {!isPreviewPlaying && (
-                      <button
-                        onClick={() => startPreview(selEx.id)}
-                        className="absolute bottom-3 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full flex items-center gap-2"
-                        style={{ background: selEx.color }}
-                      >
-                        <Play className="h-4 w-4 text-background" />
-                        <span className="text-xs font-bold text-background">15s Preview</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 overflow-y-auto px-4 mt-4 space-y-3 pb-24">
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="glass-card p-3 text-center">
-                      <Target className="h-4 w-4 mx-auto mb-1" style={{ color: selEx.color }} />
-                      <p className="text-[10px] text-muted-foreground">Muscles</p>
-                      <p className="text-xs font-bold text-foreground">{selEx.muscles.split("·")[0].trim()}</p>
-                    </div>
-                    <div className="glass-card p-3 text-center">
-                      <Zap className="h-4 w-4 mx-auto mb-1" style={{ color: selEx.color }} />
-                      <p className="text-[10px] text-muted-foreground">Level</p>
-                      <p className="text-xs font-bold text-foreground">{selEx.difficulty}</p>
-                    </div>
-                    <div className="glass-card p-3 text-center">
-                      <Sparkles className="h-4 w-4 mx-auto mb-1" style={{ color: selEx.color }} />
-                      <p className="text-[10px] text-muted-foreground">AI Tracked</p>
-                      <p className="text-xs font-bold text-foreground">Yes</p>
-                    </div>
-                  </div>
-
-                  {/* Joint Angles */}
-                  <div className="glass-card p-4 rounded-xl">
-                    <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
-                      <Target className="h-4 w-4" style={{ color: selEx.color }} />
-                      Key Joint Angles
-                    </h3>
-                    {selEx.angles.map((a, i) => (
-                      <div key={i} className="flex items-center gap-2 py-1">
-                        <span className="h-1.5 w-1.5 rounded-full" style={{ background: selEx.color }} />
-                        <span className="text-xs text-foreground/80">{a}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Tips */}
-                  <div className="glass-card p-4 rounded-xl">
-                    <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
-                      <Sparkles className="h-4 w-4" style={{ color: selEx.color }} />
-                      Pro Tips
-                    </h3>
-                    {selEx.tips.map((tip, i) => (
-                      <div key={i} className="flex items-center gap-2 py-1.5">
-                        <span className="text-xs" style={{ color: selEx.color }}>✓</span>
-                        <span className="text-xs text-foreground/80">{tip}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* CTA */}
-                  <button
-                    onClick={() => { setSelectedExercise(null); setIsPreviewPlaying(false); }}
-                    className="w-full py-3 rounded-xl font-bold text-sm text-primary-foreground gradient-primary neon-glow"
-                  >
-                    🎯 Start with AI Camera
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Exercise Grid */}
-          <div className="space-y-3">
-            <h3 className="font-bold text-foreground flex items-center gap-2">
-              <Dumbbell className="h-4 w-4 text-neon-green" />
-              Exercise Library — 3D Previews
-            </h3>
-            {exercises.map((ex, idx) => (
-              <motion.button
+      {/* 3D Exercise Carousel */}
+      <div className="relative z-10 px-4 mb-2">
+        <div className="glass-card rounded-2xl overflow-hidden" style={{ border: `1px solid ${selectedEx.color}25` }}>
+          {/* Exercise selector pills */}
+          <div className="flex gap-1.5 px-3 pt-3 overflow-x-auto no-scrollbar">
+            {exercises.map((ex, i) => (
+              <button
                 key={ex.id}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.06 }}
-                onClick={() => startPreview(ex.id)}
-                className="w-full glass-card rounded-2xl overflow-hidden text-left"
-                style={{ borderColor: `${ex.color}20` }}
+                onClick={() => setSelectedExIdx(i)}
+                className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${
+                  i === selectedExIdx
+                    ? "text-background"
+                    : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
+                }`}
+                style={i === selectedExIdx ? { background: ex.color } : {}}
               >
-                <div className="flex items-center gap-3 p-3">
-                  {/* Mini 3D preview */}
-                  <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0" style={{ background: `${ex.color}10` }}>
-                    <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-2xl">{ex.emoji}</div>}>
-                      <ExerciseModel exercise={ex.id} accentColor={ex.color} height="80px" />
-                    </Suspense>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg">{ex.emoji}</span>
-                      <h4 className="font-bold text-foreground text-sm">{ex.name}</h4>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mb-1.5">{ex.muscles}</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[9px] px-2 py-0.5 rounded-full font-medium" style={{ background: `${ex.color}20`, color: ex.color }}>
-                        {ex.difficulty}
-                      </span>
-                      <span className="text-[9px] px-2 py-0.5 rounded-full font-medium bg-neon-green/10 text-neon-green">AI Tracked</span>
-                    </div>
-                  </div>
-                  <div className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center" style={{ background: `${ex.color}20` }}>
-                    <Play className="h-3 w-3" style={{ color: ex.color }} />
-                  </div>
-                </div>
-              </motion.button>
+                {ex.emoji} {ex.name}
+              </button>
             ))}
           </div>
-        </div>
-      ) : (
-        /* Chat Tab */
-        <>
-          <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto px-4 space-y-3">
-            <AnimatePresence>
-              {messages.map((msg) => (
-                <motion.div key={msg.id} initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${
-                    msg.role === "user" ? "gradient-primary text-primary-foreground rounded-br-md" : "glass-card text-foreground rounded-bl-md"
-                  }`}>
-                    {msg.role === "assistant" && (
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                    <Sparkles className="h-3 w-3 text-neon-purple" />
-                    <span className="text-[10px] font-bold text-neon-purple">JAX</span>
-                      </div>
-                    )}
-                    {msg.role === "assistant" ? (
-                      <div className="prose prose-sm prose-invert max-w-none [&_p]:my-1 [&_strong]:text-neon-green [&_h3]:text-sm [&_h3]:font-bold [&_ul]:my-1 [&_li]:my-0">
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
-                      </div>
-                    ) : msg.content}
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-            {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-                <div className="glass-card rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-neon-green animate-pulse" />
-                  <span className="h-2 w-2 rounded-full bg-neon-green animate-pulse" style={{ animationDelay: "0.2s" }} />
-                  <span className="h-2 w-2 rounded-full bg-neon-green animate-pulse" style={{ animationDelay: "0.4s" }} />
+
+          {/* 3D Model */}
+          <div className="relative">
+            <Suspense fallback={
+              <div className="h-[180px] flex items-center justify-center">
+                <span className="text-4xl animate-bounce">{selectedEx.emoji}</span>
+              </div>
+            }>
+              <ExerciseModel exercise={selectedEx.id} accentColor={selectedEx.color} height="180px" />
+            </Suspense>
+            
+            {/* Overlay info */}
+            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-background/90 to-transparent">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-foreground">{selectedEx.emoji} {selectedEx.name}</p>
+                  <p className="text-[10px] text-muted-foreground italic">{selectedEx.vibe}</p>
                 </div>
-              </motion.div>
-            )}
-          </div>
-          <div className="relative z-10 px-4 py-2">
-            <div className="flex gap-2 overflow-x-auto no-scrollbar">
-              {quickCommands.map((cmd) => (
-                <button key={cmd.label} onClick={() => sendMessage(cmd.message)} disabled={isLoading}
-                  className="shrink-0 glass-card px-3 py-2 flex items-center gap-2 hover:bg-secondary/50 transition-colors disabled:opacity-50">
-                  <cmd.icon className="h-3 w-3 text-neon-green" />
-                  <span className="text-xs text-foreground whitespace-nowrap">{cmd.label}</span>
+                <button
+                  onClick={() => setShowDetail(true)}
+                  className="px-3 py-1.5 rounded-full text-[10px] font-bold text-background flex items-center gap-1"
+                  style={{ background: selectedEx.color }}
+                >
+                  details <ChevronRight className="h-3 w-3" />
                 </button>
-              ))}
+              </div>
             </div>
+
+            {/* Nav arrows */}
+            <button
+              onClick={() => setSelectedExIdx((i) => (i - 1 + exercises.length) % exercises.length)}
+              className="absolute left-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full glass-card flex items-center justify-center"
+            >
+              <ChevronLeft className="h-4 w-4 text-foreground" />
+            </button>
+            <button
+              onClick={() => setSelectedExIdx((i) => (i + 1) % exercises.length)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full glass-card flex items-center justify-center"
+            >
+              <ChevronRight className="h-4 w-4 text-foreground" />
+            </button>
           </div>
-          <div className="relative z-10 px-4 pb-2">
-            <div className="glass-card flex items-center gap-2 px-4 py-3">
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
-                placeholder="Ask about workouts, diet, form..."
-                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-                disabled={isLoading}
-              />
-              <button onClick={() => sendMessage(input)} disabled={isLoading || !input.trim()}
-                className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center disabled:opacity-50">
-                <Send className="h-4 w-4 text-primary-foreground" />
+        </div>
+      </div>
+
+      {/* Exercise Detail Sheet */}
+      <AnimatePresence>
+        {showDetail && (
+          <motion.div
+            initial={{ opacity: 0, y: "100%" }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed inset-0 z-50 bg-background/98 backdrop-blur-xl flex flex-col"
+          >
+            <div className="flex items-center justify-between px-4 pt-5 pb-2">
+              <button onClick={() => setShowDetail(false)} className="glass-card p-2 rounded-xl">
+                <ChevronLeft className="h-5 w-5 text-foreground" />
+              </button>
+              <h2 className="font-display font-bold text-foreground text-sm">{selectedEx.emoji} {selectedEx.name} Guide</h2>
+              <button onClick={() => setShowDetail(false)} className="glass-card p-2 rounded-xl">
+                <X className="h-5 w-5 text-foreground" />
               </button>
             </div>
-          </div>
-        </>
-      )}
+
+            <div className="flex-1 overflow-y-auto px-4 space-y-3 pb-24">
+              {/* Big 3D */}
+              <div className="glass-card rounded-2xl overflow-hidden" style={{ border: `1px solid ${selectedEx.color}30` }}>
+                <Suspense fallback={<div className="h-[260px] flex items-center justify-center text-4xl">{selectedEx.emoji}</div>}>
+                  <ExerciseModel exercise={selectedEx.id} accentColor={selectedEx.color} height="260px" />
+                </Suspense>
+              </div>
+
+              {/* Vibe */}
+              <div className="text-center">
+                <p className="text-sm font-bold text-foreground">{selectedEx.name}</p>
+                <p className="text-xs text-muted-foreground italic">{selectedEx.vibe}</p>
+              </div>
+
+              {/* Stats row */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="glass-card p-3 rounded-xl text-center">
+                  <Target className="h-4 w-4 mx-auto mb-1" style={{ color: selectedEx.color }} />
+                  <p className="text-[9px] text-muted-foreground">muscles</p>
+                  <p className="text-[11px] font-bold text-foreground">{selectedEx.muscles.split("·")[0].trim()}</p>
+                </div>
+                <div className="glass-card p-3 rounded-xl text-center">
+                  <Zap className="h-4 w-4 mx-auto mb-1" style={{ color: selectedEx.color }} />
+                  <p className="text-[9px] text-muted-foreground">level</p>
+                  <p className="text-[11px] font-bold text-foreground">{selectedEx.difficulty}</p>
+                </div>
+                <div className="glass-card p-3 rounded-xl text-center">
+                  <Brain className="h-4 w-4 mx-auto mb-1" style={{ color: selectedEx.color }} />
+                  <p className="text-[9px] text-muted-foreground">AI tracked</p>
+                  <p className="text-[11px] font-bold text-neon-green">yes ✅</p>
+                </div>
+              </div>
+
+              {/* Joint Angles */}
+              <div className="glass-card p-4 rounded-xl">
+                <h3 className="text-xs font-bold text-foreground mb-2 flex items-center gap-2">
+                  🎯 Key Joint Angles
+                </h3>
+                {selectedEx.angles.map((a, i) => (
+                  <div key={i} className="flex items-center gap-2 py-1">
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: selectedEx.color }} />
+                    <span className="text-xs text-foreground/80">{a}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Tips */}
+              <div className="glass-card p-4 rounded-xl">
+                <h3 className="text-xs font-bold text-foreground mb-2 flex items-center gap-2">
+                  💡 Pro Tips (trust me bro)
+                </h3>
+                {selectedEx.tips.map((tip, i) => (
+                  <div key={i} className="flex items-center gap-2 py-1.5">
+                    <span className="text-xs" style={{ color: selectedEx.color }}>✓</span>
+                    <span className="text-xs text-foreground/80">{tip}</span>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setShowDetail(false)}
+                className="w-full py-3 rounded-xl font-bold text-sm text-background neon-glow"
+                style={{ background: selectedEx.color }}
+              >
+                🎯 got it, let's go!
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Chat Section */}
+      <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto px-4 space-y-2.5">
+        <AnimatePresence>
+          {messages.map((msg) => (
+            <motion.div
+              key={msg.id}
+              initial={{ opacity: 0, y: 8, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+            >
+              <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm ${
+                msg.role === "user"
+                  ? "gradient-primary text-primary-foreground rounded-br-sm"
+                  : "glass-card text-foreground rounded-bl-sm"
+              }`}>
+                {msg.role === "assistant" && (
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-xs">🤖</span>
+                    <span className="text-[10px] font-bold text-neon-purple">JAX</span>
+                    <Sparkles className="h-2.5 w-2.5 text-neon-purple" />
+                  </div>
+                )}
+                {msg.role === "assistant" ? (
+                  <div className="prose prose-sm prose-invert max-w-none [&_p]:my-1 [&_strong]:text-neon-green [&_h3]:text-sm [&_h3]:font-bold [&_ul]:my-1 [&_li]:my-0 [&_em]:text-neon-orange/80">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p>{msg.content}</p>
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+            <div className="glass-card rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-2">
+              <span className="text-xs">🤖</span>
+              <span className="h-2 w-2 rounded-full bg-neon-green animate-pulse" />
+              <span className="h-2 w-2 rounded-full bg-neon-green animate-pulse" style={{ animationDelay: "0.15s" }} />
+              <span className="h-2 w-2 rounded-full bg-neon-green animate-pulse" style={{ animationDelay: "0.3s" }} />
+              <span className="text-[10px] text-muted-foreground ml-1">typing...</span>
+            </div>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Quick Commands */}
+      <div className="relative z-10 px-4 py-1.5">
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+          {quickCommands.map((cmd) => (
+            <button
+              key={cmd.label}
+              onClick={() => sendMessage(cmd.message)}
+              disabled={isLoading}
+              className="shrink-0 glass-card px-2.5 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-secondary/50 transition-colors disabled:opacity-50"
+            >
+              <span className="text-xs">{cmd.icon}</span>
+              <span className="text-[10px] text-foreground whitespace-nowrap font-medium">{cmd.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Input */}
+      <div className="relative z-10 px-4 pb-2">
+        <div className="glass-card flex items-center gap-2 px-3 py-2.5 rounded-2xl">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
+            placeholder="ask me anything bestie... 💬"
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+            disabled={isLoading}
+          />
+          <button
+            onClick={() => sendMessage(input)}
+            disabled={isLoading || !input.trim()}
+            className="h-8 w-8 rounded-xl gradient-primary flex items-center justify-center disabled:opacity-50 shadow-lg shadow-neon-green/20"
+          >
+            <Send className="h-4 w-4 text-primary-foreground" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
