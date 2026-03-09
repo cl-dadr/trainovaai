@@ -796,6 +796,8 @@ const HabitTrackerPage = () => {
                   </button>
                 ) : null}
               </div>
+              {!canUseFeature("habits") && <PremiumGate remainingUses={0} feature="AI suggestions" />}
+              {canUseFeature("habits") && getRemainingUses("habits") > 0 && <PremiumGate remainingUses={getRemainingUses("habits")} feature="AI suggestions" />}
             </div>
             {suggestions.length > 0 && (
               <div className="space-y-2">
