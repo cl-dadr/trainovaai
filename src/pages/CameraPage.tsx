@@ -31,13 +31,13 @@ const LM = {
 function drawAngleLabel(ctx: CanvasRenderingContext2D, landmark: Landmark, angle: number, label: string, w: number, h: number, color: string) {
   const x = (1 - landmark.x) * w, y = landmark.y * h;
   ctx.save();
-  ctx.font = "bold 10px monospace";
+  ctx.font = "bold 13px monospace";
   ctx.fillStyle = color;
-  ctx.strokeStyle = "rgba(0,0,0,0.7)";
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = "rgba(0,0,0,0.85)";
+  ctx.lineWidth = 4;
   const text = `${label}:${angle}°`;
-  ctx.strokeText(text, x + 6, y - 4);
-  ctx.fillText(text, x + 6, y - 4);
+  ctx.strokeText(text, x + 8, y - 6);
+  ctx.fillText(text, x + 8, y - 6);
   ctx.restore();
 }
 
