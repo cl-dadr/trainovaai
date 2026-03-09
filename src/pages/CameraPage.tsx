@@ -450,7 +450,9 @@ const CameraPage = () => {
       const lh = landmarks[LM.LEFT_HIP], rh = landmarks[LM.RIGHT_HIP];
       const lk = landmarks[LM.LEFT_KNEE], rk = landmarks[LM.RIGHT_KNEE];
 
-      const result = detectExercise(landmarks, lockedExercisew angle labels
+      const result = detectExercise(landmarks, lockedExercise);
+
+      // Draw angle labels
       const green = "hsl(160,100%,50%)", cyan = "hsl(180,100%,50%)", orange = "hsl(25,100%,55%)";
       drawAngleLabel(ctx, le, result.angles.leftElbow, "LE", w, h, cyan);
       drawAngleLabel(ctx, re, result.angles.rightElbow, "RE", w, h, cyan);
