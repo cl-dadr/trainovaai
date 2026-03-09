@@ -784,12 +784,13 @@ const CameraPage = () => {
                   {Object.entries(exerciseHistory).map(([ex, count]) => {
                     const meta = ALL_EXERCISES.find(e => e.type === ex);
                     return (
-                    <div key={ex} className="flex items-center gap-1.5 shrink-0 bg-white/10 rounded-lg px-2 py-1">
-                      <span className="text-xs">{meta?.emoji || "🏋️"}</span>
-                      <span className="text-[10px] text-white/70">{meta?.name || ex}</span>
-                      <span className="text-sm font-black text-primary">{count}</span>
-                    </div>
-                  ))}
+                      <div key={ex} className="flex items-center gap-1.5 shrink-0 bg-white/10 rounded-lg px-2 py-1">
+                        <span className="text-xs">{meta?.emoji || "🏋️"}</span>
+                        <span className="text-[10px] text-white/70">{meta?.name || ex}</span>
+                        <span className="text-sm font-black text-primary">{count}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
