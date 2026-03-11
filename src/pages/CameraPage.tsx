@@ -478,22 +478,22 @@ const CameraPage = () => {
     const initPose = () => {
       if (cancelled) return;
       const video = webcamRef.current?.video;
-      if (!video) { if (retryCount < 15) { retryCount++; setTimeout(initPose, 400); } return; }
+      if (!video) { if (retryCount < 10) { retryCount++; setTimeout(initPose, 200); } return; }
       if (!video.readyState || video.readyState < 2) {
         video.addEventListener("loadeddata", () => { if (!cancelled) initPose(); }, { once: true });
-        setTimeout(() => { if (!cancelled && (!video.readyState || video.readyState < 2)) initPose(); }, 1500);
+        setTimeout(() => { if (!cancelled && (!video.readyState || video.readyState < 2)) initPose(); }, 500);
         return;
       }
 
       try {
         const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}` });
         pose.setOptions({
-          modelComplexity: 2,
+          modelComplexity: 1,
           smoothLandmarks: true,
           enableSegmentation: false,
           smoothSegmentation: false,
-          minDetectionConfidence: 0.5,
-          minTrackingConfidence: 0.5,
+          minDetectionConfidence: 0.4,
+          minTrackingConfidence: 0.4,
         });
         pose.onResults(onResults);
         poseRef.current = pose;
@@ -509,20 +509,19 @@ const CameraPage = () => {
         });
         camera.start();
         cameraRef.current = camera;
-        toast.success("AI Body Detection active! 🎯 High accuracy mode");
+        toast.success("⚡ Body detection active in ~3s!", { duration: 2000 });
       } catch (err) {
         console.error("MediaPipe init error:", err);
         retryCount++;
-        if (retryCount <= 5) {
-          toast.error(`Detection loading... retry ${retryCount}/5`);
-          setTimeout(initPose, 1500);
+        if (retryCount <= 3) {
+          setTimeout(initPose, 500);
         } else {
           toast.error("Camera detection failed. Please reload.");
         }
       }
     };
 
-    const timeout = setTimeout(initPose, 300);
+    const timeout = setTimeout(initPose, 100);
     return () => { cancelled = true; clearTimeout(timeout); };
   }, [isDetecting, onResults]);
 
