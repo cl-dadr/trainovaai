@@ -100,7 +100,7 @@ function smoothAngle(key: string, raw: number): number {
   return smoothedAngles[key];
 }
 
-function isVisible(landmarks: Landmark[], indices: number[], threshold = 0.35): boolean {
+function isVisible(landmarks: Landmark[], indices: number[], threshold = 0.3): boolean {
   return indices.every((i) => (landmarks[i]?.visibility ?? 0) > threshold);
 }
 
@@ -133,7 +133,7 @@ const REP_COOLDOWN_MS = 400;
 
 const MIN_FRAMES_FOR_REP = 3;
 const MIN_EXERCISE_FRAMES = 5;
-const CONFIDENCE_THRESHOLD = 0.4;
+const CONFIDENCE_THRESHOLD = 0.35;
 
 // Difficulty / strictness level (Firefly-style mobility accommodation)
 export type DifficultyLevel = "easy" | "medium" | "strict";

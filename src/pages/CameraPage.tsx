@@ -444,6 +444,32 @@ const CameraPage = () => {
     resetDetection(); resetBestRepScore();
   }, []);
 
+  // Auto-save every 60 seconds during detection
+  const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    if (isDetecting && user && totalReps > 0) {
+      autoSaveIntervalRef.current = setInterval(() => {
+        const duration = sessionStartRef.current ? Math.floor((Date.now() - sessionStartRef.current.getTime()) / 1000) : 0;
+        const avgF = formScoresRef.current.length > 0
+          ? Math.round(formScoresRef.current.reduce((a, b) => a + b, 0) / formScoresRef.current.length) : formScore;
+        const entries = Object.entries(exerciseHistory);
+        if (entries.length > 0) {
+          entries.forEach(([ex, count]) => {
+            if (count > 0) {
+              supabase.from("workout_sessions").upsert({
+                user_id: user.id, exercise_type: ex, reps: count, form_score: avgF,
+                duration_seconds: Math.round(duration * (count / totalReps)),
+                calories_burned: Math.round(count * calcCaloriesPerSecond(ex as ExerciseType, userWeight) * 60 * 10) / 10,
+              }, { onConflict: "user_id,exercise_type" }).then(() => {});
+            }
+          });
+        }
+        toast.success("Progress auto-saved 💾", { duration: 1500 });
+      }, 60000);
+    }
+    return () => { if (autoSaveIntervalRef.current) clearInterval(autoSaveIntervalRef.current); };
+  }, [isDetecting, user, totalReps, exerciseHistory, formScore, userWeight]);
+
   useEffect(() => {
     if (!isDetecting) return;
     let cancelled = false;
@@ -452,35 +478,51 @@ const CameraPage = () => {
     const initPose = () => {
       if (cancelled) return;
       const video = webcamRef.current?.video;
-      if (!video) { if (retryCount < 10) { retryCount++; setTimeout(initPose, 500); } return; }
+      if (!video) { if (retryCount < 15) { retryCount++; setTimeout(initPose, 400); } return; }
       if (!video.readyState || video.readyState < 2) {
         video.addEventListener("loadeddata", () => { if (!cancelled) initPose(); }, { once: true });
-        setTimeout(() => { if (!cancelled && (!video.readyState || video.readyState < 2)) initPose(); }, 2000);
+        setTimeout(() => { if (!cancelled && (!video.readyState || video.readyState < 2)) initPose(); }, 1500);
         return;
       }
 
       try {
         const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}` });
-        pose.setOptions({ modelComplexity: 1, smoothLandmarks: true, enableSegmentation: false, minDetectionConfidence: 0.4, minTrackingConfidence: 0.4 });
+        pose.setOptions({
+          modelComplexity: 2,
+          smoothLandmarks: true,
+          enableSegmentation: false,
+          smoothSegmentation: false,
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5,
+        });
         pose.onResults(onResults);
         poseRef.current = pose;
 
         const camera = new cam.Camera(video, {
-          onFrame: async () => { if (poseRef.current) { try { await poseRef.current.send({ image: video }); } catch (e) { console.warn("Pose send error", e); } } },
+          onFrame: async () => {
+            if (poseRef.current && video.readyState >= 2) {
+              try { await poseRef.current.send({ image: video }); }
+              catch (e) { console.warn("Pose send error", e); }
+            }
+          },
           width: 640, height: 480,
         });
         camera.start();
         cameraRef.current = camera;
-        toast.success("AI Body Detection active! 🎯");
+        toast.success("AI Body Detection active! 🎯 High accuracy mode");
       } catch (err) {
         console.error("MediaPipe init error:", err);
         retryCount++;
-        if (retryCount <= 3) { toast.error(`Detection loading... retry ${retryCount}/3`); setTimeout(initPose, 2000); }
-        else { toast.error("Camera detection failed. Please reload."); }
+        if (retryCount <= 5) {
+          toast.error(`Detection loading... retry ${retryCount}/5`);
+          setTimeout(initPose, 1500);
+        } else {
+          toast.error("Camera detection failed. Please reload.");
+        }
       }
     };
 
-    const timeout = setTimeout(initPose, 500);
+    const timeout = setTimeout(initPose, 300);
     return () => { cancelled = true; clearTimeout(timeout); };
   }, [isDetecting, onResults]);
 
