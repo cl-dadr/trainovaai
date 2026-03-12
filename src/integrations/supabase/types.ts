@@ -557,6 +557,45 @@ export type Database = {
         }
         Relationships: []
       }
+      running_sessions: {
+        Row: {
+          avg_heart_rate: number | null
+          avg_pace: string | null
+          calories: number
+          created_at: string
+          distance_km: number
+          duration_seconds: number
+          id: string
+          route_points: Json | null
+          steps: number
+          user_id: string
+        }
+        Insert: {
+          avg_heart_rate?: number | null
+          avg_pace?: string | null
+          calories?: number
+          created_at?: string
+          distance_km?: number
+          duration_seconds?: number
+          id?: string
+          route_points?: Json | null
+          steps?: number
+          user_id: string
+        }
+        Update: {
+          avg_heart_rate?: number | null
+          avg_pace?: string | null
+          calories?: number
+          created_at?: string
+          distance_km?: number
+          duration_seconds?: number
+          id?: string
+          route_points?: Json | null
+          steps?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_streaks: {
         Row: {
           current_streak: number
