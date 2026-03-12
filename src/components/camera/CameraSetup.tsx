@@ -145,7 +145,8 @@ const CameraSetup = ({
       {/* Camera preview */}
       <div className="relative z-10 aspect-[3/4] max-h-[55vh] rounded-2xl bg-secondary/30 border border-border/50 overflow-hidden mb-3 mx-auto">
         <Webcam ref={webcamRef} audio={false} mirrored className="absolute inset-0 w-full h-full object-cover"
-          videoConstraints={{ facingMode: "user", width: 640, height: 480 }} />
+          forceScreenshotSourceSize
+          videoConstraints={{ facingMode: "user", width: { ideal: 480 }, height: { ideal: 360 }, frameRate: { ideal: 30 } }} />
         <div className="absolute inset-3 border-2 border-primary/20 rounded-xl pointer-events-none" />
         {/* Body outline guide */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30">

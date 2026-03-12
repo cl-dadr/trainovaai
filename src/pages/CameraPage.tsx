@@ -470,6 +470,29 @@ const CameraPage = () => {
     return () => { if (autoSaveIntervalRef.current) clearInterval(autoSaveIntervalRef.current); };
   }, [isDetecting, user, totalReps, exerciseHistory, formScore, userWeight]);
 
+  // Preload MediaPipe WASM on mount for instant detection
+  const preloadedPoseRef = useRef<Pose | null>(null);
+  useEffect(() => {
+    try {
+      const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}` });
+      pose.setOptions({
+        modelComplexity: 0,
+        smoothLandmarks: true,
+        enableSegmentation: false,
+        smoothSegmentation: false,
+        minDetectionConfidence: 0.3,
+        minTrackingConfidence: 0.3,
+      });
+      // Warm up the model with a blank canvas
+      const warmup = document.createElement("canvas");
+      warmup.width = 64; warmup.height = 64;
+      const wCtx = warmup.getContext("2d");
+      if (wCtx) { wCtx.fillStyle = "#000"; wCtx.fillRect(0, 0, 64, 64); }
+      pose.send({ image: warmup }).catch(() => {});
+      preloadedPoseRef.current = pose;
+    } catch (e) { console.warn("Preload failed:", e); }
+  }, []);
+
   useEffect(() => {
     if (!isDetecting) return;
     let cancelled = false;
@@ -478,25 +501,29 @@ const CameraPage = () => {
     const initPose = () => {
       if (cancelled) return;
       const video = webcamRef.current?.video;
-      if (!video) { if (retryCount < 10) { retryCount++; setTimeout(initPose, 200); } return; }
-      if (!video.readyState || video.readyState < 2) {
-        video.addEventListener("loadeddata", () => { if (!cancelled) initPose(); }, { once: true });
-        setTimeout(() => { if (!cancelled && (!video.readyState || video.readyState < 2)) initPose(); }, 500);
+      if (!video || !video.readyState || video.readyState < 2) {
+        retryCount++;
+        if (retryCount < 30) setTimeout(initPose, 100);
+        else toast.error("Camera not ready. Check permissions.");
         return;
       }
 
       try {
-        const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}` });
-        pose.setOptions({
-          modelComplexity: 1,
-          smoothLandmarks: true,
-          enableSegmentation: false,
-          smoothSegmentation: false,
-          minDetectionConfidence: 0.4,
-          minTrackingConfidence: 0.4,
-        });
+        // Use preloaded pose if available for instant start
+        const pose = preloadedPoseRef.current || new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}` });
+        if (!preloadedPoseRef.current) {
+          pose.setOptions({
+            modelComplexity: 0,
+            smoothLandmarks: true,
+            enableSegmentation: false,
+            smoothSegmentation: false,
+            minDetectionConfidence: 0.3,
+            minTrackingConfidence: 0.3,
+          });
+        }
         pose.onResults(onResults);
         poseRef.current = pose;
+        preloadedPoseRef.current = null; // consumed
 
         const camera = new cam.Camera(video, {
           onFrame: async () => {
@@ -505,24 +532,21 @@ const CameraPage = () => {
               catch (e) { console.warn("Pose send error", e); }
             }
           },
-          width: 640, height: 480,
+          width: 480, height: 360,
         });
         camera.start();
         cameraRef.current = camera;
-        toast.success("⚡ Body detection active in ~3s!", { duration: 2000 });
+        toast.success("⚡ Body detected!", { duration: 1500 });
       } catch (err) {
         console.error("MediaPipe init error:", err);
-        retryCount++;
-        if (retryCount <= 3) {
-          setTimeout(initPose, 500);
-        } else {
-          toast.error("Camera detection failed. Please reload.");
-        }
+        if (retryCount++ <= 3) setTimeout(initPose, 300);
+        else toast.error("Camera detection failed. Please reload.");
       }
     };
 
-    const timeout = setTimeout(initPose, 100);
-    return () => { cancelled = true; clearTimeout(timeout); };
+    // Start immediately — no delay
+    initPose();
+    return () => { cancelled = true; };
   }, [isDetecting, onResults]);
 
   const stopDetection = () => {
