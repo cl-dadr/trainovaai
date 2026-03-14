@@ -1,9 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import Webcam from "react-webcam";
-import { Pose } from "@mediapipe/pose";
-import * as cam from "@mediapipe/camera_utils";
-import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
-import { POSE_CONNECTIONS } from "@mediapipe/pose";
 import {
   detectExercise, resetDetection, EXERCISE_NAMES, calcCaloriesPerSecond,
   type ExerciseType, type Landmark, type FormCorrection,
