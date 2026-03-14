@@ -34,7 +34,7 @@ import {
 const CameraPage = () => {
   const webcamRef = useRef<Webcam>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const cameraRef = useRef<Camera | null>(null);
+  const frameRequestRef = useRef<number | null>(null);
   const poseRef = useRef<Pose | null>(null);
   const { user } = useAuth();
 
