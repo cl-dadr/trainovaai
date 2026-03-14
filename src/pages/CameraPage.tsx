@@ -521,7 +521,7 @@ const CameraPage = () => {
         poseRef.current = pose;
         preloadedPoseRef.current = null; // consumed
 
-        const camera = new cam.Camera(video, {
+        const camera = new Camera(video, {
           onFrame: async () => {
             if (poseRef.current && video.readyState >= 2) {
               try { await poseRef.current.send({ image: video }); }
