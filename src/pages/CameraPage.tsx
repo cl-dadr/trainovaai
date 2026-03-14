@@ -34,7 +34,7 @@ import {
 const CameraPage = () => {
   const webcamRef = useRef<Webcam>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const cameraRef = useRef<Camera | null>(null);
+  const frameRequestRef = useRef<number | null>(null);
   const poseRef = useRef<Pose | null>(null);
   const { user } = useAuth();
 
@@ -332,8 +332,15 @@ const CameraPage = () => {
     ctx.drawImage(results.image, 0, 0, w, h);
 
     if (results.poseLandmarks) {
-      drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, { color: "hsl(160,100%,50%)", lineWidth: 3 });
-      drawLandmarks(ctx, results.poseLandmarks, { color: "hsl(180,100%,50%)", lineWidth: 1, radius: 4, fillColor: "hsl(160,100%,50%)" });
+      const drawConnectorsFn = window.drawConnectors;
+      const drawLandmarksFn = window.drawLandmarks;
+      const poseConnections = window.POSE_CONNECTIONS;
+      if (drawConnectorsFn && poseConnections) {
+        drawConnectorsFn(ctx, results.poseLandmarks, poseConnections, { color: "hsl(160,100%,50%)", lineWidth: 3 });
+      }
+      if (drawLandmarksFn) {
+        drawLandmarksFn(ctx, results.poseLandmarks, { color: "hsl(180,100%,50%)", lineWidth: 1, radius: 4, fillColor: "hsl(160,100%,50%)" });
+      }
 
       const landmarks: Landmark[] = results.poseLandmarks.map((lm: any) => ({ x: lm.x, y: lm.y, z: lm.z, visibility: lm.visibility }));
       const le = landmarks[LM.LEFT_ELBOW], re = landmarks[LM.RIGHT_ELBOW];
@@ -466,11 +473,14 @@ const CameraPage = () => {
     return () => { if (autoSaveIntervalRef.current) clearInterval(autoSaveIntervalRef.current); };
   }, [isDetecting, user, totalReps, exerciseHistory, formScore, userWeight]);
 
-  // Preload MediaPipe WASM on mount for instant detection
+  // Preload MediaPipe on mount for faster first detection
   const preloadedPoseRef = useRef<Pose | null>(null);
   useEffect(() => {
+    const PoseCtor = window.Pose;
+    if (!PoseCtor) return;
+
     try {
-      const pose = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}` });
+      const pose = new PoseCtor({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}` });
       pose.setOptions({
         modelComplexity: 0,
         smoothLandmarks: true,
@@ -479,75 +489,117 @@ const CameraPage = () => {
         minDetectionConfidence: 0.3,
         minTrackingConfidence: 0.3,
       });
-      // Warm up the model with a blank canvas
+
       const warmup = document.createElement("canvas");
-      warmup.width = 64; warmup.height = 64;
+      warmup.width = 64;
+      warmup.height = 64;
       const wCtx = warmup.getContext("2d");
-      if (wCtx) { wCtx.fillStyle = "#000"; wCtx.fillRect(0, 0, 64, 64); }
+      if (wCtx) {
+        wCtx.fillStyle = "#000";
+        wCtx.fillRect(0, 0, 64, 64);
+      }
       pose.send({ image: warmup }).catch(() => {});
       preloadedPoseRef.current = pose;
-    } catch (e) { console.warn("Preload failed:", e); }
+    } catch (e) {
+      console.warn("Preload failed:", e);
+    }
   }, []);
 
   useEffect(() => {
     if (!isDetecting) return;
+
+    const PoseCtor = window.Pose;
+    if (!PoseCtor) {
+      toast.error("Camera engine failed to load. Please refresh once.");
+      return;
+    }
+
     let cancelled = false;
     let retryCount = 0;
+    let frameInFlight = false;
 
     const initPose = () => {
       if (cancelled) return;
+
       const video = webcamRef.current?.video;
-      if (!video || !video.readyState || video.readyState < 2) {
-        retryCount++;
-        if (retryCount < 30) setTimeout(initPose, 100);
-        else toast.error("Camera not ready. Check permissions.");
+      if (!video || video.readyState < 2) {
+        retryCount += 1;
+        if (retryCount < 40) {
+          setTimeout(initPose, 100);
+        } else {
+          toast.error("Camera not ready. Please allow camera permission.");
+        }
         return;
       }
 
       try {
-        // Use preloaded pose if available for instant start
-        const pose = preloadedPoseRef.current || new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}` });
-        if (!preloadedPoseRef.current) {
-          pose.setOptions({
-            modelComplexity: 0,
-            smoothLandmarks: true,
-            enableSegmentation: false,
-            smoothSegmentation: false,
-            minDetectionConfidence: 0.3,
-            minTrackingConfidence: 0.3,
-          });
-        }
+        const pose = preloadedPoseRef.current || new PoseCtor({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}` });
+        pose.setOptions({
+          modelComplexity: 0,
+          smoothLandmarks: true,
+          enableSegmentation: false,
+          smoothSegmentation: false,
+          minDetectionConfidence: 0.3,
+          minTrackingConfidence: 0.3,
+        });
         pose.onResults(onResults);
         poseRef.current = pose;
-        preloadedPoseRef.current = null; // consumed
+        preloadedPoseRef.current = null;
 
-        const camera = new Camera(video, {
-          onFrame: async () => {
-            if (poseRef.current && video.readyState >= 2) {
-              try { await poseRef.current.send({ image: video }); }
-              catch (e) { console.warn("Pose send error", e); }
+        const processFrame = async () => {
+          if (cancelled) return;
+
+          const currentVideo = webcamRef.current?.video;
+          if (poseRef.current && currentVideo && currentVideo.readyState >= 2 && !frameInFlight) {
+            frameInFlight = true;
+            try {
+              await poseRef.current.send({ image: currentVideo });
+            } catch (e) {
+              console.warn("Pose send error", e);
+            } finally {
+              frameInFlight = false;
             }
-          },
-          width: 480, height: 360,
-        });
-        camera.start();
-        cameraRef.current = camera;
+          }
+
+          frameRequestRef.current = requestAnimationFrame(processFrame);
+        };
+
+        frameRequestRef.current = requestAnimationFrame(processFrame);
         toast.success("⚡ Body detected!", { duration: 1500 });
       } catch (err) {
         console.error("MediaPipe init error:", err);
-        if (retryCount++ <= 3) setTimeout(initPose, 300);
-        else toast.error("Camera detection failed. Please reload.");
+        if (retryCount++ <= 4) {
+          setTimeout(initPose, 250);
+        } else {
+          toast.error("Camera detection failed. Please reload.");
+        }
       }
     };
 
-    // Start immediately — no delay
     initPose();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+      if (frameRequestRef.current !== null) {
+        cancelAnimationFrame(frameRequestRef.current);
+        frameRequestRef.current = null;
+      }
+      if (poseRef.current) {
+        poseRef.current.close();
+        poseRef.current = null;
+      }
+    };
   }, [isDetecting, onResults]);
 
   const stopDetection = () => {
-    if (cameraRef.current) { cameraRef.current.stop(); cameraRef.current = null; }
-    if (poseRef.current) { poseRef.current.close(); poseRef.current = null; }
+    if (frameRequestRef.current !== null) {
+      cancelAnimationFrame(frameRequestRef.current);
+      frameRequestRef.current = null;
+    }
+    if (poseRef.current) {
+      poseRef.current.close();
+      poseRef.current = null;
+    }
     setIsDetecting(false);
     resetDetection();
     if (totalReps > 0 && user) saveSession();

@@ -51,9 +51,13 @@ const DetectingView = ({
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
       <div className="relative flex-1">
-        <Webcam ref={webcamRef} audio={false} mirrored className="absolute inset-0 w-full h-full object-cover"
+        <Webcam
+          ref={webcamRef}
+          audio={false}
+          mirrored
+          className="absolute inset-0 w-full h-full object-cover"
           videoConstraints={{ facingMode: "user", width: 640, height: 480 }}
-          style={{ opacity: 0 }} />
+        />
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
 
         {/* Rep flash */}
