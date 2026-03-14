@@ -332,8 +332,15 @@ const CameraPage = () => {
     ctx.drawImage(results.image, 0, 0, w, h);
 
     if (results.poseLandmarks) {
-      drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, { color: "hsl(160,100%,50%)", lineWidth: 3 });
-      drawLandmarks(ctx, results.poseLandmarks, { color: "hsl(180,100%,50%)", lineWidth: 1, radius: 4, fillColor: "hsl(160,100%,50%)" });
+      const drawConnectorsFn = window.drawConnectors;
+      const drawLandmarksFn = window.drawLandmarks;
+      const poseConnections = window.POSE_CONNECTIONS;
+      if (drawConnectorsFn && poseConnections) {
+        drawConnectorsFn(ctx, results.poseLandmarks, poseConnections, { color: "hsl(160,100%,50%)", lineWidth: 3 });
+      }
+      if (drawLandmarksFn) {
+        drawLandmarksFn(ctx, results.poseLandmarks, { color: "hsl(180,100%,50%)", lineWidth: 1, radius: 4, fillColor: "hsl(160,100%,50%)" });
+      }
 
       const landmarks: Landmark[] = results.poseLandmarks.map((lm: any) => ({ x: lm.x, y: lm.y, z: lm.z, visibility: lm.visibility }));
       const le = landmarks[LM.LEFT_ELBOW], re = landmarks[LM.RIGHT_ELBOW];
