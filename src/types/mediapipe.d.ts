@@ -1,4 +1,13 @@
 // MediaPipe loaded via CDN script tags — global declarations
+
+interface Window {
+  Pose: typeof Pose;
+  Camera: typeof Camera;
+  drawConnectors: typeof drawConnectors;
+  drawLandmarks: typeof drawLandmarks;
+  POSE_CONNECTIONS: Array<[number, number]>;
+}
+
 declare class Pose {
   constructor(config?: { locateFile?: (file: string) => string });
   setOptions(options: Record<string, any>): void;
@@ -7,7 +16,14 @@ declare class Pose {
   close(): void;
 }
 
-declare const POSE_CONNECTIONS: Array<[number, number]>;
+declare class Camera {
+  constructor(
+    video: HTMLVideoElement,
+    config: { onFrame: () => Promise<void>; width?: number; height?: number }
+  );
+  start(): void;
+  stop(): void;
+}
 
 declare function drawConnectors(
   ctx: CanvasRenderingContext2D,
@@ -22,13 +38,4 @@ declare function drawLandmarks(
   style?: Record<string, any>
 ): void;
 
-declare namespace globalThis {
-  class Camera {
-    constructor(
-      video: HTMLVideoElement,
-      config: { onFrame: () => Promise<void>; width?: number; height?: number }
-    );
-    start(): void;
-    stop(): void;
-  }
-}
+declare var POSE_CONNECTIONS: Array<[number, number]>;
