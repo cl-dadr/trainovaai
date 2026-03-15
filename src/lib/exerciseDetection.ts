@@ -100,7 +100,7 @@ function smoothAngle(key: string, raw: number): number {
   return smoothedAngles[key];
 }
 
-function isVisible(landmarks: Landmark[], indices: number[], threshold = 0.3): boolean {
+function isVisible(landmarks: Landmark[], indices: number[], threshold = 0.15): boolean {
   return indices.every((i) => (landmarks[i]?.visibility ?? 0) > threshold);
 }
 
