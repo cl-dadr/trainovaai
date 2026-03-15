@@ -14,16 +14,16 @@ declare global {
 const plans = [
   {
     name: "Monthly",
-    price: 99,
+    price: 49,
     period: "/mo",
-    features: ["Unlimited AI Generations", "AI Workout Planner", "AI Nutrition Plans", "AI Habit Coach", "Mental Wellness Tools"],
+    features: ["AI Camera Trainer", "Personalized Workout Plans", "Nutrition AI", "Ad-free Experience", "Advanced Analytics"],
   },
   {
-    name: "Yearly",
-    price: 699,
-    period: "/yr",
-    badge: "SAVE 41%",
-    features: ["Everything in Monthly", "Custom Workout Plans", "Export Reports", "Early Access Features", "Priority Support"],
+    name: "Quarterly",
+    price: 199,
+    period: "/3mo",
+    badge: "SAVE 35%",
+    features: ["Everything in Monthly", "AI Body Scanner", "Export Reports", "Early Access Features", "Priority Support"],
   },
 ];
 
