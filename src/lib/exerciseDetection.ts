@@ -532,8 +532,8 @@ export function detectExercise(landmarks: Landmark[], lockedExercise?: ExerciseT
 
   // ===== HIGH KNEES DETECTION =====
   if (exercise === "unknown" && isVertical && lowerBodyVisible) {
-    const leftKneeHigh = lk.y < lh.y + 0.02;
-    const rightKneeHigh = rk.y < rh.y + 0.02;
+    const leftKneeHigh = lk.y < lh.y + 0.05;
+    const rightKneeHigh = rk.y < rh.y + 0.05;
     
     if (leftKneeHigh || rightKneeHigh) {
       exercise = "high_knees";
