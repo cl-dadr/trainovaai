@@ -131,9 +131,9 @@ const HYSTERESIS = {
 let lastRepTime = 0;
 const REP_COOLDOWN_MS = 400;
 
-const MIN_FRAMES_FOR_REP = 3;
-const MIN_EXERCISE_FRAMES = 5;
-const CONFIDENCE_THRESHOLD = 0.35;
+const MIN_FRAMES_FOR_REP = 2;
+const MIN_EXERCISE_FRAMES = 3;
+const CONFIDENCE_THRESHOLD = 0.20;
 
 // Difficulty / strictness level (Firefly-style mobility accommodation)
 export type DifficultyLevel = "easy" | "medium" | "strict";
