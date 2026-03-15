@@ -16,6 +16,7 @@ import HealthReportPage from "./pages/HealthReportPage";
 import AICoachPage from "./pages/AICoachPage";
 import RunningPage from "./pages/RunningPage";
 import PremiumPage from "./pages/PremiumPage";
+import FitnessStorePage from "./pages/FitnessStorePage";
 import NutritionPage from "./pages/NutritionPage";
 import HabitTrackerPage from "./pages/HabitTrackerPage";
 import MentalWellnessPage from "./pages/MentalWellnessPage";
