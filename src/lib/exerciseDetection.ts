@@ -424,7 +424,7 @@ export function detectExercise(landmarks: Landmark[], lockedExercise?: ExerciseT
     const wristsAboveShoulders = (lw.y < ls.y && rw.y < rs.y);
     const legSpread = Math.abs(la.x - ra.x);
 
-    if (wristsAboveShoulders && legSpread > HYSTERESIS.jumping_jack.legSpreadEnter) {
+    if (wristsAboveShoulders && legSpread > 0.16) {
       exercise = "jumping_jack";
       state = "up";
       confidence = 0.78;
