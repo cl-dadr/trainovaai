@@ -377,7 +377,7 @@ export function detectExercise(landmarks: Landmark[], lockedExercise?: ExerciseT
 
   // ===== SQUAT DETECTION =====
   if (exercise === "unknown" && isVertical && lowerBodyVisible) {
-    if (avgKnee < 155) {
+    if (avgKnee < 165) {
       exercise = "squat";
       const kneesOverToes = Math.abs(midKnee.x - midAnkle.x);
       confidence = 0.90;
