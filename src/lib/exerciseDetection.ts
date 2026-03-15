@@ -483,9 +483,8 @@ export function detectExercise(landmarks: Landmark[], lockedExercise?: ExerciseT
   // ===== BICEP CURL DETECTION =====
   if (exercise === "unknown" && isVertical && upperBodyVisible && avgKnee > 155) {
     const shoulderStability = Math.abs(ls.y - rs.y);
-    const elbowsNearBody = Math.abs(le.x - ls.x) < 0.1 && Math.abs(re.x - rs.x) < 0.1;
-    
-    if (elbowsNearBody && (avgElbow < 70 || avgElbow > 140)) {
+    // Removed strict elbowsNearBody check for easier detection
+    if (avgElbow < 80 || avgElbow > 130) {
       exercise = "bicep_curl";
       confidence = 0.72;
       corrections = getBicepCurlCorrections(avgElbow, shoulderStability);
