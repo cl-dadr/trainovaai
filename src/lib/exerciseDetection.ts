@@ -100,7 +100,7 @@ function smoothAngle(key: string, raw: number): number {
   return smoothedAngles[key];
 }
 
-function isVisible(landmarks: Landmark[], indices: number[], threshold = 0.3): boolean {
+function isVisible(landmarks: Landmark[], indices: number[], threshold = 0.15): boolean {
   return indices.every((i) => (landmarks[i]?.visibility ?? 0) > threshold);
 }
 
@@ -131,9 +131,9 @@ const HYSTERESIS = {
 let lastRepTime = 0;
 const REP_COOLDOWN_MS = 400;
 
-const MIN_FRAMES_FOR_REP = 3;
-const MIN_EXERCISE_FRAMES = 5;
-const CONFIDENCE_THRESHOLD = 0.35;
+const MIN_FRAMES_FOR_REP = 2;
+const MIN_EXERCISE_FRAMES = 3;
+const CONFIDENCE_THRESHOLD = 0.20;
 
 // Difficulty / strictness level (Firefly-style mobility accommodation)
 export type DifficultyLevel = "easy" | "medium" | "strict";
@@ -377,7 +377,7 @@ export function detectExercise(landmarks: Landmark[], lockedExercise?: ExerciseT
 
   // ===== SQUAT DETECTION =====
   if (exercise === "unknown" && isVertical && lowerBodyVisible) {
-    if (avgKnee < 155) {
+    if (avgKnee < 165) {
       exercise = "squat";
       const kneesOverToes = Math.abs(midKnee.x - midAnkle.x);
       confidence = 0.90;
@@ -424,7 +424,7 @@ export function detectExercise(landmarks: Landmark[], lockedExercise?: ExerciseT
     const wristsAboveShoulders = (lw.y < ls.y && rw.y < rs.y);
     const legSpread = Math.abs(la.x - ra.x);
 
-    if (wristsAboveShoulders && legSpread > HYSTERESIS.jumping_jack.legSpreadEnter) {
+    if (wristsAboveShoulders && legSpread > 0.16) {
       exercise = "jumping_jack";
       state = "up";
       confidence = 0.78;
@@ -483,9 +483,8 @@ export function detectExercise(landmarks: Landmark[], lockedExercise?: ExerciseT
   // ===== BICEP CURL DETECTION =====
   if (exercise === "unknown" && isVertical && upperBodyVisible && avgKnee > 155) {
     const shoulderStability = Math.abs(ls.y - rs.y);
-    const elbowsNearBody = Math.abs(le.x - ls.x) < 0.1 && Math.abs(re.x - rs.x) < 0.1;
-    
-    if (elbowsNearBody && (avgElbow < 70 || avgElbow > 140)) {
+    // Removed strict elbowsNearBody check for easier detection
+    if (avgElbow < 80 || avgElbow > 130) {
       exercise = "bicep_curl";
       confidence = 0.72;
       corrections = getBicepCurlCorrections(avgElbow, shoulderStability);
@@ -533,8 +532,8 @@ export function detectExercise(landmarks: Landmark[], lockedExercise?: ExerciseT
 
   // ===== HIGH KNEES DETECTION =====
   if (exercise === "unknown" && isVertical && lowerBodyVisible) {
-    const leftKneeHigh = lk.y < lh.y + 0.02;
-    const rightKneeHigh = rk.y < rh.y + 0.02;
+    const leftKneeHigh = lk.y < lh.y + 0.05;
+    const rightKneeHigh = rk.y < rh.y + 0.05;
     
     if (leftKneeHigh || rightKneeHigh) {
       exercise = "high_knees";

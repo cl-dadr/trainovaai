@@ -473,110 +473,97 @@ const CameraPage = () => {
     return () => { if (autoSaveIntervalRef.current) clearInterval(autoSaveIntervalRef.current); };
   }, [isDetecting, user, totalReps, exerciseHistory, formScore, userWeight]);
 
-  // Preload MediaPipe on mount for faster first detection
-  const preloadedPoseRef = useRef<Pose | null>(null);
-  useEffect(() => {
-    const PoseCtor = window.Pose;
-    if (!PoseCtor) return;
-
-    try {
-      const pose = new PoseCtor({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}` });
-      pose.setOptions({
-        modelComplexity: 0,
-        smoothLandmarks: true,
-        enableSegmentation: false,
-        smoothSegmentation: false,
-        minDetectionConfidence: 0.3,
-        minTrackingConfidence: 0.3,
-      });
-
-      const warmup = document.createElement("canvas");
-      warmup.width = 64;
-      warmup.height = 64;
-      const wCtx = warmup.getContext("2d");
-      if (wCtx) {
-        wCtx.fillStyle = "#000";
-        wCtx.fillRect(0, 0, 64, 64);
-      }
-      pose.send({ image: warmup }).catch(() => {});
-      preloadedPoseRef.current = pose;
-    } catch (e) {
-      console.warn("Preload failed:", e);
-    }
-  }, []);
-
+  // ─── Bulletproof MediaPipe Init ───
   useEffect(() => {
     if (!isDetecting) return;
 
-    const PoseCtor = window.Pose;
-    if (!PoseCtor) {
-      toast.error("Camera engine failed to load. Please refresh once.");
-      return;
-    }
-
     let cancelled = false;
-    let retryCount = 0;
     let frameInFlight = false;
 
-    const initPose = () => {
-      if (cancelled) return;
+    const boot = async () => {
+      // Step 1: Wait for CDN to load window.Pose (max 10s)
+      const PoseCtor = await new Promise<typeof Pose | null>((resolve) => {
+        if ((window as any).Pose) return resolve((window as any).Pose);
+        let elapsed = 0;
+        const poll = setInterval(() => {
+          elapsed += 150;
+          if ((window as any).Pose) { clearInterval(poll); resolve((window as any).Pose); }
+          else if (elapsed > 10000) { clearInterval(poll); resolve(null); }
+        }, 150);
+      });
 
-      const video = webcamRef.current?.video;
-      if (!video || video.readyState < 2) {
-        retryCount += 1;
-        if (retryCount < 40) {
-          setTimeout(initPose, 100);
-        } else {
-          toast.error("Camera not ready. Please allow camera permission.");
-        }
+      if (!PoseCtor || cancelled) {
+        if (!cancelled) toast.error("AI engine failed to load. Please refresh the page.");
         return;
       }
 
+      // Step 2: Wait for the webcam video element to be ready (max 8s)
+      const video = await new Promise<HTMLVideoElement | null>((resolve) => {
+        let elapsed = 0;
+        const poll = setInterval(() => {
+          elapsed += 200;
+          const v = webcamRef.current?.video;
+          if (v && v.readyState >= 2) { clearInterval(poll); resolve(v); }
+          else if (elapsed > 8000) { clearInterval(poll); resolve(null); }
+        }, 200);
+      });
+
+      if (!video || cancelled) {
+        if (!cancelled) toast.error("Camera not ready. Please allow camera permission and try again.");
+        return;
+      }
+
+      // Step 3: Create a fresh Pose instance
       try {
-        const pose = preloadedPoseRef.current || new PoseCtor({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}` });
+        const pose = new PoseCtor({
+          locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}`,
+        });
         pose.setOptions({
-          modelComplexity: 0,
+          modelComplexity: 1,
           smoothLandmarks: true,
           enableSegmentation: false,
           smoothSegmentation: false,
-          minDetectionConfidence: 0.3,
-          minTrackingConfidence: 0.3,
+          minDetectionConfidence: 0.4,
+          minTrackingConfidence: 0.4,
         });
         pose.onResults(onResults);
         poseRef.current = pose;
-        preloadedPoseRef.current = null;
 
+        // Warm up with a single black frame so WASM is ready
+        const warmup = document.createElement("canvas");
+        warmup.width = 64; warmup.height = 64;
+        const wCtx = warmup.getContext("2d");
+        if (wCtx) { wCtx.fillStyle = "#000"; wCtx.fillRect(0, 0, 64, 64); }
+        try { await pose.send({ image: warmup as any }); } catch (_) {}
+
+        if (cancelled) { pose.close(); return; }
+
+        // Step 4: Start rAF loop
         const processFrame = async () => {
           if (cancelled) return;
-
           const currentVideo = webcamRef.current?.video;
           if (poseRef.current && currentVideo && currentVideo.readyState >= 2 && !frameInFlight) {
             frameInFlight = true;
             try {
               await poseRef.current.send({ image: currentVideo });
             } catch (e) {
-              console.warn("Pose send error", e);
+              console.warn("Pose frame error", e);
             } finally {
               frameInFlight = false;
             }
           }
-
-          frameRequestRef.current = requestAnimationFrame(processFrame);
+          if (!cancelled) frameRequestRef.current = requestAnimationFrame(processFrame);
         };
 
         frameRequestRef.current = requestAnimationFrame(processFrame);
-        toast.success("⚡ Body detected!", { duration: 1500 });
+        toast.success("⚡ Body tracking active!", { duration: 1500 });
       } catch (err) {
         console.error("MediaPipe init error:", err);
-        if (retryCount++ <= 4) {
-          setTimeout(initPose, 250);
-        } else {
-          toast.error("Camera detection failed. Please reload.");
-        }
+        if (!cancelled) toast.error("Camera detection failed. Please reload.");
       }
     };
 
-    initPose();
+    boot();
 
     return () => {
       cancelled = true;
@@ -585,7 +572,7 @@ const CameraPage = () => {
         frameRequestRef.current = null;
       }
       if (poseRef.current) {
-        poseRef.current.close();
+        try { poseRef.current.close(); } catch (_) {}
         poseRef.current = null;
       }
     };
