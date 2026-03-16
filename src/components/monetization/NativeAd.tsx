@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { ExternalLink } from "lucide-react";
+import AdSenseBanner from "./AdSenseBanner";
 
 interface NativeAdProps {
   title?: string;
@@ -8,6 +9,7 @@ interface NativeAdProps {
   ctaText?: string;
   ctaUrl?: string;
   variant?: "compact" | "full";
+  useAdSense?: boolean;
 }
 
 const NativeAd = ({
@@ -17,7 +19,19 @@ const NativeAd = ({
   ctaText = "Learn More",
   ctaUrl = "#",
   variant = "full",
+  useAdSense = true,
 }: NativeAdProps) => {
+  // When AdSense is enabled, render the real ad unit
+  if (useAdSense) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+        <AdSenseBanner
+          adFormat={variant === "compact" ? "fluid" : "auto"}
+          className={variant === "compact" ? "min-h-[60px]" : "min-h-[120px]"}
+        />
+      </motion.div>
+    );
+  }
   if (variant === "compact") {
     return (
       <motion.a
