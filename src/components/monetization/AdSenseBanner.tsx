@@ -6,8 +6,8 @@ interface AdSenseBannerProps {
   className?: string;
 }
 
-const PUBLISHER_ID = "ca-pub-XXXXXXXXXX";
-const DEFAULT_SLOT = "XXXXXXXXXX";
+const PUBLISHER_ID = "ca-pub-9511069914372818";
+const DEFAULT_SLOT = "8314049068";
 
 const AdSenseBanner = ({
   adSlot = DEFAULT_SLOT,
