@@ -25,6 +25,7 @@ import ProgressPage from "./pages/ProgressPage";
 import StreakPage from "./pages/StreakPage";
 import InstallPage from "./pages/InstallPage";
 import NotFound from "./pages/NotFound";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 
 const queryClient = new QueryClient();
 
