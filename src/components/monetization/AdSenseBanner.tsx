@@ -6,8 +6,8 @@ interface AdSenseBannerProps {
   className?: string;
 }
 
-const PUBLISHER_ID = "ca-pub-XXXXXXXXXX";
-const DEFAULT_SLOT = "XXXXXXXXXX";
+const PUBLISHER_ID = "ca-pub-9511069914372818";
+const DEFAULT_SLOT = "8314049068";
 
 const AdSenseBanner = ({
   adSlot = DEFAULT_SLOT,
@@ -35,6 +35,7 @@ const AdSenseBanner = ({
         data-ad-client={PUBLISHER_ID}
         data-ad-slot={adSlot}
         data-ad-format={adFormat}
+        data-ad-layout-key="-fb+5w+4e-db+86"
         data-full-width-responsive="true"
       />
       <span className="absolute top-1 right-2 text-[8px] text-muted-foreground/50 uppercase tracking-wider z-10">
