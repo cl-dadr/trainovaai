@@ -25,6 +25,7 @@ import ProgressPage from "./pages/ProgressPage";
 import StreakPage from "./pages/StreakPage";
 import InstallPage from "./pages/InstallPage";
 import NotFound from "./pages/NotFound";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const AppRoutes = () => {
         <Route path="/progress" element={<ProtectedRoute><ProgressPage /></ProtectedRoute>} />
         <Route path="/streak" element={<ProtectedRoute><StreakPage /></ProtectedRoute>} />
         <Route path="/install" element={<InstallPage />} />
+        <Route path="/admin" element={<ProtectedRoute><AdminDashboardPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {user && <NowPlayingBar />}

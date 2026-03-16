@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "react";
+import { useAdTracking } from "@/hooks/useAdTracking";
 
 interface AdSenseBannerProps {
   adSlot?: string;
   adFormat?: "auto" | "fluid" | "rectangle";
   className?: string;
+  page?: string;
 }
 
 const PUBLISHER_ID = "ca-pub-9511069914372818";
@@ -13,15 +15,18 @@ const AdSenseBanner = ({
   adSlot = DEFAULT_SLOT,
   adFormat = "fluid",
   className = "",
+  page = "unknown",
 }: AdSenseBannerProps) => {
   const adRef = useRef<HTMLDivElement>(null);
   const pushed = useRef(false);
+  const { trackImpression } = useAdTracking();
 
   useEffect(() => {
     if (pushed.current) return;
     try {
       ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
       pushed.current = true;
+      trackImpression(page, adSlot);
     } catch {
       // AdSense not loaded yet or ad blocker active
     }

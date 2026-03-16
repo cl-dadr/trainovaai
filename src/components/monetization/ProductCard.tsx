@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { ShoppingCart, Star } from "lucide-react";
+import { useAdTracking } from "@/hooks/useAdTracking";
 
 export interface Product {
   id: string;
@@ -14,6 +15,12 @@ export interface Product {
 }
 
 const ProductCard = ({ product, index = 0 }: { product: Product; index?: number }) => {
+  const { trackAffiliateClick } = useAdTracking();
+
+  const handleClick = () => {
+    trackAffiliateClick(product.id, product.name, product.affiliateUrl);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -56,6 +63,7 @@ const ProductCard = ({ product, index = 0 }: { product: Product; index?: number 
             href={product.affiliateUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={handleClick}
             className="flex items-center gap-1 gradient-primary text-primary-foreground text-[10px] font-bold px-2.5 py-1.5 rounded-lg"
           >
             <ShoppingCart className="h-3 w-3" /> Buy
