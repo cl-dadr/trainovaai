@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_impressions: {
+        Row: {
+          ad_slot: string
+          created_at: string
+          id: string
+          impression_type: string
+          page: string
+          user_id: string | null
+        }
+        Insert: {
+          ad_slot: string
+          created_at?: string
+          id?: string
+          impression_type?: string
+          page: string
+          user_id?: string | null
+        }
+        Update: {
+          ad_slot?: string
+          created_at?: string
+          id?: string
+          impression_type?: string
+          page?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      affiliate_clicks: {
+        Row: {
+          affiliate_url: string
+          created_at: string
+          id: string
+          product_id: string
+          product_name: string
+          user_id: string | null
+        }
+        Insert: {
+          affiliate_url: string
+          created_at?: string
+          id?: string
+          product_id: string
+          product_name: string
+          user_id?: string | null
+        }
+        Update: {
+          affiliate_url?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+          product_name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       battle_participants: {
         Row: {
           battle_id: string
