@@ -60,6 +60,7 @@ const AppRoutes = () => {
         <Route path="/progress" element={<ProtectedRoute><ProgressPage /></ProtectedRoute>} />
         <Route path="/streak" element={<ProtectedRoute><StreakPage /></ProtectedRoute>} />
         <Route path="/install" element={<InstallPage />} />
+        <Route path="/admin" element={<ProtectedRoute><AdminDashboardPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {user && <NowPlayingBar />}
