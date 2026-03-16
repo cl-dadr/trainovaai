@@ -38,8 +38,6 @@ const AdSenseBanner = ({
         data-ad-layout-key="-fb+5w+4e-db+86"
         data-full-width-responsive="true"
       />
-        data-full-width-responsive="true"
-      />
       <span className="absolute top-1 right-2 text-[8px] text-muted-foreground/50 uppercase tracking-wider z-10">
         Sponsored
       </span>
