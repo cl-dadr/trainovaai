@@ -9,7 +9,7 @@ export const useAdTracking = () => {
     async (page: string, adSlot: string) => {
       if (!user) return;
       try {
-        await supabase.from("ad_impressions").insert({
+        await (supabase as any).from("ad_impressions").insert({
           user_id: user.id,
           page,
           ad_slot: adSlot,
@@ -26,7 +26,7 @@ export const useAdTracking = () => {
     async (productId: string, productName: string, affiliateUrl: string) => {
       if (!user) return;
       try {
-        await supabase.from("affiliate_clicks").insert({
+        await (supabase as any).from("affiliate_clicks").insert({
           user_id: user.id,
           product_id: productId,
           product_name: productName,
