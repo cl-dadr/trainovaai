@@ -100,7 +100,7 @@ const HomePage = () => {
       </motion.div>
 
       {/* Quick Nav Row 3 (Streak + Store) */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }} className="relative z-10 grid grid-cols-2 gap-2 mb-5">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }} className="relative z-10 grid grid-cols-3 gap-2 mb-5">
         {quickNav3.map((item) => (
           <button key={item.label} onClick={() => navigate(item.path)} className="glass-card p-3 text-center hover:bg-secondary/50 transition-colors">
             <item.icon className={`mx-auto h-5 w-5 mb-1.5 ${item.color}`} />
