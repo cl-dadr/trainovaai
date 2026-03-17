@@ -30,6 +30,7 @@ const quickNav2 = [
 const quickNav3 = [
   { icon: Footprints, label: "Streak", path: "/streak", color: "text-neon-green" },
   { icon: ShoppingBag, label: "Store", path: "/store", color: "text-neon-orange" },
+  { icon: ShoppingCart, label: "Shop", path: "/shop", color: "text-neon-cyan" },
 ];
 
 const HomePage = () => {
