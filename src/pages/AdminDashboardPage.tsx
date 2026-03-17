@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Eye, MousePointerClick, CreditCard, TrendingUp, Users, DollarSign, BarChart3 } from "lucide-react";
+import { ArrowLeft, Eye, MousePointerClick, CreditCard, TrendingUp, Users, DollarSign, BarChart3, Package, ShoppingBag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -138,12 +138,20 @@ const AdminDashboardPage = () => {
             <h1 className="text-base font-bold text-foreground font-display">Revenue Dashboard</h1>
             <p className="text-[10px] text-muted-foreground">Admin Analytics</p>
           </div>
-          <button
-            onClick={fetchStats}
-            className="ml-auto text-[10px] font-bold text-primary px-3 py-1 rounded-lg border border-primary/30"
-          >
-            Refresh
-          </button>
+          <div className="ml-auto flex gap-2">
+            <button
+              onClick={() => navigate("/admin/products")}
+              className="text-[10px] font-bold text-foreground px-2 py-1 rounded-lg border border-border/50 flex items-center gap-1"
+            >
+              <Package className="h-3 w-3" /> Products
+            </button>
+            <button
+              onClick={fetchStats}
+              className="text-[10px] font-bold text-primary px-3 py-1 rounded-lg border border-primary/30"
+            >
+              Refresh
+            </button>
+          </div>
         </div>
       </div>
 
