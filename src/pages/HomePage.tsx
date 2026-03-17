@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Flame, User, Footprints, Bot, Bell, PersonStanding,
   Apple, Brain, CheckSquare, TrendingUp, Dumbbell, ShoppingBag,
-  Sparkles, Camera,
+  Sparkles, Camera, ShoppingCart,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserStats } from "@/hooks/useUserStats";
