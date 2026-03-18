@@ -739,6 +739,54 @@ export type Database = {
         }
         Relationships: []
       }
+      sponsored_products: {
+        Row: {
+          active: boolean
+          badge: string | null
+          brand_name: string
+          created_at: string
+          cta_text: string
+          cta_url: string
+          description: string | null
+          id: string
+          image_url: string | null
+          price: number | null
+          priority: number
+          product_name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          badge?: string | null
+          brand_name: string
+          created_at?: string
+          cta_text?: string
+          cta_url: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          price?: number | null
+          priority?: number
+          product_name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          badge?: string | null
+          brand_name?: string
+          created_at?: string
+          cta_text?: string
+          cta_url?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          price?: number | null
+          priority?: number
+          product_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
