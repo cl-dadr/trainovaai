@@ -59,7 +59,7 @@ const PremiumPage = () => {
         key: data.keyId,
         amount: plan.price * 100,
         currency: "INR",
-        name: "BEAST Pro",
+        name: "Trainova AI Pro",
         description: `${plan.name} Subscription`,
         order_id: data.orderId,
         prefill: {
