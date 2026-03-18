@@ -130,6 +130,13 @@ const ShopPage = () => {
         </div>
       </motion.div>
 
+      {/* Sponsored brand product */}
+      {!isPremium && (
+        <div className="relative z-10 mb-4">
+          <SponsoredProductBanner page="shop" />
+        </div>
+      )}
+
       {/* AdSense for non-premium */}
       {!isPremium && (
         <div className="relative z-10 mb-4">
