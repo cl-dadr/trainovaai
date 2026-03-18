@@ -48,8 +48,7 @@ const AuthPage = () => {
       >
         {/* Logo */}
         <div className="flex flex-col items-center mb-10">
-          <img src="/trainova-logo.png" alt="Trainova AI" className="h-20 w-20 rounded-2xl object-cover mb-4 shadow-lg shadow-primary/30" />
-          <img src="/trainova-logo.png" alt="Trainova AI" className="h-20 w-20 rounded-2xl object-cover" />
+          <img src="/trainova-logo.png" alt="Trainova AI" className="h-24 w-24 rounded-2xl object-cover mb-4 shadow-lg shadow-primary/30" />
           <h1 className="text-3xl font-display font-black text-foreground tracking-wider">Trainova AI</h1>
           <p className="text-sm text-muted-foreground mt-1">AI Fitness Companion</p>
         </div>
