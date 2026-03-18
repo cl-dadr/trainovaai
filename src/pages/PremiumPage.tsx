@@ -67,7 +67,7 @@ const PremiumPage = () => {
         },
         theme: { color: "#00ff88" },
         handler: () => {
-          alert("🎉 Welcome to BEAST Pro! Your premium features are now active.");
+          alert("🎉 Welcome to Trainova AI Pro! Your premium features are now active.");
           navigate("/");
         },
       };
