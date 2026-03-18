@@ -8,6 +8,7 @@ import { usePremium } from "@/hooks/usePremium";
 import { useAdTracking } from "@/hooks/useAdTracking";
 import AdSenseBanner from "@/components/monetization/AdSenseBanner";
 import NativeAd from "@/components/monetization/NativeAd";
+import SponsoredProductBanner from "@/components/monetization/SponsoredProductBanner";
 import { toast } from "@/hooks/use-toast";
 
 declare global {
