@@ -146,6 +146,12 @@ const AdminDashboardPage = () => {
               <Package className="h-3 w-3" /> Products
             </button>
             <button
+              onClick={() => navigate("/admin/sponsored")}
+              className="text-[10px] font-bold text-foreground px-2 py-1 rounded-lg border border-neon-orange/50 flex items-center gap-1 text-neon-orange"
+            >
+              <Megaphone className="h-3 w-3" /> Sponsored
+            </button>
+            <button
               onClick={fetchStats}
               className="text-[10px] font-bold text-primary px-3 py-1 rounded-lg border border-primary/30"
             >
