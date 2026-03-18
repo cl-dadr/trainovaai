@@ -65,7 +65,7 @@ const InstallPage = () => {
           <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary to-neon-cyan flex items-center justify-center shadow-lg shadow-primary/30">
             <Smartphone className="h-10 w-10 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-display font-black text-foreground mb-2">Install BEAST</h1>
+          <h1 className="text-2xl font-display font-black text-foreground mb-2">Install Trainova AI</h1>
           <p className="text-sm text-muted-foreground">Add to your home screen for the best experience</p>
         </motion.div>
 
