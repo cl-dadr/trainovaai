@@ -13,7 +13,6 @@ import NativeAd from "@/components/monetization/NativeAd";
 import RewardedAdCard from "@/components/monetization/RewardedAdCard";
 import PremiumUpsellBanner from "@/components/monetization/PremiumUpsellBanner";
 import SponsoredProductBanner from "@/components/monetization/SponsoredProductBanner";
-import PremiumUpsellBanner from "@/components/monetization/PremiumUpsellBanner";
 
 const quickNav = [
   { icon: Camera, label: "AI Trainer", path: "/camera", color: "text-neon-green" },
