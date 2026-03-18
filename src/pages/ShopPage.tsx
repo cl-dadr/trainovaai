@@ -90,7 +90,7 @@ const ShopPage = () => {
         key: data.keyId,
         amount: product.price * 100,
         currency: "INR",
-        name: "BEAST Shop",
+        name: "Trainova AI Shop",
         description: product.name,
         order_id: data.orderId,
         prefill: { email: user.email || "" },
