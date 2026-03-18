@@ -55,7 +55,7 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
   if (!user) return <Navigate to="/auth" replace />;
-  if (!isAdmin && !SETUP_MODE) return <Navigate to="/" replace />;
+  if (!isAdmin && !SETUP_MODE) return <Navigate to="/admin" replace />;
   return <>{children}</>;
 };
 
