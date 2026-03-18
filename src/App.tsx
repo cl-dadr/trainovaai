@@ -43,6 +43,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
+  
+  // ⚠️ TEMPORARY: Allow access if SETUP_MODE is enabled (remove after setup)
+  const SETUP_MODE = localStorage.getItem('ADMIN_SETUP_MODE') === 'true';
 
   if (authLoading || adminLoading) {
     return (
@@ -52,7 +55,7 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
   if (!user) return <Navigate to="/auth" replace />;
-  if (!isAdmin) return <Navigate to="/" replace />;
+  if (!isAdmin && !SETUP_MODE) return <Navigate to="/" replace />;
   return <>{children}</>;
 };
 
