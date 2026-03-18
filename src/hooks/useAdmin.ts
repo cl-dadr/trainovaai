@@ -13,14 +13,22 @@ export const useAdmin = () => {
       setLoading(false);
       return;
     }
-    const { data } = await (supabase as any)
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .limit(1);
+    try {
+      const { data, error } = await supabase.rpc("has_role", {
+        _user_id: user.id,
+        _role: "admin",
+      });
 
-    setIsAdmin((data?.length ?? 0) > 0);
+      if (error) {
+        console.error("Admin check error:", error);
+        setIsAdmin(false);
+      } else {
+        setIsAdmin(data === true);
+      }
+    } catch (err) {
+      console.error("Admin check exception:", err);
+      setIsAdmin(false);
+    }
     setLoading(false);
   }, [user]);
 
