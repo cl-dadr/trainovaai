@@ -90,7 +90,7 @@ const ShopPage = () => {
         key: data.keyId,
         amount: product.price * 100,
         currency: "INR",
-        name: "BEAST Shop",
+        name: "Trainova AI Shop",
         description: product.name,
         order_id: data.orderId,
         prefill: { email: user.email || "" },
@@ -123,7 +123,7 @@ const ShopPage = () => {
         </button>
         <div>
           <h1 className="text-lg font-display font-bold text-foreground flex items-center gap-2">
-            <ShoppingBag className="h-5 w-5 text-primary" /> BEAST Shop
+            <ShoppingBag className="h-5 w-5 text-primary" /> Trainova AI Shop
           </h1>
           <p className="text-[10px] text-muted-foreground">Premium fitness gear</p>
         </div>
@@ -224,7 +224,7 @@ const ShopPage = () => {
             <div className="col-span-2">
               <NativeAd
                 title="Flat 30% Off on Supplements"
-                description="Use code BEAST30 at checkout. Limited time offer."
+                description="Use code TRAINOVA30 at checkout. Limited time offer."
                 variant="compact"
               />
             </div>

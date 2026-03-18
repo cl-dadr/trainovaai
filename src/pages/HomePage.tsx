@@ -48,7 +48,7 @@ const HomePage = () => {
         <div>
           <p className="text-sm text-neon-green font-medium">Welcome back</p>
           <h1 className="text-2xl font-display font-bold text-foreground">
-            {user?.user_metadata?.display_name || "Beast"} 🐺
+            {user?.user_metadata?.display_name || "Champ"} 💪
           </h1>
         </div>
         <div className="flex items-center gap-3">

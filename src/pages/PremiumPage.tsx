@@ -59,7 +59,7 @@ const PremiumPage = () => {
         key: data.keyId,
         amount: plan.price * 100,
         currency: "INR",
-        name: "BEAST Pro",
+        name: "Trainova AI Pro",
         description: `${plan.name} Subscription`,
         order_id: data.orderId,
         prefill: {
@@ -67,7 +67,7 @@ const PremiumPage = () => {
         },
         theme: { color: "#00ff88" },
         handler: () => {
-          alert("🎉 Welcome to BEAST Pro! Your premium features are now active.");
+          alert("🎉 Welcome to Trainova AI Pro! Your premium features are now active.");
           navigate("/");
         },
       };
@@ -90,7 +90,7 @@ const PremiumPage = () => {
           <Crown className="h-8 w-8 text-foreground" />
         </div>
         <h1 className="text-2xl font-display font-bold text-foreground">GO PRO</h1>
-        <p className="text-sm text-muted-foreground mt-2">Unlock the full BEAST experience</p>
+        <p className="text-sm text-muted-foreground mt-2">Unlock the full Trainova AI experience</p>
       </motion.div>
 
       {/* Features */}

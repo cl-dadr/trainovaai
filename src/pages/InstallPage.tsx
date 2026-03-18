@@ -65,7 +65,7 @@ const InstallPage = () => {
           <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary to-neon-cyan flex items-center justify-center shadow-lg shadow-primary/30">
             <Smartphone className="h-10 w-10 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-display font-black text-foreground mb-2">Install BEAST</h1>
+          <h1 className="text-2xl font-display font-black text-foreground mb-2">Install Trainova AI</h1>
           <p className="text-sm text-muted-foreground">Add to your home screen for the best experience</p>
         </motion.div>
 
@@ -75,7 +75,7 @@ const InstallPage = () => {
             className="glass-card p-6 text-center mb-6 border border-primary/30">
             <CheckCircle className="h-12 w-12 text-primary mx-auto mb-3" />
             <h2 className="text-lg font-bold text-foreground mb-1">Already Installed! 🎉</h2>
-            <p className="text-sm text-muted-foreground mb-4">Open BEAST from your home screen for the full experience.</p>
+            <p className="text-sm text-muted-foreground mb-4">Open Trainova AI from your home screen for the full experience.</p>
             <Link to="/camera" className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-xl font-bold">
               Open AI Trainer →
             </Link>
