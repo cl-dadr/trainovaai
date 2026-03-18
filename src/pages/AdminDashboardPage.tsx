@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Eye, MousePointerClick, CreditCard, TrendingUp, Users, DollarSign, BarChart3, Package, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Eye, MousePointerClick, CreditCard, TrendingUp, Users, DollarSign, BarChart3, Package, ShoppingBag, Megaphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -144,6 +144,12 @@ const AdminDashboardPage = () => {
               className="text-[10px] font-bold text-foreground px-2 py-1 rounded-lg border border-border/50 flex items-center gap-1"
             >
               <Package className="h-3 w-3" /> Products
+            </button>
+            <button
+              onClick={() => navigate("/admin/sponsored")}
+              className="text-[10px] font-bold text-foreground px-2 py-1 rounded-lg border border-neon-orange/50 flex items-center gap-1 text-neon-orange"
+            >
+              <Megaphone className="h-3 w-3" /> Sponsored
             </button>
             <button
               onClick={fetchStats}

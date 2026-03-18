@@ -12,6 +12,7 @@ import { showRandomInspiration } from "@/lib/inspiringNotifications";
 import NativeAd from "@/components/monetization/NativeAd";
 import RewardedAdCard from "@/components/monetization/RewardedAdCard";
 import PremiumUpsellBanner from "@/components/monetization/PremiumUpsellBanner";
+import SponsoredProductBanner from "@/components/monetization/SponsoredProductBanner";
 
 const quickNav = [
   { icon: Camera, label: "AI Trainer", path: "/camera", color: "text-neon-green" },
@@ -69,6 +70,13 @@ const HomePage = () => {
       {!isPremium && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="relative z-10 mb-4">
           <PremiumUpsellBanner />
+        </motion.div>
+      )}
+
+      {/* Sponsored brand product ad (free users only) */}
+      {!isPremium && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.07 }} className="relative z-10 mb-4">
+          <SponsoredProductBanner page="home" />
         </motion.div>
       )}
 
