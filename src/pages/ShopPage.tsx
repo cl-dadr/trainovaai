@@ -224,7 +224,7 @@ const ShopPage = () => {
             <div className="col-span-2">
               <NativeAd
                 title="Flat 30% Off on Supplements"
-                description="Use code BEAST30 at checkout. Limited time offer."
+                description="Use code TRAINOVA30 at checkout. Limited time offer."
                 variant="compact"
               />
             </div>

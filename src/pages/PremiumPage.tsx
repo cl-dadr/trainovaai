@@ -90,7 +90,7 @@ const PremiumPage = () => {
           <Crown className="h-8 w-8 text-foreground" />
         </div>
         <h1 className="text-2xl font-display font-bold text-foreground">GO PRO</h1>
-        <p className="text-sm text-muted-foreground mt-2">Unlock the full BEAST experience</p>
+        <p className="text-sm text-muted-foreground mt-2">Unlock the full Trainova AI experience</p>
       </motion.div>
 
       {/* Features */}

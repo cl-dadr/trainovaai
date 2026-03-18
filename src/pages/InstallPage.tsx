@@ -75,7 +75,7 @@ const InstallPage = () => {
             className="glass-card p-6 text-center mb-6 border border-primary/30">
             <CheckCircle className="h-12 w-12 text-primary mx-auto mb-3" />
             <h2 className="text-lg font-bold text-foreground mb-1">Already Installed! 🎉</h2>
-            <p className="text-sm text-muted-foreground mb-4">Open BEAST from your home screen for the full experience.</p>
+            <p className="text-sm text-muted-foreground mb-4">Open Trainova AI from your home screen for the full experience.</p>
             <Link to="/camera" className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-xl font-bold">
               Open AI Trainer →
             </Link>

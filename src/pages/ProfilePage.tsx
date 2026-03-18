@@ -14,7 +14,7 @@ const ProfilePage = () => {
     navigate("/auth");
   };
 
-  const displayName = user?.user_metadata?.display_name || "Beast";
+  const displayName = user?.user_metadata?.display_name || "Champ";
 
   const level = Math.floor(totalXP / 100) + 1;
   const xpInLevel = totalXP % 100;
