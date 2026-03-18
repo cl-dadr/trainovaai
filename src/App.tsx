@@ -28,6 +28,7 @@ import InstallPage from "./pages/InstallPage";
 import NotFound from "./pages/NotFound";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminProductsPage from "./pages/AdminProductsPage";
+import AdminSponsoredPage from "./pages/AdminSponsoredPage";
 import { useAdmin } from "./hooks/useAdmin";
 
 const queryClient = new QueryClient();
