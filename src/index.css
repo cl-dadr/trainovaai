@@ -151,3 +151,11 @@ body {
 .fill-neon-pink {
   fill: hsl(var(--neon-pink));
 }
+
+
+@layer base {
+  /* ...the rest of your base...*/
+  #lovable-badge {
+    display: none !important;
+  }
+}
