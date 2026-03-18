@@ -74,6 +74,13 @@ const HomePage = () => {
         </motion.div>
       )}
 
+      {/* Sponsored brand product ad (free users only) */}
+      {!isPremium && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.07 }} className="relative z-10 mb-4">
+          <SponsoredProductBanner page="home" />
+        </motion.div>
+      )}
+
       {/* Sponsored ad slot (free users only) */}
       {!isPremium && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.08 }} className="relative z-10 mb-4">

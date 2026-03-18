@@ -83,6 +83,7 @@ const AppRoutes = () => {
         <Route path="/install" element={<InstallPage />} />
         <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
         <Route path="/admin/products" element={<AdminRoute><AdminProductsPage /></AdminRoute>} />
+        <Route path="/admin/sponsored" element={<AdminRoute><AdminSponsoredPage /></AdminRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {user && <NowPlayingBar />}
