@@ -123,7 +123,7 @@ const ShopPage = () => {
         </button>
         <div>
           <h1 className="text-lg font-display font-bold text-foreground flex items-center gap-2">
-            <ShoppingBag className="h-5 w-5 text-primary" /> BEAST Shop
+            <ShoppingBag className="h-5 w-5 text-primary" /> Trainova AI Shop
           </h1>
           <p className="text-[10px] text-muted-foreground">Premium fitness gear</p>
         </div>
